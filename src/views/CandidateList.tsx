@@ -64,12 +64,12 @@ export default function CandidateList() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-6 md:px-8">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-5 md:px-6">
         <section className="section-card p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="eyebrow mb-2">Recruitment pipeline</p>
-              <h1 className="text-3xl font-black text-on-surface">Kanban ứng viên</h1>
+              <h1 className="text-2xl font-black text-on-surface md:text-3xl">Kanban ứng viên</h1>
               <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
                 Kéo thả ứng viên qua 10 stage. Mỗi lần đổi stage sẽ tự động ghi vào lịch sử hoạt động của ứng viên.
               </p>

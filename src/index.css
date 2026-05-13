@@ -92,7 +92,7 @@
 
 @layer components {
   .page-shell {
-    @apply mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-6 pb-28 md:px-8 md:py-8;
+    @apply mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-5 pb-28 md:px-6 md:py-6;
   }
 
   .section-card {
@@ -100,7 +100,7 @@
   }
 
   .metric-card {
-    @apply rounded-lg border border-outline-variant/70 bg-surface-container-lowest p-4 shadow-sm shadow-slate-900/5;
+    @apply rounded-lg border border-outline-variant/70 bg-surface-container-lowest p-3.5 shadow-sm shadow-slate-900/5;
   }
 
   .eyebrow {

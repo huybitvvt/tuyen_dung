@@ -60,14 +60,14 @@ function TopBar() {
   const { resetDemoData, currentUser } = useCrm();
 
   return (
-    <header className="sticky top-0 z-50 bg-surface/90 border-b border-outline-variant/80 shadow-sm backdrop-blur-md h-16 flex items-center justify-between px-4 md:px-6 w-full">
+    <header className="sticky top-0 z-50 bg-surface/90 border-b border-outline-variant/80 shadow-sm backdrop-blur-md h-14 flex items-center justify-between px-4 md:px-5 w-full">
       <div className="flex items-center gap-3 min-w-0">
         <button className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors md:hidden">
           <Menu className="size-5" />
         </button>
         <div className="min-w-0">
           <p className="eyebrow hidden sm:block">XOXO CRM</p>
-          <h1 className="text-lg font-black text-on-surface truncate">
+          <h1 className="text-base font-black text-on-surface truncate">
             Đào tạo & Tuyển dụng
           </h1>
         </div>
@@ -99,20 +99,20 @@ function Sidebar() {
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-72 h-screen fixed left-0 top-0 bg-surface/95 border-r border-outline-variant/80 py-6 z-40 backdrop-blur-md">
-      <div className="px-6 mb-8">
+    <aside className="hidden md:flex flex-col w-60 h-screen fixed left-0 top-0 bg-surface/95 border-r border-outline-variant/80 py-5 z-40 backdrop-blur-md">
+      <div className="px-5 mb-7">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-on-primary font-black shadow-sm shadow-primary/20">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-on-primary font-black shadow-sm shadow-primary/20">
             XO
           </div>
           <div>
-            <h2 className="text-lg font-black text-on-surface">XOXO CRM</h2>
+            <h2 className="text-base font-black text-on-surface">XOXO CRM</h2>
             <p className="eyebrow">People Ops</p>
           </div>
         </div>
       </div>
       
-      <div className="flex-1 px-3 space-y-1">
+      <div className="flex-1 px-2.5 space-y-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           const Icon = item.icon;
@@ -121,13 +121,13 @@ function Sidebar() {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group",
+                "flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all duration-200 group",
                 isActive 
                   ? "bg-primary text-on-primary font-semibold shadow-sm shadow-primary/20" 
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
               )}
             >
-              <Icon className="size-5" />
+              <Icon className="size-4.5" />
               <span className="text-sm">{item.label}</span>
               {item.count !== null && item.count !== undefined && (
                 <span className={cn("ml-auto rounded-full px-2 py-0.5 text-[10px] font-black", isActive ? "bg-white/15 text-white" : "bg-surface-container text-on-surface-variant")}>
@@ -140,7 +140,7 @@ function Sidebar() {
         })}
       </div>
 
-      <div className="px-6 mt-auto pt-6 border-t border-outline-variant">
+      <div className="px-4 mt-auto pt-5 border-t border-outline-variant">
         <div className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-low p-3">
           <img 
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT56xaYBgGZcjb4fjg3yVanYOGyDjC80pxXcg96gJc8MCS2SiFU6urI5Q9zsc9xrJBRkJea0u1MQqKFgandaC_hSz7eS5BvCk6UxeUaZtC2N2OTqfBhHnipmdEDbwmDsrFLRMiPxy_V6eypLT5s3IF1tqDmydlOGrqnXqSLkFc_26EK_xSfyteHFP0wue00kLbcoZhiHaXDn1cWB-RFsHVnOPWM-I5Lu6C0gAoy4oqC7V5qYJRLRFJcCxWtoo3oXgeOkzwc3pVQg"
@@ -161,7 +161,7 @@ function MainLayout({ children, hideNav = false }: { children: React.ReactNode, 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className={cn("flex flex-col min-h-screen", !hideNav && "md:ml-72")}>
+      <div className={cn("flex flex-col min-h-screen", !hideNav && "md:ml-60")}>
         {!hideNav && <TopBar />}
         <main className="flex-1">
           <AnimatePresence mode="wait">

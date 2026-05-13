@@ -63,11 +63,11 @@ export default function TrainingList() {
 
   return (
     <div className="page-shell max-w-7xl">
-      <section className="section-card p-5 md:p-6">
+      <section className="section-card p-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="eyebrow mb-2">Training / LMS</p>
-            <h1 className="text-3xl font-black text-on-surface">Đào tạo nội bộ</h1>
+            <h1 className="text-2xl font-black text-on-surface md:text-3xl">Đào tạo nội bộ</h1>
             <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
               Quản lý khóa học theo phòng ban, theo dõi video/tài liệu, gán khóa cho nhân viên và đánh giá năng lực bằng quiz.
             </p>
@@ -75,15 +75,15 @@ export default function TrainingList() {
           <div className="grid grid-cols-3 gap-2 sm:min-w-[360px]">
             <div className="rounded-lg bg-surface-container-low p-3">
               <p className="eyebrow">Khóa</p>
-              <p className="mt-2 text-2xl font-black">{courses.length}</p>
+              <p className="mt-1 text-xl font-black">{courses.length}</p>
             </div>
             <div className="rounded-lg bg-surface-container-low p-3">
               <p className="eyebrow">TB</p>
-              <p className="mt-2 text-2xl font-black">{averageProgress}%</p>
+              <p className="mt-1 text-xl font-black">{averageProgress}%</p>
             </div>
             <div className="rounded-lg bg-surface-container-low p-3">
               <p className="eyebrow">Cần học</p>
-              <p className="mt-2 text-2xl font-black">{pendingCount}</p>
+              <p className="mt-1 text-xl font-black">{pendingCount}</p>
             </div>
           </div>
         </div>
@@ -124,21 +124,21 @@ export default function TrainingList() {
           return (
             <Link key={course.id} to={`/training/${course.id}`} className="section-card overflow-hidden transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
               <div className={cn('h-2', course.department === 'Sale' ? 'bg-primary' : course.department === 'Kỹ thuật' ? 'bg-secondary' : 'bg-tertiary-container')} />
-              <div className="p-5">
+              <div className="p-4">
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="mb-2 flex flex-wrap gap-2">
                       <span className="status-pill border-outline-variant bg-surface-container-low text-on-surface-variant">{course.department}</span>
                       <span className="status-pill border-outline-variant bg-surface-container-low text-on-surface-variant">{course.level}</span>
                     </div>
-                    <h2 className="line-clamp-2 text-lg font-black leading-6 text-on-surface">{course.name}</h2>
+                    <h2 className="line-clamp-2 text-base font-black leading-6 text-on-surface">{course.name}</h2>
                   </div>
                   <span className={cn('status-pill shrink-0', statusClass)}>{course.status}</span>
                 </div>
 
-                <p className="min-h-12 text-sm font-medium leading-6 text-on-surface-variant">{course.description}</p>
+                <p className="min-h-11 text-sm font-medium leading-5 text-on-surface-variant">{course.description}</p>
 
-                <div className="mt-5 grid grid-cols-3 gap-2">
+                <div className="mt-4 grid grid-cols-3 gap-2">
                   <div className="rounded-lg bg-surface-container-low p-3">
                     <BookOpen className="mb-2 size-4 text-primary" />
                     <p className="text-xs font-black">{course.lessons}</p>

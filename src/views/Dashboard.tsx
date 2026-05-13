@@ -48,11 +48,11 @@ export default function Dashboard() {
   return (
     <div className="page-shell">
       <section className="section-card overflow-hidden">
-        <div className="p-6 md:p-8">
+        <div className="p-5 md:p-6">
           <p className="eyebrow mb-3">Bảng điều hành nhân sự</p>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h1 className="max-w-2xl text-3xl font-black leading-tight text-on-surface md:text-4xl">
+              <h1 className="max-w-2xl text-2xl font-black leading-tight text-on-surface md:text-3xl">
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
@@ -79,10 +79,10 @@ export default function Dashboard() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="eyebrow">{metric.label}</p>
-                <p className="mt-3 text-3xl font-black text-on-surface">{metric.value}</p>
+                <p className="mt-2 text-2xl font-black text-on-surface">{metric.value}</p>
                 <p className="mt-1 text-xs font-semibold text-on-surface-variant">{metric.detail}</p>
               </div>
-              <div className={cn('flex size-10 items-center justify-center rounded-lg', metric.tone)}>
+              <div className={cn('flex size-9 items-center justify-center rounded-lg', metric.tone)}>
                 <metric.icon className="size-5" />
               </div>
             </div>
@@ -91,11 +91,11 @@ export default function Dashboard() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="section-card p-5">
+        <section className="section-card p-4">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="eyebrow">Đào tạo</p>
-              <h2 className="mt-1 text-lg font-black text-on-surface">Tiến độ theo phòng ban</h2>
+            <h2 className="mt-1 text-base font-black text-on-surface">Tiến độ theo phòng ban</h2>
             </div>
             <ClipboardList className="size-5 text-primary" />
           </div>
@@ -120,17 +120,17 @@ export default function Dashboard() {
         </section>
 
         <section className="section-card overflow-hidden">
-          <div className="border-b border-outline-variant p-5">
+          <div className="border-b border-outline-variant p-4">
             <p className="eyebrow">Pipeline tuyển dụng</p>
-            <h2 className="mt-1 text-lg font-black text-on-surface">Ứng viên theo trạng thái</h2>
+            <h2 className="mt-1 text-base font-black text-on-surface">Ứng viên theo trạng thái</h2>
           </div>
           <div className="grid grid-cols-2 gap-px bg-outline-variant/70 sm:grid-cols-5">
             {candidateStages.map((stage) => {
               const count = candidates.filter((candidate) => candidate.stage === stage.id).length;
               return (
-                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-4 transition-colors hover:bg-surface-container-low">
+                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-3 transition-colors hover:bg-surface-container-low">
                   <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{stage.label}</p>
-                  <p className="mt-3 text-2xl font-black text-on-surface">{count}</p>
+                  <p className="mt-2 text-xl font-black text-on-surface">{count}</p>
                 </Link>
               );
             })}
