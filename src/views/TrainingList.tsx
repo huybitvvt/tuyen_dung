@@ -1,10 +1,11 @@
 import {
-  BookOpen,
-  Users,
-  SlidersHorizontal,
-  Plus,
-  ChevronRight,
   Bell,
+  BookOpen,
+  CheckCircle2,
+  FileQuestion,
+  Plus,
+  SlidersHorizontal,
+  Users,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -13,7 +14,7 @@ import { Department, useCrm } from '../lib/crmStore';
 import { useMemo, useState } from 'react';
 
 export default function TrainingList() {
-  const { courses, lessons, progress, enrollments, employees, currentUser, createCourse } = useCrm();
+  const { courses, lessons, progress, enrollments, employees, currentUser, createCourse, quizzes, questions } = useCrm();
   const [departmentFilter, setDepartmentFilter] = useState<'all' | Department>('all');
   const [levelFilter, setLevelFilter] = useState('all');
 
@@ -22,20 +23,27 @@ export default function TrainingList() {
     const courseProgress = courseLessons.map((lesson) => progress.find((item) => item.userId === currentUser.id && item.lessonId === lesson.id)?.percent ?? 0);
     const progressPercent = courseProgress.length ? Math.round(courseProgress.reduce((sum, item) => sum + item, 0) / courseProgress.length) : 0;
     const enrollment = enrollments.find((item) => item.userId === currentUser.id && item.courseId === course.id);
+    const quiz = quizzes.find((item) => item.courseId === course.id);
     return {
       ...course,
       lessons: courseLessons.length,
+      videos: courseLessons.filter((lesson) => lesson.type === 'video').length,
+      documents: courseLessons.filter((lesson) => lesson.type === 'document').length,
       members: new Set(enrollments.filter((item) => item.courseId === course.id).map((item) => item.userId)).size,
+      questionCount: quiz ? questions.filter((item) => item.quizId === quiz.id).length : 0,
       progress: progressPercent,
       status: enrollment?.status ?? 'chưa học',
     };
-  }), [courses, lessons, progress, enrollments, currentUser.id]);
+  }), [courses, lessons, progress, enrollments, currentUser.id, quizzes, questions]);
 
   const filteredCourses = courseCards.filter((course) => {
     const departmentMatch = departmentFilter === 'all' || course.department === departmentFilter;
     const levelMatch = levelFilter === 'all' || course.level === levelFilter;
     return departmentMatch && levelMatch;
   });
+
+  const pendingCount = courseCards.filter((course) => course.status !== 'hoàn thành').length;
+  const averageProgress = courseCards.length ? Math.round(courseCards.reduce((sum, course) => sum + course.progress, 0) / courseCards.length) : 0;
 
   function handleCreateCourse() {
     const name = window.prompt('Tên khóa học mới');
@@ -54,129 +62,122 @@ export default function TrainingList() {
   }
 
   return (
-    <div className="relative min-h-screen px-4 py-8 md:px-8 max-w-4xl mx-auto flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
+    <div className="page-shell max-w-7xl">
+      <section className="section-card p-5 md:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-on-surface">Đào tạo</h2>
-            <p className="text-xs text-on-surface-variant font-semibold mt-1">Theo dõi khóa học, gán nhân viên và kết quả quiz.</p>
+            <p className="eyebrow mb-2">Training / LMS</p>
+            <h1 className="text-3xl font-black text-on-surface">Đào tạo nội bộ</h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
+              Quản lý khóa học theo phòng ban, theo dõi video/tài liệu, gán khóa cho nhân viên và đánh giá năng lực bằng quiz.
+            </p>
           </div>
-          <div className="hidden md:flex items-center gap-2 rounded-xl border border-outline-variant bg-surface px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-            <Bell className="size-4 text-primary" />
-            {courseCards.filter((course) => course.status !== 'hoàn thành').length} cần học
+          <div className="grid grid-cols-3 gap-2 sm:min-w-[360px]">
+            <div className="rounded-lg bg-surface-container-low p-3">
+              <p className="eyebrow">Khóa</p>
+              <p className="mt-2 text-2xl font-black">{courses.length}</p>
+            </div>
+            <div className="rounded-lg bg-surface-container-low p-3">
+              <p className="eyebrow">TB</p>
+              <p className="mt-2 text-2xl font-black">{averageProgress}%</p>
+            </div>
+            <div className="rounded-lg bg-surface-container-low p-3">
+              <p className="eyebrow">Cần học</p>
+              <p className="mt-2 text-2xl font-black">{pendingCount}</p>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          <select
-            value={departmentFilter}
-            onChange={(event) => setDepartmentFilter(event.target.value as 'all' | Department)}
-            className="bg-surface border border-outline-variant rounded-lg text-sm font-medium py-2 px-3 outline-none focus:ring-1 focus:ring-primary h-10 min-w-max"
-          >
+      <section className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value as 'all' | Department)} className="h-10 min-w-max rounded-lg border border-outline-variant bg-surface px-3 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/30">
             <option value="all">Tất cả phòng ban</option>
             <option value="Sale">Sale</option>
             <option value="Kỹ thuật">Kỹ thuật</option>
             <option value="Marketing">Marketing</option>
           </select>
-          <select
-            value={levelFilter}
-            onChange={(event) => setLevelFilter(event.target.value)}
-            className="bg-surface border border-outline-variant rounded-lg text-sm font-medium py-2 px-3 outline-none focus:ring-1 focus:ring-primary h-10 min-w-max"
-          >
+          <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)} className="h-10 min-w-max rounded-lg border border-outline-variant bg-surface px-3 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/30">
             <option value="all">Mọi cấp độ</option>
             <option value="Cơ bản">Cơ bản</option>
             <option value="Trung cấp">Trung cấp</option>
             <option value="Nâng cao">Nâng cao</option>
           </select>
-          <button className="bg-surface border border-outline-variant rounded-lg text-sm font-medium py-2 px-3 flex items-center gap-2 h-10 hover:bg-surface-container-low transition-colors">
+          <button className="btn-secondary">
             <SlidersHorizontal className="size-4" /> Lọc
           </button>
         </div>
-      </div>
+        <button onClick={handleCreateCourse} className="btn-primary">
+          <Plus className="size-4" />
+          Tạo khóa học
+        </button>
+      </section>
 
-      <div className="flex flex-col gap-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredCourses.map((course) => {
           const isCompleted = course.status === 'hoàn thành';
           const statusClass = isCompleted
-            ? 'text-on-surface-variant bg-surface-variant border-outline-variant'
+            ? 'border-secondary/30 bg-secondary-container text-on-secondary-container'
             : course.status === 'đang học'
-              ? 'text-[#137333] bg-[#e6f4ea] border-[#ceead6]'
-              : 'text-primary bg-primary/10 border-primary/20';
+              ? 'border-primary/25 bg-primary/10 text-primary'
+              : 'border-tertiary/25 bg-amber-50 text-tertiary';
           return (
-            <Link
-              key={course.id}
-              to={`/training/${course.id}`}
-              className={cn(
-                'bg-surface rounded-xl shadow-sm border border-outline-variant overflow-hidden flex flex-col hover:border-primary transition-all group',
-                isCompleted && 'opacity-85'
-              )}
-            >
-              <div className="h-28 relative bg-surface-container-high overflow-hidden">
-                <div className={cn(
-                  'w-full h-full opacity-90',
-                  course.department === 'Sale' ? 'bg-gradient-to-r from-blue-100 to-sky-50' : course.department === 'Kỹ thuật' ? 'bg-gradient-to-r from-slate-200 to-cyan-50' : 'bg-gradient-to-r from-emerald-100 to-lime-50'
-                )} />
-                <div className={cn('absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full border', statusClass)}>
-                  {course.status}
-                </div>
-              </div>
-
-              <div className="p-4 flex flex-col gap-3">
-                <div className="flex gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-secondary bg-surface-container-highest px-2 py-0.5 rounded">
-                    {course.department}
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-secondary bg-surface-container-highest px-2 py-0.5 rounded">
-                    {course.level}
-                  </span>
-                  {course.kpiLeadEligible && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
-                      KPI Lead
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="text-lg font-bold text-on-surface group-hover:text-primary transition-colors">
-                  {course.name}
-                </h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed">{course.description}</p>
-
-                <div className="flex items-center gap-6 text-on-surface-variant text-xs font-semibold">
-                  <div className="flex items-center gap-1.5">
-                    <BookOpen className="size-4" /> {course.lessons} bài
+            <Link key={course.id} to={`/training/${course.id}`} className="section-card overflow-hidden transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
+              <div className={cn('h-2', course.department === 'Sale' ? 'bg-primary' : course.department === 'Kỹ thuật' ? 'bg-secondary' : 'bg-tertiary-container')} />
+              <div className="p-5">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      <span className="status-pill border-outline-variant bg-surface-container-low text-on-surface-variant">{course.department}</span>
+                      <span className="status-pill border-outline-variant bg-surface-container-low text-on-surface-variant">{course.level}</span>
+                    </div>
+                    <h2 className="line-clamp-2 text-lg font-black leading-6 text-on-surface">{course.name}</h2>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Users className="size-4" /> {course.members} NV
+                  <span className={cn('status-pill shrink-0', statusClass)}>{course.status}</span>
+                </div>
+
+                <p className="min-h-12 text-sm font-medium leading-6 text-on-surface-variant">{course.description}</p>
+
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  <div className="rounded-lg bg-surface-container-low p-3">
+                    <BookOpen className="mb-2 size-4 text-primary" />
+                    <p className="text-xs font-black">{course.lessons}</p>
+                    <p className="text-[10px] font-bold text-on-surface-variant">Bài học</p>
+                  </div>
+                  <div className="rounded-lg bg-surface-container-low p-3">
+                    <Users className="mb-2 size-4 text-secondary" />
+                    <p className="text-xs font-black">{course.members}</p>
+                    <p className="text-[10px] font-bold text-on-surface-variant">Nhân viên</p>
+                  </div>
+                  <div className="rounded-lg bg-surface-container-low p-3">
+                    <FileQuestion className="mb-2 size-4 text-tertiary" />
+                    <p className="text-xs font-black">{course.questionCount}</p>
+                    <p className="text-[10px] font-bold text-on-surface-variant">Câu hỏi</p>
                   </div>
                 </div>
 
-                <div className="mt-2">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-1.5 text-secondary">
-                    <span>Tiến độ</span>
-                    <span>{course.progress}%</span>
+                <div className="mt-5">
+                  <div className="mb-2 flex justify-between">
+                    <span className="eyebrow">Tiến độ</span>
+                    <span className="font-mono text-xs font-black text-on-surface">{course.progress}%</span>
                   </div>
-                  <div className="w-full bg-surface-variant rounded-full h-2">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${course.progress}%` }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
-                      className={cn('h-full rounded-full', isCompleted ? 'bg-[#137333]' : 'bg-primary-container')}
-                    />
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-container">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${course.progress}%` }} transition={{ duration: 0.8 }} className={cn('h-full rounded-full', isCompleted ? 'bg-secondary' : 'bg-primary')} />
                   </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between border-t border-outline-variant/60 pt-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-on-surface-variant">
+                    {isCompleted ? <CheckCircle2 className="size-4 text-secondary" /> : <Bell className="size-4 text-tertiary" />}
+                    {course.videos} video • {course.documents} tài liệu
+                  </div>
+                  {course.kpiLeadEligible && <span className="status-pill border-primary/20 bg-primary/10 text-primary">KPI lead</span>}
                 </div>
               </div>
             </Link>
           );
         })}
-      </div>
-
-      <button
-        onClick={handleCreateCourse}
-        title="Tạo khóa học"
-        className="fixed bottom-[88px] right-6 p-4 bg-primary-container text-on-primary rounded-full shadow-lg shadow-primary/30 hover:bg-primary transition-all active:scale-95 z-40 group"
-      >
-        <Plus className="size-7 group-hover:rotate-90 transition-transform duration-300" />
-      </button>
+      </section>
     </div>
   );
 }

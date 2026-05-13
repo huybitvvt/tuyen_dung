@@ -6,8 +6,9 @@ import {
   UsersRound, 
   Settings, 
   Menu, 
-  Bell,
-  ChevronRight
+  ChevronRight,
+  RotateCcw,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -33,7 +34,7 @@ function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant flex justify-around items-center h-16 px-2 pb-safe z-50 md:hidden">
+    <nav className="fixed bottom-0 left-0 w-full bg-surface/95 backdrop-blur-md border-t border-outline-variant flex justify-around items-center h-16 px-2 pb-safe z-50 md:hidden">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
         const Icon = item.icon;
@@ -42,11 +43,11 @@ function BottomNav() {
             key={item.path}
             to={item.path}
             className={cn(
-              "flex flex-col items-center justify-center px-4 py-1 rounded-full transition-all duration-200",
-              isActive ? "bg-secondary-container text-on-secondary-container" : "text-on-surface-variant hover:bg-surface-container-high"
+              "flex min-w-16 flex-col items-center justify-center px-3 py-1 rounded-lg transition-all duration-200",
+              isActive ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:bg-surface-container-high"
             )}
           >
-            <Icon className={cn("size-6", isActive && "fill-current")} />
+            <Icon className="size-5" />
             <span className={cn("text-[10px] font-medium mt-1")}>{item.label}</span>
           </Link>
         );
@@ -56,23 +57,32 @@ function BottomNav() {
 }
 
 function TopBar() {
-  const { resetDemoData } = useCrm();
+  const { resetDemoData, currentUser } = useCrm();
 
   return (
-    <header className="sticky top-0 z-50 bg-surface border-b border-outline-variant shadow-sm h-14 flex items-center justify-between px-4 w-full">
-      <button className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
-        <Menu className="size-6" />
-      </button>
-      <h1 className="text-headline-md font-bold text-primary truncate px-4">
-        CRM Hệ Thống
-      </h1>
+    <header className="sticky top-0 z-50 bg-surface/90 border-b border-outline-variant/80 shadow-sm backdrop-blur-md h-16 flex items-center justify-between px-4 md:px-6 w-full">
+      <div className="flex items-center gap-3 min-w-0">
+        <button className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors md:hidden">
+          <Menu className="size-5" />
+        </button>
+        <div className="min-w-0">
+          <p className="eyebrow hidden sm:block">XOXO CRM</p>
+          <h1 className="text-lg font-black text-on-surface truncate">
+            Đào tạo & Tuyển dụng
+          </h1>
+        </div>
+      </div>
+      <div className="hidden items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-xs font-bold text-on-surface-variant sm:flex">
+        <Sparkles className="size-4 text-tertiary" />
+        {currentUser.department} • {currentUser.role}
+      </div>
       <button
         onClick={resetDemoData}
         title="Khôi phục dữ liệu demo"
-        className="p-2 -mr-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors relative"
+        className="btn-secondary h-9 px-3"
       >
-        <Bell className="size-6" />
-        <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-surface"></span>
+        <RotateCcw className="size-4" />
+        <span className="hidden sm:inline">Reset demo</span>
       </button>
     </header>
   );
@@ -80,18 +90,26 @@ function TopBar() {
 
 function Sidebar() {
   const location = useLocation();
-  const { currentUser } = useCrm();
+  const { currentUser, courses, candidates } = useCrm();
   const navItems = [
-    { path: '/', label: 'Tổng quan', icon: LayoutDashboard },
-    { path: '/training', label: 'Đào tạo', icon: GraduationCap },
-    { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound },
+    { path: '/', label: 'Tổng quan', icon: LayoutDashboard, count: null },
+    { path: '/training', label: 'Đào tạo', icon: GraduationCap, count: courses.length },
+    { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound, count: candidates.length },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 bg-surface border-r border-outline-variant py-6 z-40">
+    <aside className="hidden md:flex flex-col w-72 h-screen fixed left-0 top-0 bg-surface/95 border-r border-outline-variant/80 py-6 z-40 backdrop-blur-md">
       <div className="px-6 mb-8">
-        <h2 className="text-xl font-bold text-primary">CRM Hệ Thống</h2>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-on-primary font-black shadow-sm shadow-primary/20">
+            XO
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-on-surface">XOXO CRM</h2>
+            <p className="eyebrow">People Ops</p>
+          </div>
+        </div>
       </div>
       
       <div className="flex-1 px-3 space-y-1">
@@ -105,24 +123,29 @@ function Sidebar() {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group",
                 isActive 
-                  ? "bg-primary-container text-on-primary-container font-semibold shadow-sm" 
+                  ? "bg-primary text-on-primary font-semibold shadow-sm shadow-primary/20" 
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
               )}
             >
-              <Icon className={cn("size-5", isActive && "fill-current")} />
+              <Icon className="size-5" />
               <span className="text-sm">{item.label}</span>
-              {isActive && <ChevronRight className="ml-auto size-4" />}
+              {item.count !== null && item.count !== undefined && (
+                <span className={cn("ml-auto rounded-full px-2 py-0.5 text-[10px] font-black", isActive ? "bg-white/15 text-white" : "bg-surface-container text-on-surface-variant")}>
+                  {item.count}
+                </span>
+              )}
+              {isActive && <ChevronRight className={cn("size-4", item.count == null && "ml-auto")} />}
             </Link>
           );
         })}
       </div>
 
       <div className="px-6 mt-auto pt-6 border-t border-outline-variant">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-low p-3">
           <img 
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT56xaYBgGZcjb4fjg3yVanYOGyDjC80pxXcg96gJc8MCS2SiFU6urI5Q9zsc9xrJBRkJea0u1MQqKFgandaC_hSz7eS5BvCk6UxeUaZtC2N2OTqfBhHnipmdEDbwmDsrFLRMiPxy_V6eypLT5s3IF1tqDmydlOGrqnXqSLkFc_26EK_xSfyteHFP0wue00kLbcoZhiHaXDn1cWB-RFsHVnOPWM-I5Lu6C0gAoy4oqC7V5qYJRLRFJcCxWtoo3oXgeOkzwc3pVQg"
             alt="User"
-            className="size-10 rounded-full object-cover border border-outline-variant"
+            className="size-10 rounded-lg object-cover border border-outline-variant"
           />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-on-surface truncate">{currentUser.name}</p>
@@ -138,7 +161,7 @@ function MainLayout({ children, hideNav = false }: { children: React.ReactNode, 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className={cn("flex flex-col min-h-screen", !hideNav && "md:ml-64")}>
+      <div className={cn("flex flex-col min-h-screen", !hideNav && "md:ml-72")}>
         {!hideNav && <TopBar />}
         <main className="flex-1">
           <AnimatePresence mode="wait">
