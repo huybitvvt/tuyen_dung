@@ -1,44 +1,46 @@
-# XOXO CRM - Dao tao noi bo va tuyen dung
+# XOXO CRM - Internal Training and Recruitment
 
-Ung dung React/Vite mo phong he thong CRM nhan su cho hai nghiep vu chinh:
+A React/Vite prototype for managing two core HR workflows in one CRM-style interface:
 
-- **Dao tao noi bo / LMS**: quan ly khoa hoc theo phong ban, bai hoc video/tai lieu, gan khoa hoc cho nhan vien, theo doi tien do hoc va quiz pass/fail.
-- **Tuyen dung / Recruitment Kanban**: quan ly vi tri tuyen dung, ung vien, CV/file, lich phong van, ket qua danh gia, lich su stage va pipeline 10 trang thai.
+- **Internal Training / LMS**: manage courses by department, lessons, videos, documents, employee assignments, learning progress, and quiz pass/fail results.
+- **Recruitment / Kanban Pipeline**: manage jobs, candidates, CV/files, interviews, evaluation results, candidate activity history, and a full 10-stage hiring pipeline.
 
-## Chuc nang chinh
+## Key Features
 
-### Module dao tao
+### Training Module
 
-- Khoa hoc theo phong ban Sale, Ky thuat, Marketing.
-- Moi khoa co level, mo ta, video, tai lieu va tien do hoan thanh.
-- Gan khoa hoc cho nhan vien.
-- Theo doi enrollment status: chua hoc, dang hoc, hoan thanh.
-- Quiz trac nghiem, cham diem theo phan tram.
-- Pass/fail voi nguong `>= 70%`.
-- Luu du lieu demo bang `localStorage`.
+- Courses grouped by department: Sales, Technical, and Marketing.
+- Course metadata including level, description, assigned roles, and assigned employees.
+- Lessons with video and document content types.
+- Learning progress tracking by lesson.
+- Enrollment status: not started, in progress, completed.
+- Multiple-choice quizzes.
+- Percentage-based scoring.
+- Pass/fail evaluation with a `>= 70%` threshold.
+- Demo data persisted with `localStorage`.
 
-### Module tuyen dung
+### Recruitment Module
 
-- Dashboard tuyen dung voi thong ke vi tri, ung vien, phong van, nhan viec.
-- Bang vi tri tuyen dung: title, department, quantity needed, quantity hired, status.
-- Kanban day du 10 stage:
-  - Moi ung tuyen
-  - Da sang loc
-  - Hen phong van
-  - Da phong van
-  - Test chuyen mon
-  - Cho quyet dinh
-  - Nhan viec
-  - Thu viec
-  - Chinh thuc
-  - Loai
-- Keo tha ung vien giua cac stage.
-- Tu dong luu lich su thay doi stage.
-- Ho so ung vien gom thong tin lien he, vi tri, nguon, ghi chu, CV/file, lich su hoat dong.
-- Tao lich phong van va ghi nhan ket qua.
-- Chuyen ung vien sang `Chinh thuc` de tao nhan vien demo.
+- Recruitment dashboard with job, candidate, interview, and hiring metrics.
+- Job table with title, department, quantity needed, quantity hired, and status.
+- Full 10-stage recruitment kanban:
+  - New Application
+  - Screened
+  - Interview Scheduled
+  - Interviewed
+  - Technical Test
+  - Decision Pending
+  - Offer Accepted
+  - Probation
+  - Official
+  - Rejected
+- Drag and drop candidates between stages.
+- Automatic activity history for stage changes.
+- Candidate profile with contact information, applied position, source, notes, CV/file, interview schedule, and activity timeline.
+- Interview scheduling and interview result recording.
+- Candidate conversion to employee when moved to the official stage.
 
-## Cong nghe
+## Tech Stack
 
 - React 19
 - TypeScript
@@ -47,30 +49,30 @@ Ung dung React/Vite mo phong he thong CRM nhan su cho hai nghiep vu chinh:
 - React Router
 - Lucide React icons
 - Motion
-- `localStorage` cho du lieu demo
+- `localStorage` for demo persistence
 
-## Chay local
+## Run Locally
 
-Yeu cau: Node.js
+Prerequisite: Node.js
 
 ```bash
 npm install
 npm run dev
 ```
 
-Mac dinh app chay tai:
+The app runs at:
 
 ```text
 http://localhost:3000
 ```
 
-Kiem tra type/build:
+Type-check and build:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-## Ghi chu
+## Notes
 
-Day la prototype frontend hoan chinh cho demo/nghiem thu luong nghiep vu theo spec. Neu dua vao production, can bo sung backend/API, database that, auth/phan quyen, upload file that va deployment pipeline.
+This is a complete frontend prototype for demo and workflow validation based on the training and recruitment specification. For production use, it should be extended with a real backend/API, database, authentication, authorization, real file upload, and a deployment pipeline.
