@@ -58,12 +58,12 @@ export default function RecruitmentDashboard() {
 
   return (
     <div className="page-shell max-w-7xl">
-      <section className="section-card p-5">
+      <section className="section-card p-4 md:p-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="eyebrow mb-2">Recruitment / Kanban</p>
-            <h1 className="text-2xl font-black text-on-surface md:text-3xl">Tuyển dụng</h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
+            <h1 className="text-xl font-black text-on-surface md:text-3xl">Tuyển dụng</h1>
+            <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-sm md:leading-6">
               Quản lý vị trí tuyển dụng, nguồn ứng viên, lịch phỏng vấn, kết quả đánh giá và pipeline tuyển dụng rõ ràng.
             </p>
           </div>
@@ -80,17 +80,17 @@ export default function RecruitmentDashboard() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         {stats.map((stat) => (
           <div key={stat.label} className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="eyebrow">{stat.label}</p>
-                <p className="mt-2 text-2xl font-black text-on-surface">{stat.value}</p>
-                <p className="mt-1 text-xs font-semibold text-on-surface-variant">{stat.detail}</p>
+                <p className="mt-1 text-xl font-black text-on-surface md:mt-2 md:text-2xl">{stat.value}</p>
+                <p className="mt-1 text-[11px] font-semibold text-on-surface-variant md:text-xs">{stat.detail}</p>
               </div>
-              <div className={cn('flex size-9 items-center justify-center rounded-lg', stat.tone)}>
-                <stat.icon className="size-5" />
+              <div className={cn('flex size-8 items-center justify-center rounded-lg md:size-9', stat.tone)}>
+                <stat.icon className="size-4 md:size-5" />
               </div>
             </div>
           </div>

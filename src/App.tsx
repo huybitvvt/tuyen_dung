@@ -34,7 +34,7 @@ function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full bg-surface/95 backdrop-blur-md border-t border-outline-variant flex justify-around items-center h-16 px-2 pb-safe z-50 md:hidden">
+    <nav className="fixed bottom-0 left-0 w-full bg-surface/95 backdrop-blur-md border-t border-outline-variant flex justify-around items-center h-14 px-1 pb-safe z-50 md:hidden">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
         const Icon = item.icon;
@@ -43,12 +43,12 @@ function BottomNav() {
             key={item.path}
             to={item.path}
             className={cn(
-              "flex min-w-16 flex-col items-center justify-center px-3 py-1 rounded-lg transition-all duration-200",
+              "flex min-w-14 flex-col items-center justify-center px-2 py-1 rounded-lg transition-all duration-200",
               isActive ? "bg-primary text-on-primary shadow-sm" : "text-on-surface-variant hover:bg-surface-container-high"
             )}
           >
             <Icon className="size-5" />
-            <span className={cn("text-[10px] font-medium mt-1")}>{item.label}</span>
+            <span className={cn("text-[9px] font-bold mt-0.5")}>{item.label}</span>
           </Link>
         );
       })}
@@ -60,14 +60,14 @@ function TopBar() {
   const { resetDemoData, currentUser } = useCrm();
 
   return (
-    <header className="sticky top-0 z-50 bg-surface/90 border-b border-outline-variant/80 shadow-sm backdrop-blur-md h-14 flex items-center justify-between px-4 md:px-5 w-full">
+    <header className="sticky top-0 z-50 bg-surface/90 border-b border-outline-variant/80 shadow-sm backdrop-blur-md h-12 md:h-14 flex items-center justify-between px-3 md:px-5 w-full">
       <div className="flex items-center gap-3 min-w-0">
         <button className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors md:hidden">
           <Menu className="size-5" />
         </button>
         <div className="min-w-0">
           <p className="eyebrow hidden sm:block">XOXO CRM</p>
-          <h1 className="text-base font-black text-on-surface truncate">
+          <h1 className="text-sm font-black text-on-surface truncate md:text-base">
             Đào tạo & Tuyển dụng
           </h1>
         </div>

@@ -64,13 +64,13 @@ export default function CandidateList() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-5 md:px-6">
-        <section className="section-card p-5">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-3 py-3 pb-24 md:gap-4 md:px-6 md:py-5">
+        <section className="section-card p-4 md:p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="eyebrow mb-2">Recruitment pipeline</p>
-              <h1 className="text-2xl font-black text-on-surface md:text-3xl">Kanban ứng viên</h1>
-              <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
+              <h1 className="text-xl font-black text-on-surface md:text-3xl">Kanban ứng viên</h1>
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-sm md:leading-6">
                 Kéo thả ứng viên qua 10 stage. Mỗi lần đổi stage sẽ tự động ghi vào lịch sử hoạt động của ứng viên.
               </p>
             </div>
@@ -82,7 +82,7 @@ export default function CandidateList() {
                   placeholder="Tìm ứng viên, email, vị trí..."
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  className="h-10 w-full rounded-lg border border-outline-variant bg-surface pl-10 pr-3 text-sm font-semibold outline-none transition-all focus:ring-2 focus:ring-primary/25"
+                className="h-9 w-full rounded-lg border border-outline-variant bg-surface pl-10 pr-3 text-xs font-semibold outline-none transition-all focus:ring-2 focus:ring-primary/25 md:h-10 md:text-sm"
                 />
               </div>
               <button className="btn-secondary">

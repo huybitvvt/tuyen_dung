@@ -48,18 +48,18 @@ export default function Dashboard() {
   return (
     <div className="page-shell">
       <section className="section-card overflow-hidden">
-        <div className="p-5 md:p-6">
-          <p className="eyebrow mb-3">Bảng điều hành nhân sự</p>
+        <div className="p-4 md:p-6">
+          <p className="eyebrow mb-2 md:mb-3">Bảng điều hành nhân sự</p>
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h1 className="max-w-2xl text-2xl font-black leading-tight text-on-surface md:text-3xl">
+              <h1 className="max-w-2xl text-xl font-black leading-tight text-on-surface md:text-3xl">
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
-              <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:mt-3 md:text-sm md:leading-6">
                 Theo dõi tiến độ học, chấm quiz, quản lý pipeline ứng viên, lịch phỏng vấn và chuyển ứng viên nhận việc thành nhân viên.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2 md:flex">
               <Link to="/training" className="btn-primary">
                 <BookOpenCheck className="size-4" />
                 LMS
@@ -73,24 +73,24 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         {metricCards.map((metric) => (
           <div key={metric.label} className="metric-card">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="eyebrow">{metric.label}</p>
-                <p className="mt-2 text-2xl font-black text-on-surface">{metric.value}</p>
-                <p className="mt-1 text-xs font-semibold text-on-surface-variant">{metric.detail}</p>
+                <p className="mt-1 text-xl font-black text-on-surface md:mt-2 md:text-2xl">{metric.value}</p>
+                <p className="mt-1 text-[11px] font-semibold text-on-surface-variant md:text-xs">{metric.detail}</p>
               </div>
-              <div className={cn('flex size-9 items-center justify-center rounded-lg', metric.tone)}>
-                <metric.icon className="size-5" />
+              <div className={cn('flex size-8 items-center justify-center rounded-lg md:size-9', metric.tone)}>
+                <metric.icon className="size-4 md:size-5" />
               </div>
             </div>
           </div>
         ))}
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-3 md:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <section className="section-card p-4">
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -99,7 +99,7 @@ export default function Dashboard() {
             </div>
             <ClipboardList className="size-5 text-primary" />
           </div>
-          <div className="space-y-5">
+          <div className="space-y-4 md:space-y-5">
             {departments.map((dept) => (
               <div key={dept.name}>
                 <div className="mb-2 flex items-center justify-between">
@@ -128,9 +128,9 @@ export default function Dashboard() {
             {candidateStages.map((stage) => {
               const count = candidates.filter((candidate) => candidate.stage === stage.id).length;
               return (
-                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-3 transition-colors hover:bg-surface-container-low">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{stage.label}</p>
-                  <p className="mt-2 text-xl font-black text-on-surface">{count}</p>
+                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-2.5 transition-colors hover:bg-surface-container-low md:p-3">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant md:text-[10px]">{stage.label}</p>
+                  <p className="mt-1 text-lg font-black text-on-surface md:mt-2 md:text-xl">{count}</p>
                 </Link>
               );
             })}

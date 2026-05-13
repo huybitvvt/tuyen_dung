@@ -63,12 +63,12 @@ export default function TrainingList() {
 
   return (
     <div className="page-shell max-w-7xl">
-      <section className="section-card p-5">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <section className="section-card p-4 md:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="eyebrow mb-2">Training / LMS</p>
-            <h1 className="text-2xl font-black text-on-surface md:text-3xl">Đào tạo nội bộ</h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-on-surface-variant">
+            <h1 className="text-xl font-black text-on-surface md:text-3xl">Đào tạo nội bộ</h1>
+            <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-sm md:leading-6">
               Quản lý khóa học theo phòng ban, theo dõi video/tài liệu, gán khóa cho nhân viên và đánh giá năng lực bằng quiz.
             </p>
           </div>
@@ -89,15 +89,15 @@ export default function TrainingList() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <section className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value as 'all' | Department)} className="h-10 min-w-max rounded-lg border border-outline-variant bg-surface px-3 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/30">
+          <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value as 'all' | Department)} className="h-9 min-w-max rounded-lg border border-outline-variant bg-surface px-3 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 md:h-10 md:text-sm">
             <option value="all">Tất cả phòng ban</option>
             <option value="Sale">Sale</option>
             <option value="Kỹ thuật">Kỹ thuật</option>
             <option value="Marketing">Marketing</option>
           </select>
-          <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)} className="h-10 min-w-max rounded-lg border border-outline-variant bg-surface px-3 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/30">
+          <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)} className="h-9 min-w-max rounded-lg border border-outline-variant bg-surface px-3 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 md:h-10 md:text-sm">
             <option value="all">Mọi cấp độ</option>
             <option value="Cơ bản">Cơ bản</option>
             <option value="Trung cấp">Trung cấp</option>
@@ -113,7 +113,7 @@ export default function TrainingList() {
         </button>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
         {filteredCourses.map((course) => {
           const isCompleted = course.status === 'hoàn thành';
           const statusClass = isCompleted
@@ -124,19 +124,19 @@ export default function TrainingList() {
           return (
             <Link key={course.id} to={`/training/${course.id}`} className="section-card overflow-hidden transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
               <div className={cn('h-2', course.department === 'Sale' ? 'bg-primary' : course.department === 'Kỹ thuật' ? 'bg-secondary' : 'bg-tertiary-container')} />
-              <div className="p-4">
-                <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="p-3.5 md:p-4">
+                <div className="mb-3 flex items-start justify-between gap-2 md:gap-3">
                   <div className="min-w-0">
                     <div className="mb-2 flex flex-wrap gap-2">
                       <span className="status-pill border-outline-variant bg-surface-container-low text-on-surface-variant">{course.department}</span>
                       <span className="status-pill border-outline-variant bg-surface-container-low text-on-surface-variant">{course.level}</span>
                     </div>
-                    <h2 className="line-clamp-2 text-base font-black leading-6 text-on-surface">{course.name}</h2>
+                    <h2 className="line-clamp-2 text-sm font-black leading-5 text-on-surface md:text-base md:leading-6">{course.name}</h2>
                   </div>
                   <span className={cn('status-pill shrink-0', statusClass)}>{course.status}</span>
                 </div>
 
-                <p className="min-h-11 text-sm font-medium leading-5 text-on-surface-variant">{course.description}</p>
+                <p className="min-h-10 text-xs font-semibold leading-5 text-on-surface-variant md:text-sm">{course.description}</p>
 
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <div className="rounded-lg bg-surface-container-low p-3">

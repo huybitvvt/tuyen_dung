@@ -92,7 +92,7 @@
 
 @layer components {
   .page-shell {
-    @apply mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-5 pb-28 md:px-6 md:py-6;
+    @apply mx-auto flex w-full max-w-6xl flex-col gap-3 px-3 pt-3 pb-24 md:gap-4 md:px-6 md:py-6;
   }
 
   .section-card {
@@ -100,7 +100,7 @@
   }
 
   .metric-card {
-    @apply rounded-lg border border-outline-variant/70 bg-surface-container-lowest p-3.5 shadow-sm shadow-slate-900/5;
+    @apply rounded-lg border border-outline-variant/70 bg-surface-container-lowest p-3 shadow-sm shadow-slate-900/5 md:p-3.5;
   }
 
   .eyebrow {
@@ -108,11 +108,11 @@
   }
 
   .btn-primary {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-black uppercase tracking-widest text-on-primary shadow-sm shadow-primary/20 transition-all hover:bg-primary-container active:scale-[0.98];
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-[11px] font-black uppercase tracking-widest text-on-primary shadow-sm shadow-primary/20 transition-all hover:bg-primary-container active:scale-[0.98] md:h-10 md:px-4 md:text-xs;
   }
 
   .btn-secondary {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-outline-variant bg-surface px-4 text-xs font-black uppercase tracking-widest text-on-surface-variant transition-all hover:border-primary/40 hover:bg-surface-container-low hover:text-primary active:scale-[0.98];
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-outline-variant bg-surface px-3 text-[11px] font-black uppercase tracking-widest text-on-surface-variant transition-all hover:border-primary/40 hover:bg-surface-container-low hover:text-primary active:scale-[0.98] md:h-10 md:px-4 md:text-xs;
   }
 
   .status-pill {
