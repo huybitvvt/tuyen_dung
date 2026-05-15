@@ -12,7 +12,6 @@ import {
   ChevronRight,
   RotateCcw,
   Search,
-  Fingerprint,
   Trees
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -29,7 +28,7 @@ import QuizScreen from './views/QuizScreen';
 import RecruitmentDashboard from './views/RecruitmentDashboard';
 import CandidateList from './views/CandidateList';
 import CandidateProfile from './views/CandidateProfile';
-import Attendance from './views/Attendance';
+import InterviewQuestions from './views/InterviewQuestions';
 
 function BottomNav() {
   const location = useLocation();
@@ -37,7 +36,6 @@ function BottomNav() {
     { path: '/', label: 'Tổng quan', icon: LayoutDashboard },
     { path: '/training', label: 'Đào tạo', icon: GraduationCap },
     { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound },
-    { path: '/attendance', label: 'Chấm công', icon: Fingerprint },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
@@ -135,7 +133,6 @@ function Sidebar() {
     { path: '/', label: 'Tổng quan', icon: LayoutDashboard, count: null },
     { path: '/training', label: 'Đào tạo', icon: GraduationCap, count: courses.length },
     { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound, count: candidates.length },
-    { path: '/attendance', label: 'Chấm công', icon: Fingerprint, count: null },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
@@ -154,7 +151,7 @@ function Sidebar() {
             <Trees className="size-5" />
           </div>
           <p className="font-display text-[15px] font-bold leading-none">People Ops</p>
-          <p className="mx-auto mt-1.5 max-w-[140px] text-[10px] leading-4 text-home-on-surface-variant">Đào tạo, tuyển dụng và chấm công</p>
+          <p className="mx-auto mt-1.5 max-w-[140px] text-[10px] leading-4 text-home-on-surface-variant">Đào tạo và tuyển dụng</p>
         </div>
       </div>
       
@@ -255,7 +252,7 @@ function AuthenticatedRoutes() {
       <Route path="/recruitment" element={<MainLayout><RecruitmentDashboard /></MainLayout>} />
       <Route path="/recruitment/candidates" element={<MainLayout><CandidateList /></MainLayout>} />
       <Route path="/recruitment/candidate/:id" element={<MainLayout hideNav><CandidateProfile /></MainLayout>} />
-      <Route path="/attendance" element={<MainLayout><Attendance /></MainLayout>} />
+      <Route path="/recruitment/interview-questions" element={<MainLayout><InterviewQuestions /></MainLayout>} />
       <Route path="/settings" element={<MainLayout><div className="p-4">Cài đặt (Coming soon)</div></MainLayout>} />
     </Routes>
   );

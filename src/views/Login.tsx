@@ -44,15 +44,14 @@ export default function Login() {
                 XOXO CRM
               </h1>
               <p className="mt-5 max-w-md text-sm font-semibold leading-6 text-white/78">
-                Quản lý đào tạo, tuyển dụng và chấm công trong một không gian làm việc thống nhất.
+                Quản lý đào tạo và tuyển dụng trong một không gian làm việc thống nhất.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 ['LMS', 'Đào tạo'],
                 ['HR', 'Tuyển dụng'],
-                ['GPS', 'Chấm công'],
               ].map(([value, label]) => (
                 <div key={value} className="rounded-lg border border-white/18 bg-white/12 p-3 backdrop-blur">
                   <p className="text-2xl font-bold leading-none">{value}</p>

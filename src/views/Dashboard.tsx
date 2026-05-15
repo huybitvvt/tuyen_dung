@@ -5,7 +5,6 @@ import {
   ChevronRight,
   ClipboardList,
   FileQuestion,
-  Fingerprint,
   Gauge,
   GraduationCap,
   LineChart,
@@ -477,7 +476,7 @@ export default function Dashboard() {
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
               <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
-                Quản lý đào tạo, tuyển dụng và chấm công hằng ngày trong một giao diện làm việc thống nhất.
+                Quản lý đào tạo và tuyển dụng trong một giao diện làm việc thống nhất.
               </p>
               {supabaseDashboard.loaded && (
                 <span className="mt-3 inline-flex rounded-full border border-primary/20 bg-primary-fixed px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">
@@ -485,7 +484,7 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-2 md:flex">
+            <div className="grid grid-cols-2 gap-2 md:flex">
               <Link to="/training" className="btn-primary">
                 <BookOpenCheck className="size-4" />
                 LMS
@@ -493,10 +492,6 @@ export default function Dashboard() {
               <Link to="/recruitment/candidates" className="btn-secondary">
                 <BriefcaseBusiness className="size-4" />
                 Kanban
-              </Link>
-              <Link to="/attendance" className="btn-secondary">
-                <Fingerprint className="size-4" />
-                Chấm công
               </Link>
             </div>
           </div>
@@ -530,35 +525,6 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <Link to="/attendance" className="section-card flex flex-col gap-3 p-3.5 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md hover:shadow-primary/10 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-sm shadow-primary/20">
-            <Fingerprint className="size-5" />
-          </div>
-          <div>
-            <p className="eyebrow">Chấm công hôm nay</p>
-            <h2 className="mt-0.5 text-sm font-black text-on-surface md:text-base">Check-in và check-out</h2>
-            <p className="mt-1 text-xs font-semibold text-on-surface-variant">
-              Theo dõi trạng thái vào ca, đang làm và tan ca của nhân viên.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-center md:min-w-72">
-          <div className="rounded-md bg-surface-container-low px-3 py-2">
-            <p className="text-base font-black text-on-surface md:text-lg">{attendanceStats.checkedInToday}</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Đã vào</p>
-          </div>
-          <div className="rounded-md bg-secondary-container px-3 py-2 text-on-secondary-container">
-            <p className="text-base font-black md:text-lg">{attendanceStats.workingNow}</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest">Đang làm</p>
-          </div>
-          <div className="rounded-md bg-primary/10 px-3 py-2 text-primary">
-            <p className="text-base font-black md:text-lg">{attendanceStats.checkedOutToday}</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest">Đã ra</p>
-          </div>
-        </div>
-      </Link>
-
       <section className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         {metricCards.map((metric) => (
           <div key={metric.label} className="metric-card">
@@ -587,7 +553,7 @@ export default function Dashboard() {
           </div>
           <SparklineChart values={operationsTrend} delay={0.12} />
           <div className="mt-3 flex items-center justify-between rounded-md border border-home-outline bg-home-bg px-3 py-2">
-            <span className="text-xs font-bold text-on-surface-variant">Đào tạo, tuyển dụng, chấm công</span>
+            <span className="text-xs font-bold text-on-surface-variant">Đào tạo và tuyển dụng</span>
             <span className="font-mono text-sm font-black text-primary">+{Math.max(completionRate, activeCandidates * 5)}%</span>
           </div>
         </div>

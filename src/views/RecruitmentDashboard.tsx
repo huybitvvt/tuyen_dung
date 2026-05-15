@@ -4,6 +4,7 @@ import {
   Globe,
   Handshake,
   LayoutGrid,
+  MessageCircleQuestion,
   Plus,
   UserPlus,
   Users,
@@ -97,6 +98,10 @@ export default function RecruitmentDashboard() {
             <Link to="/recruitment/candidates" className="btn-secondary">
               <LayoutGrid className="size-4" />
               Kanban
+            </Link>
+            <Link to="/recruitment/interview-questions" className="btn-secondary">
+              <MessageCircleQuestion className="size-4" />
+              Bộ câu hỏi PV
             </Link>
           </div>
         </div>

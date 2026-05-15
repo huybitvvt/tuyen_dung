@@ -153,3 +153,24 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+  .page-shell {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .section-card {
+    box-shadow: none !important;
+    border-color: #d4d4d4 !important;
+    page-break-inside: avoid;
+  }
+}
