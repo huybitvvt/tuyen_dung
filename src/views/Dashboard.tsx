@@ -120,10 +120,10 @@ export default function Dashboard() {
             <Fingerprint className="size-6" />
           </div>
           <div>
-            <p className="eyebrow">Chấm công đã tích hợp</p>
-            <h2 className="mt-1 text-base font-black text-on-surface">Nhúng nguyên app chấm công cũ bằng iframe</h2>
+            <p className="eyebrow">Chấm công hôm nay</p>
+            <h2 className="mt-1 text-base font-black text-on-surface">Check-in, check-out và GPS</h2>
             <p className="mt-1 text-xs font-semibold text-on-surface-variant">
-              Giao diện và logic chấm công giữ nguyên, dữ liệu check-in/check-out đọc chung từ Supabase.
+              Theo dõi trạng thái vào ca, tan ca và vị trí làm việc theo dữ liệu Supabase.
             </p>
           </div>
         </div>
