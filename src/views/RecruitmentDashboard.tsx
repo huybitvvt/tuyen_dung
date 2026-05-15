@@ -1,6 +1,7 @@
 import {
   Briefcase,
   CalendarClock,
+  ChevronRight,
   Globe,
   Handshake,
   LayoutGrid,
@@ -12,9 +13,9 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { candidateStages, Department, formatDateTime, useCrm } from '../lib/crmStore';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 export default function RecruitmentDashboard() {
   const { recruitmentJobs, candidates, candidateInterviews, createRecruitmentJob } = useCrm();
@@ -24,38 +25,81 @@ export default function RecruitmentDashboard() {
     department: 'Kỹ thuật' as Department,
     quantityNeeded: 1,
   });
+
   const activeJobs = recruitmentJobs.filter((job) => job.status === 'Đang mở');
   const newCandidates = candidates.filter((candidate) => candidate.stage === 'new');
-  const interviewing = candidates.filter((candidate) => candidate.stage === 'interview_scheduled' || candidate.stage === 'interviewed');
+  const interviewing = candidates.filter(
+    (candidate) => candidate.stage === 'interview_scheduled' || candidate.stage === 'interviewed'
+  );
   const hired = candidates.filter((candidate) => candidate.stage === 'official');
   const totalCandidates = Math.max(1, candidates.length);
 
   const stats = [
-    { label: 'Vị trí mở', value: activeJobs.length, detail: `${recruitmentJobs.length} tổng vị trí`, icon: Briefcase, tone: 'bg-primary/10 text-primary' },
-    { label: 'Ứng viên mới', value: newCandidates.length, detail: 'Stage đầu pipeline', icon: UserPlus, tone: 'bg-secondary-container text-on-secondary-container' },
-    { label: 'Phỏng vấn', value: interviewing.length, detail: `${candidateInterviews.length} lịch đã tạo`, icon: CalendarClock, tone: 'bg-tertiary-container/15 text-tertiary' },
-    { label: 'Chính thức', value: hired.length, detail: 'Đã chuyển nhân viên', icon: Handshake, tone: 'bg-primary-fixed text-on-primary-fixed' },
+    {
+      label: 'Vị trí mở',
+      value: activeJobs.length,
+      detail: `${recruitmentJobs.length} tổng`,
+      icon: Briefcase,
+      tone: 'bg-primary/10 text-primary',
+    },
+    {
+      label: 'Ứng viên mới',
+      value: newCandidates.length,
+      detail: 'Đầu pipeline',
+      icon: UserPlus,
+      tone: 'bg-secondary-container text-on-secondary-container',
+    },
+    {
+      label: 'Đang PV',
+      value: interviewing.length,
+      detail: `${candidateInterviews.length} lịch`,
+      icon: CalendarClock,
+      tone: 'bg-tertiary-container/40 text-on-tertiary-container',
+    },
+    {
+      label: 'Chính thức',
+      value: hired.length,
+      detail: 'Đã onboard',
+      icon: Handshake,
+      tone: 'bg-primary-fixed text-on-primary-fixed',
+    },
   ];
 
-  const pipeline = candidateStages.map((stage) => {
-    const value = candidates.filter((candidate) => candidate.stage === stage.id).length;
-    return { label: stage.label, value, progress: Math.round((value / totalCandidates) * 100) };
-  });
+  const pipeline = candidateStages
+    .map((stage) => {
+      const value = candidates.filter((candidate) => candidate.stage === stage.id).length;
+      return {
+        label: stage.label,
+        value,
+        progress: Math.round((value / totalCandidates) * 100),
+      };
+    })
+    .filter((item) => item.value > 0);
 
   const upcomingInterviews = candidateInterviews
     .filter((interview) => !interview.result)
-    .map((interview) => ({ interview, candidate: candidates.find((candidate) => candidate.id === interview.candidateId) }))
+    .map((interview) => ({
+      interview,
+      candidate: candidates.find((candidate) => candidate.id === interview.candidateId),
+    }))
     .filter((item) => item.candidate)
-    .slice(0, 4);
+    .slice(0, 5);
 
-  const sources = Array.from(new Set<string>(candidates.map((candidate) => candidate.source))).map((source) => {
-    const value = candidates.filter((candidate) => candidate.source === source).length;
-    return {
-      label: source,
-      value: Math.round((value / totalCandidates) * 100),
-      icon: source.toLowerCase().includes('facebook') ? Globe : source.toLowerCase().includes('referral') ? Users : Briefcase,
-    };
-  });
+  const sources = Array.from(new Set<string>(candidates.map((candidate) => candidate.source)))
+    .map((source) => {
+      const count = candidates.filter((candidate) => candidate.source === source).length;
+      return {
+        label: source,
+        count,
+        percent: Math.round((count / totalCandidates) * 100),
+        icon: source.toLowerCase().includes('facebook')
+          ? Globe
+          : source.toLowerCase().includes('referral')
+          ? Users
+          : Briefcase,
+      };
+    })
+    .sort((a, b) => b.count - a.count);
 
   function resetJobForm() {
     setJobForm({
@@ -69,221 +113,325 @@ export default function RecruitmentDashboard() {
     event.preventDefault();
     const title = jobForm.title.trim();
     if (!title) return;
-    createRecruitmentJob({ 
-      title, 
-      department: jobForm.department, 
-      quantityNeeded: jobForm.quantityNeeded, 
-      status: 'Đang mở' 
+    createRecruitmentJob({
+      title,
+      department: jobForm.department,
+      quantityNeeded: jobForm.quantityNeeded,
+      status: 'Đang mở',
     });
     setIsCreateOpen(false);
     resetJobForm();
   }
 
+  // Lock body scroll when modal open
+  useEffect(() => {
+    document.body.style.overflow = isCreateOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCreateOpen]);
+
   return (
-    <div className="page-shell max-w-7xl">
-      <section className="section-card p-3.5 md:p-5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="eyebrow mb-2">Recruitment / Kanban</p>
-            <h1 className="text-xl font-black text-on-surface md:text-2xl">Tuyển dụng</h1>
-            <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
-              Quản lý vị trí tuyển dụng, nguồn ứng viên, lịch phỏng vấn, kết quả đánh giá và pipeline tuyển dụng rõ ràng.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => setIsCreateOpen(true)} className="btn-primary">
-              <Plus className="size-4" />
-              Tạo tin mới
+    <div className="flex flex-col gap-3 px-3 py-3">
+      {/* HERO */}
+      <section className="section-card relative overflow-hidden rounded-2xl border-home-outline/80">
+        <div className="absolute -right-12 -top-12 size-40 rounded-full bg-secondary/10 blur-3xl" />
+        <div className="absolute -left-10 -bottom-12 size-36 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative z-10 p-4">
+          <p className="eyebrow">Recruitment / Kanban</p>
+          <h1 className="mt-1 font-display text-[24px] font-bold leading-tight text-on-surface">Tuyển dụng</h1>
+          <p className="mt-1.5 text-[12px] font-semibold leading-5 text-on-surface-variant">
+            Quản lý vị trí, ứng viên, lịch phỏng vấn và pipeline tuyển dụng.
+          </p>
+
+          <div className="mt-3.5 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen(true)}
+              className="col-span-2 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-primary text-[11px] font-black uppercase tracking-[0.12em] text-on-primary shadow-sm shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
+            >
+              <Plus className="size-4" strokeWidth={2.5} />
+              <span>Tạo tin mới</span>
             </button>
-            <Link to="/recruitment/candidates" className="btn-secondary">
-              <LayoutGrid className="size-4" />
-              Kanban
+            <Link
+              to="/recruitment/candidates"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-outline-variant bg-surface text-[10.5px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
+            >
+              <LayoutGrid className="size-3.5" strokeWidth={2.5} />
+              <span>Kanban</span>
             </Link>
-            <Link to="/recruitment/interview-questions" className="btn-secondary">
-              <MessageCircleQuestion className="size-4" />
-              Bộ câu hỏi PV
+            <Link
+              to="/recruitment/interview-questions"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-outline-variant bg-surface text-[10.5px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
+            >
+              <MessageCircleQuestion className="size-3.5" strokeWidth={2.5} />
+              <span>Câu hỏi PV</span>
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
+      {/* STATS GRID 2x2 */}
+      <section className="grid grid-cols-2 gap-2">
         {stats.map((stat) => (
-          <div key={stat.label} className="metric-card">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="eyebrow">{stat.label}</p>
-                <p className="mt-1 text-lg font-black text-on-surface md:text-xl">{stat.value}</p>
-                <p className="mt-1 text-[11px] font-semibold text-on-surface-variant md:text-xs">{stat.detail}</p>
+          <div key={stat.label} className="rounded-2xl border border-outline-variant bg-surface p-3 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">
+                  {stat.label}
+                </p>
+                <p className="mt-1 font-mono text-[20px] font-black tabular-nums text-on-surface">{stat.value}</p>
+                <p className="truncate text-[10.5px] font-semibold text-on-surface-variant">{stat.detail}</p>
               </div>
-              <div className={cn('flex size-8 items-center justify-center rounded-lg', stat.tone)}>
-                <stat.icon className="size-4" />
+              <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-lg', stat.tone)}>
+                <stat.icon className="size-4" strokeWidth={2.2} />
               </div>
             </div>
           </div>
         ))}
       </section>
 
-      <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-        <div className="flex flex-col gap-3 border-b border-outline-variant p-3.5 md:flex-row md:items-center md:justify-between">
+      {/* JOBS LIST - card style instead of table */}
+      <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
+        <header className="flex items-center justify-between gap-2 border-b border-outline-variant px-4 py-3">
           <div>
             <p className="eyebrow">Recruitment jobs</p>
-            <h2 className="mt-1 text-base font-black text-on-surface">Bảng vị trí tuyển dụng</h2>
+            <h2 className="mt-0.5 text-[15px] font-black text-on-surface">Vị trí tuyển dụng</h2>
           </div>
-          <span className="status-pill border-secondary/20 bg-secondary-container text-on-secondary-container">
-            {activeJobs.length} đang mở
+          <span className="inline-flex items-center gap-1 rounded-full border border-secondary/30 bg-secondary-container px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-on-secondary-container">
+            {activeJobs.length} mở
           </span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead className="bg-surface-container-low text-[10px] uppercase tracking-widest text-on-surface-variant">
-              <tr>
-                <th className="p-2.5 text-left">Vị trí</th>
-                <th className="p-2.5 text-left">Phòng ban</th>
-                <th className="p-2.5 text-center">Cần tuyển</th>
-                <th className="p-2.5 text-center">Đã nhận</th>
-                <th className="p-2.5 text-left">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/60">
-              {recruitmentJobs.map((job) => {
-                const fill = job.quantityNeeded ? Math.round((job.quantityHired / job.quantityNeeded) * 100) : 0;
-                return (
-                  <tr key={job.id} className="transition-colors hover:bg-surface-container-low/50">
-                    <td className="p-2.5">
-                      <p className="font-black text-on-surface">{job.title}</p>
-                      <div className="mt-2 h-1.5 w-36 overflow-hidden rounded-full bg-surface-container">
-                        <div className="h-full rounded-full bg-secondary" style={{ width: `${fill}%` }} />
-                      </div>
-                    </td>
-                    <td className="p-2.5 font-semibold text-on-surface-variant">{job.department}</td>
-                    <td className="p-2.5 text-center font-mono font-bold">{job.quantityNeeded}</td>
-                    <td className="p-2.5 text-center font-mono font-black text-primary">{job.quantityHired}</td>
-                    <td className="p-2.5">
-                      <span className="status-pill border-primary/20 bg-primary/10 text-primary">{job.status}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        </header>
+        <ul className="divide-y divide-outline-variant/40">
+          {recruitmentJobs.map((job) => {
+            const fill = job.quantityNeeded ? Math.round((job.quantityHired / job.quantityNeeded) * 100) : 0;
+            return (
+              <li key={job.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-black text-on-surface">{job.title}</p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">{job.department}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full border px-2 py-0.5 text-[9.5px] font-black uppercase tracking-[0.10em]',
+                      job.status === 'Đang mở' && 'border-primary/25 bg-primary/10 text-primary',
+                      job.status === 'Tạm dừng' && 'border-tertiary/25 bg-tertiary-container/40 text-on-tertiary-container',
+                      job.status === 'Đã đóng' && 'border-outline-variant bg-surface-container-low text-on-surface-variant'
+                    )}
+                  >
+                    {job.status}
+                  </span>
+                </div>
+                <div className="mt-2.5 flex items-center gap-2.5">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-container">
+                    <div className="h-full rounded-full bg-secondary" style={{ width: `${fill}%` }} />
+                  </div>
+                  <span className="font-mono text-[10.5px] font-black tabular-nums text-on-surface-variant">
+                    {job.quantityHired}/{job.quantityNeeded}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+          {recruitmentJobs.length === 0 && (
+            <li className="px-4 py-6 text-center text-[12px] font-medium text-on-surface-variant">
+              Chưa có vị trí tuyển dụng nào.
+            </li>
+          )}
+        </ul>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <p className="eyebrow">Kanban stages</p>
-              <h2 className="mt-1 text-base font-black text-on-surface">Ứng viên theo pipeline</h2>
-            </div>
-            <Link to="/recruitment/candidates" className="text-xs font-black uppercase tracking-widest text-primary">Mở bảng</Link>
-          </div>
-          <div className="space-y-3">
-            {pipeline.map((item, index) => (
-              <div key={item.label}>
-                <div className="mb-2 flex justify-between text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                  <span>{item.label}</span>
-                  <span className="font-mono text-on-surface">{item.value}</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${item.progress}%` }} transition={{ duration: 0.7, delay: index * 0.03 }} className="h-full rounded-full bg-primary" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-          <div className="border-b border-outline-variant bg-surface-container-low/50 p-3.5">
+      {/* INTERVIEW SCHEDULE - full width, mobile optimized */}
+      <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
+        <header className="flex items-center justify-between gap-2 border-b border-outline-variant px-4 py-3">
+          <div>
             <p className="eyebrow">Interview schedule</p>
-            <h2 className="mt-1 text-base font-black text-on-surface">Lịch phỏng vấn</h2>
+            <h2 className="mt-0.5 text-[15px] font-black text-on-surface">Lịch phỏng vấn sắp tới</h2>
           </div>
-          <ul className="divide-y divide-outline-variant/60">
+          {upcomingInterviews.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary-fixed px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-primary">
+              {upcomingInterviews.length}
+            </span>
+          )}
+        </header>
+        {upcomingInterviews.length > 0 ? (
+          <ul className="divide-y divide-outline-variant/40">
             {upcomingInterviews.map(({ interview, candidate }) => (
-              <li key={interview.id} className="flex items-center gap-3 p-3.5 transition-colors hover:bg-surface-container-low">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-fixed font-black text-on-primary-fixed">
+              <li key={interview.id} className="flex items-start gap-3 px-4 py-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-fixed font-black text-on-primary-fixed">
                   {candidate?.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-on-surface">{candidate?.name}</p>
-                  <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{interview.interviewer}</p>
+                  <p className="truncate text-[13.5px] font-black text-on-surface">{candidate?.name}</p>
+                  <p className="mt-0.5 truncate text-[11px] font-semibold text-on-surface-variant">
+                    PV bởi {interview.interviewer}
+                  </p>
+                  <div className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary-fixed px-2 py-0.5 text-[10px] font-black tabular-nums text-primary">
+                    <CalendarClock className="size-3" strokeWidth={2.5} />
+                    {formatDateTime(interview.scheduledAt)}
+                  </div>
                 </div>
-                <p className="max-w-28 text-right text-xs font-black text-primary">{formatDateTime(interview.scheduledAt)}</p>
               </li>
             ))}
-            {upcomingInterviews.length === 0 && <li className="p-5 text-sm font-medium text-on-surface-variant">Chưa có lịch phỏng vấn sắp tới.</li>}
           </ul>
-        </section>
-      </div>
-
-      <section className="section-card p-3.5 md:p-4 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-        <div className="mb-4">
-          <p className="eyebrow">Candidate sources</p>
-          <h2 className="mt-1 text-base font-black text-on-surface">Nguồn ứng viên</h2>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          {sources.map((source) => (
-            <div key={source.label} className="rounded-lg border border-outline-variant/60 bg-surface-container-low p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-surface text-on-surface-variant ring-1 ring-outline-variant/70">
-                    <source.icon className="size-4" />
-                  </div>
-                  <span className="text-sm font-black text-on-surface">{source.label}</span>
-                </div>
-                <span className="font-mono text-sm font-black text-primary">{source.value}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-surface-container">
-                <div className="h-full rounded-full bg-tertiary-container" style={{ width: `${source.value}%` }} />
-              </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 px-4 py-8">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-surface-container-low/60 text-on-surface-variant">
+              <CalendarClock className="size-5" strokeWidth={2} />
             </div>
-          ))}
-        </div>
+            <p className="text-[12.5px] font-bold text-on-surface">Chưa có lịch phỏng vấn</p>
+            <p className="text-center text-[11px] font-medium text-on-surface-variant">
+              Tạo lịch phỏng vấn từ hồ sơ ứng viên để hiển thị tại đây.
+            </p>
+          </div>
+        )}
       </section>
 
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-3 py-6 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="w-full max-w-xl overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-2xl"
-          >
-            <div className="flex items-start justify-between gap-4 border-b border-outline-variant bg-surface-container-low p-5">
-              <div>
-                <p className="eyebrow">Tin tuyển dụng mới</p>
-                <h2 className="mt-1 text-2xl font-black text-on-surface">Tạo vị trí tuyển dụng</h2>
-                <p className="mt-2 text-sm font-semibold text-on-surface-variant">Điền thông tin vị trí cần tuyển để bắt đầu nhận ứng viên.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCreateOpen(false)}
-                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
-              >
-                <X className="size-5" />
-              </button>
+      {/* PIPELINE */}
+      {pipeline.length > 0 && (
+        <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
+          <header className="flex items-center justify-between gap-2 border-b border-outline-variant px-4 py-3">
+            <div>
+              <p className="eyebrow">Kanban stages</p>
+              <h2 className="mt-0.5 text-[15px] font-black text-on-surface">Ứng viên theo pipeline</h2>
             </div>
+            <Link
+              to="/recruitment/candidates"
+              className="inline-flex items-center gap-0.5 text-[11px] font-black uppercase tracking-[0.10em] text-primary"
+            >
+              Mở
+              <ChevronRight className="size-3.5" strokeWidth={2.5} />
+            </Link>
+          </header>
+          <div className="space-y-2.5 p-4">
+            {pipeline.map((item, index) => (
+              <div key={item.label}>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="truncate text-[11.5px] font-black text-on-surface">{item.label}</span>
+                  <span className="font-mono text-[10.5px] font-black tabular-nums text-on-surface-variant">
+                    {item.value}
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-surface-container">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${item.progress}%` }}
+                    transition={{ duration: 0.7, delay: index * 0.04 }}
+                    className="h-full rounded-full bg-primary"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-            <form onSubmit={handleSubmitJob} className="grid gap-4 p-5">
-              <label className="block">
-                <span className="eyebrow">Tên vị trí tuyển dụng</span>
-                <input
-                  value={jobForm.title}
-                  onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))}
-                  autoFocus
-                  required
-                  placeholder="VD: Frontend Developer, Sales Executive"
-                  className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-surface px-4 text-sm font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+      {/* SOURCES - 1 col on mobile */}
+      <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
+        <header className="border-b border-outline-variant px-4 py-3">
+          <p className="eyebrow">Candidate sources</p>
+          <h2 className="mt-0.5 text-[15px] font-black text-on-surface">Nguồn ứng viên</h2>
+        </header>
+        <ul className="divide-y divide-outline-variant/40">
+          {sources.map((source) => (
+            <li key={source.label} className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant ring-1 ring-outline-variant/60">
+                  <source.icon className="size-4" strokeWidth={2.2} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13.5px] font-black text-on-surface">{source.label}</p>
+                  <p className="text-[11px] font-semibold text-on-surface-variant">
+                    {source.count} ứng viên
+                  </p>
+                </div>
+                <span className="font-mono text-[14px] font-black tabular-nums text-primary">
+                  {source.percent}%
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-container">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${source.percent}%` }}
+                  transition={{ duration: 0.6 }}
+                  className="h-full rounded-full bg-tertiary-container"
                 />
-              </label>
+              </div>
+            </li>
+          ))}
+          {sources.length === 0 && (
+            <li className="px-4 py-6 text-center text-[12px] font-medium text-on-surface-variant">
+              Chưa có dữ liệu nguồn ứng viên.
+            </li>
+          )}
+        </ul>
+      </section>
 
-              <div className="grid gap-4 md:grid-cols-2">
+      {/* CREATE JOB BOTTOM SHEET */}
+      <AnimatePresence>
+        {isCreateOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 backdrop-blur-sm"
+            onClick={() => setIsCreateOpen(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md overflow-hidden rounded-t-3xl border border-b-0 border-outline-variant bg-surface shadow-[0_-12px_50px_rgba(0,0,0,0.16)]"
+            >
+              <div className="flex justify-center pt-2.5 pb-1">
+                <div className="h-1 w-10 rounded-full bg-outline-variant/70" />
+              </div>
+
+              <div className="flex items-center gap-3 px-4 pt-2 pb-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-sm shadow-primary/25">
+                  <Plus className="size-5" strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="eyebrow">Tin tuyển dụng mới</p>
+                  <h3 className="mt-0.5 truncate font-display text-[18px] font-bold leading-tight text-on-surface">
+                    Tạo vị trí
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(false)}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition active:scale-90 hover:bg-surface-container-high hover:text-on-surface"
+                  aria-label="Đóng"
+                >
+                  <X className="size-4" strokeWidth={2.5} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmitJob} className="grid gap-3 border-t border-outline-variant p-4">
+                <label className="block">
+                  <span className="eyebrow">Tên vị trí</span>
+                  <input
+                    value={jobForm.title}
+                    onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))}
+                    autoFocus
+                    required
+                    placeholder="VD: Sale Junior, Frontend Dev..."
+                    className="mt-1.5 h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  />
+                </label>
+
                 <label className="block">
                   <span className="eyebrow">Phòng ban</span>
                   <select
                     value={jobForm.department}
-                    onChange={(event) => setJobForm((current) => ({ ...current, department: event.target.value as Department }))}
-                    className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-surface px-4 text-sm font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    onChange={(event) =>
+                      setJobForm((current) => ({ ...current, department: event.target.value as Department }))
+                    }
+                    className="mt-1.5 h-12 w-full appearance-none rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
                   >
                     <option value="Sale">Sale</option>
                     <option value="Kỹ thuật">Kỹ thuật</option>
@@ -298,32 +446,34 @@ export default function RecruitmentDashboard() {
                     min="1"
                     max="99"
                     value={jobForm.quantityNeeded}
-                    onChange={(event) => setJobForm((current) => ({ ...current, quantityNeeded: Number(event.target.value) }))}
-                    className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-surface px-4 text-sm font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    onChange={(event) =>
+                      setJobForm((current) => ({ ...current, quantityNeeded: Number(event.target.value) }))
+                    }
+                    className="mt-1.5 h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
                   />
                 </label>
-              </div>
 
-              <div className="flex flex-col-reverse gap-2 border-t border-outline-variant pt-4 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-outline-variant bg-surface px-5 text-xs font-black uppercase tracking-widest text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-xs font-black uppercase tracking-widest text-on-primary shadow-lg shadow-primary/20 transition hover:bg-primary-container active:scale-[0.98]"
-                >
-                  <Plus className="size-4" />
-                  Tạo tin tuyển dụng
-                </button>
-              </div>
-            </form>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateOpen(false)}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-outline-variant bg-surface text-[11px] font-black uppercase tracking-[0.12em] text-on-surface-variant transition active:scale-95 hover:bg-surface-container-high"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="inline-flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-primary text-[11px] font-black uppercase tracking-[0.12em] text-on-primary shadow-md shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
+                  >
+                    <Plus className="size-4" strokeWidth={2.5} />
+                    Tạo tin
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
