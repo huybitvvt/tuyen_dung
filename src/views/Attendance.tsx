@@ -1,11 +1,23 @@
 import { ExternalLink, RefreshCw } from 'lucide-react';
+import { useMemo } from 'react';
 import { useState } from 'react';
+import { useAuth } from '../lib/authStore';
 
 const DEFAULT_ATTENDANCE_URL = 'https://jarviz-attendance.vercel.app';
 
 export default function Attendance() {
-  const attendanceUrl = import.meta.env.VITE_ATTENDANCE_IFRAME_URL || DEFAULT_ATTENDANCE_URL;
+  const { user } = useAuth();
+  const baseAttendanceUrl = import.meta.env.VITE_ATTENDANCE_IFRAME_URL || DEFAULT_ATTENDANCE_URL;
   const [frameKey, setFrameKey] = useState(0);
+  const attendanceUrl = useMemo(() => {
+    const url = new URL(baseAttendanceUrl);
+    const employeeId = user?.employeeCode || user?.id || user?.email || '';
+    const employeeName = user?.name || user?.email || '';
+    if (employeeId) url.searchParams.set('employeeId', employeeId);
+    if (employeeName) url.searchParams.set('employeeName', employeeName);
+    if (user?.phone) url.searchParams.set('employeePhone', user.phone);
+    return url.toString();
+  }, [baseAttendanceUrl, user]);
 
   return (
     <div className="page-shell max-w-7xl">

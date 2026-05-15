@@ -84,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw new Error(error.message);
       if (!data) throw new Error('Email hoặc mật khẩu không đúng.');
-      if (data.status && data.status !== 'active') throw new Error('Tài khoản chưa được kích hoạt.');
 
       const isValid = await compare(password, data.password_hash);
       if (!isValid) throw new Error('Email hoặc mật khẩu không đúng.');
