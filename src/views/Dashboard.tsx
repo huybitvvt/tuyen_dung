@@ -17,10 +17,138 @@ import {
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
-import { candidateStages, useCrm } from '../lib/crmStore';
-import { useEffect, useState } from 'react';
+import { CandidateStage, candidateStages, Course, Lesson, Progress, RecruitmentJob, Result, useCrm } from '../lib/crmStore';
+import { useEffect, useMemo, useState } from 'react';
 import { appSupabase } from '../lib/supabase';
 import { getTodayKey } from '../lib/attendanceService';
+
+type DbUser = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  department: string | null;
+  role: string | null;
+  status: string | null;
+  created_at: string | null;
+  join_date: string | null;
+};
+
+type DbTimesheet = {
+  id: string;
+  user_id: string;
+  schedule_date: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: string | null;
+  created_at: string | null;
+};
+
+type DashboardCandidate = {
+  id: string;
+  stage: CandidateStage | string;
+  createdAt: string | null;
+};
+
+type DashboardInterview = {
+  result: string | null;
+  scheduledAt: string | null;
+};
+
+type DashboardActivity = {
+  createdAt: string | null;
+};
+
+type SupabaseDashboardData = {
+  loaded: boolean;
+  users: DbUser[];
+  timesheets: DbTimesheet[];
+  courses: Course[];
+  lessons: Lesson[];
+  progress: Progress[];
+  enrollments: Array<{ userId: string; courseId: string; status: string | null }>;
+  results: Result[];
+  jobs: RecruitmentJob[];
+  candidates: DashboardCandidate[];
+  interviews: DashboardInterview[];
+  activities: DashboardActivity[];
+};
+
+const emptySupabaseDashboard: SupabaseDashboardData = {
+  loaded: false,
+  users: [],
+  timesheets: [],
+  courses: [],
+  lessons: [],
+  progress: [],
+  enrollments: [],
+  results: [],
+  jobs: [],
+  candidates: [],
+  interviews: [],
+  activities: [],
+};
+
+function addDays(date: Date, offset: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + offset);
+  return next;
+}
+
+function safeText(value: unknown) {
+  return typeof value === 'string' ? value : '';
+}
+
+function normalizeStage(value: unknown): CandidateStage | string {
+  const stage = safeText(value);
+  return stage || 'new';
+}
+
+function mapDbCourse(row: Record<string, unknown>): Course {
+  return {
+    id: safeText(row.id),
+    name: safeText(row.name) || 'Khóa học',
+    department: (safeText(row.department) || 'Sale') as Course['department'],
+    level: (safeText(row.level) || 'Cơ bản') as Course['level'],
+    description: safeText(row.description),
+    assignedRoles: Array.isArray(row.assigned_roles) ? row.assigned_roles.map(String) : [],
+    assignedUsers: Array.isArray(row.assigned_users) ? row.assigned_users.map(String) : [],
+    kpiLeadEligible: Boolean(row.kpi_lead_eligible),
+  };
+}
+
+function mapDbLesson(row: Record<string, unknown>): Lesson {
+  return {
+    id: safeText(row.id),
+    courseId: safeText(row.course_id),
+    title: safeText(row.title) || 'Bài học',
+    type: safeText(row.type) === 'document' ? 'document' : 'video',
+    contentUrl: safeText(row.content_url),
+    videoUrl: safeText(row.video_url) || undefined,
+    duration: Number(row.duration) || 0,
+    documentPages: row.document_pages ? Number(row.document_pages) : undefined,
+  };
+}
+
+function mapDbProgress(row: Record<string, unknown>): Progress {
+  return {
+    userId: safeText(row.user_id),
+    lessonId: safeText(row.lesson_id),
+    percent: Number(row.percent) || 0,
+    secondsWatched: Number(row.seconds_watched) || 0,
+    completed: Boolean(row.completed),
+  };
+}
+
+function mapDbResult(row: Record<string, unknown>): Result {
+  return {
+    id: safeText(row.id),
+    userId: safeText(row.user_id),
+    quizId: safeText(row.quiz_id),
+    score: Number(row.score) || 0,
+    passed: Boolean(row.passed),
+    submittedAt: safeText(row.submitted_at) || safeText(row.created_at) || new Date().toISOString(),
+  };
+}
 
 function SparklineChart({ values }: { values: number[] }) {
   const width = 280;
@@ -89,62 +217,189 @@ function DonutChart({ value }: { value: number }) {
   );
 }
 
+async function readOptionalTable<T>(table: string, mapper: (row: Record<string, unknown>) => T, select = '*') {
+  if (!appSupabase) return [];
+
+  const { data, error } = await appSupabase
+    .from(table)
+    .select(select);
+
+  if (error) {
+    if (error.code !== 'PGRST205') console.warn(`Không đọc được bảng ${table}:`, error.message);
+    return [];
+  }
+
+  return ((data || []) as unknown as Record<string, unknown>[]).map(mapper).filter(Boolean);
+}
+
 export default function Dashboard() {
   const { courses, lessons, progress, enrollments, currentUser, questions, results, recruitmentJobs, candidates, candidateActivities, candidateInterviews } = useCrm();
-  const [attendanceStats, setAttendanceStats] = useState({
-    checkedInToday: 0,
-    workingNow: 0,
-    checkedOutToday: 0,
-  });
+  const [supabaseDashboard, setSupabaseDashboard] = useState<SupabaseDashboardData>(emptySupabaseDashboard);
 
   useEffect(() => {
     if (!appSupabase) return;
 
     let cancelled = false;
 
-    async function loadAttendanceStats() {
+    async function loadDashboardData() {
       try {
         const today = getTodayKey();
-        const { data, error } = await appSupabase!
+        const rangeStart = getTodayKey(addDays(new Date(), -29));
+        const [
+          usersResult,
+          timesheetsResult,
+          dbCourses,
+          dbLessons,
+          dbProgress,
+          dbEnrollments,
+          dbResults,
+          dbJobs,
+          dbCandidates,
+          dbInterviews,
+          dbActivities,
+        ] = await Promise.all([
+          appSupabase!
+            .from('users')
+            .select('id,name,email,department,role,status,created_at,join_date')
+            .order('created_at', { ascending: false }),
+          appSupabase!
           .from('timesheets')
-          .select('user_id,check_in,check_out,status')
-          .eq('schedule_date', today);
+            .select('id,user_id,schedule_date,check_in,check_out,status,created_at')
+            .gte('schedule_date', rangeStart)
+            .lte('schedule_date', today)
+            .order('schedule_date', { ascending: true }),
+          readOptionalTable('courses', mapDbCourse),
+          readOptionalTable('lessons', mapDbLesson),
+          readOptionalTable('lesson_progress', mapDbProgress),
+          readOptionalTable('enrollments', (row) => ({
+            userId: safeText(row.user_id),
+            courseId: safeText(row.course_id),
+            status: safeText(row.status) || null,
+          })),
+          readOptionalTable('results', mapDbResult),
+          readOptionalTable('recruitment_jobs', (row) => ({
+            id: safeText(row.id),
+            title: safeText(row.title) || 'Vị trí tuyển dụng',
+            department: (safeText(row.department) || 'Sale') as RecruitmentJob['department'],
+            quantityNeeded: Number(row.quantity_needed) || Number(row.quantityNeeded) || 0,
+            quantityHired: Number(row.quantity_hired) || Number(row.quantityHired) || 0,
+            status: (safeText(row.status) || 'Đang mở') as RecruitmentJob['status'],
+          })),
+          readOptionalTable('candidates', (row) => ({
+            id: safeText(row.id),
+            stage: normalizeStage(row.stage),
+            createdAt: safeText(row.created_at) || null,
+          })),
+          readOptionalTable('candidate_interviews', (row) => ({
+            result: safeText(row.result) || null,
+            scheduledAt: safeText(row.scheduled_at) || safeText(row.created_at) || null,
+          })),
+          readOptionalTable('candidate_activities', (row) => ({
+            createdAt: safeText(row.created_at) || null,
+          })),
+        ]);
 
-        if (error) throw error;
+        if (usersResult.error) throw usersResult.error;
+        if (timesheetsResult.error) throw timesheetsResult.error;
         if (cancelled) return;
 
-        const rows = data || [];
-        setAttendanceStats({
-          checkedInToday: new Set(rows.filter((row) => row.check_in).map((row) => row.user_id)).size,
-          workingNow: rows.filter((row) => row.check_in && !row.check_out).length,
-          checkedOutToday: rows.filter((row) => row.check_out).length,
+        setSupabaseDashboard({
+          loaded: true,
+          users: (usersResult.data || []) as DbUser[],
+          timesheets: (timesheetsResult.data || []) as DbTimesheet[],
+          courses: dbCourses,
+          lessons: dbLessons,
+          progress: dbProgress,
+          enrollments: dbEnrollments,
+          results: dbResults,
+          jobs: dbJobs,
+          candidates: dbCandidates,
+          interviews: dbInterviews,
+          activities: dbActivities,
         });
       } catch {
-        setAttendanceStats({ checkedInToday: 0, workingNow: 0, checkedOutToday: 0 });
+        if (!cancelled) setSupabaseDashboard(emptySupabaseDashboard);
       }
     }
 
-    void loadAttendanceStats();
+    void loadDashboardData();
+
+    const channel = appSupabase
+      .channel('dashboard-live-data')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'timesheets' }, () => void loadDashboardData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => void loadDashboardData())
+      .subscribe();
 
     return () => {
       cancelled = true;
+      void appSupabase?.removeChannel(channel);
     };
   }, []);
 
-  const courseProgress = courses.map((course) => {
-    const courseLessons = lessons.filter((lesson) => lesson.courseId === course.id);
-    const rows = courseLessons.map((lesson) => progress.find((item) => item.userId === currentUser.id && item.lessonId === lesson.id)?.percent ?? 0);
+  const dashboardCourses = supabaseDashboard.courses.length ? supabaseDashboard.courses : courses;
+  const dashboardLessons = supabaseDashboard.lessons.length ? supabaseDashboard.lessons : lessons;
+  const dashboardProgress = supabaseDashboard.progress.length ? supabaseDashboard.progress : progress;
+  const dashboardEnrollments = supabaseDashboard.enrollments.length ? supabaseDashboard.enrollments : enrollments;
+  const dashboardResults = supabaseDashboard.results.length ? supabaseDashboard.results : results;
+  const dashboardJobs = supabaseDashboard.jobs.length ? supabaseDashboard.jobs : recruitmentJobs;
+  const dashboardCandidates = supabaseDashboard.candidates.length
+    ? supabaseDashboard.candidates
+    : candidates.map((candidate) => ({ id: candidate.id, stage: candidate.stage, createdAt: candidate.createdAt }));
+  const dashboardInterviews = supabaseDashboard.interviews.length
+    ? supabaseDashboard.interviews
+    : candidateInterviews.map((interview) => ({ result: interview.result || null, scheduledAt: interview.scheduledAt }));
+  const dashboardActivities = supabaseDashboard.activities.length
+    ? supabaseDashboard.activities
+    : candidateActivities.map((activity) => ({ createdAt: activity.createdAt }));
+
+  const todayKey = getTodayKey();
+  const todayTimesheets = supabaseDashboard.timesheets.filter((record) => record.schedule_date === todayKey);
+  const attendanceStats = {
+    checkedInToday: new Set(todayTimesheets.filter((row) => row.check_in).map((row) => row.user_id)).size,
+    workingNow: todayTimesheets.filter((row) => row.check_in && !row.check_out).length,
+    checkedOutToday: todayTimesheets.filter((row) => row.check_out).length,
+  };
+
+  const attendanceTrend = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = addDays(new Date(), index - 6);
+      const key = getTodayKey(date);
+      const dayRows = supabaseDashboard.timesheets.filter((record) => record.schedule_date === key);
+      return {
+        key,
+        value: new Set(dayRows.filter((record) => record.check_in).map((record) => record.user_id)).size,
+      };
+    });
+
+    return days.map((day) => day.value);
+  }, [supabaseDashboard.timesheets]);
+
+  const userDepartmentBars = useMemo(() => {
+    const sourceUsers = supabaseDashboard.users.filter((user) => !user.status || user.status === 'active');
+    const rows = sourceUsers.length
+      ? Array.from(new Set(sourceUsers.map((user) => user.department || 'Chưa phân phòng'))).map((department) => ({
+        label: department,
+        value: sourceUsers.filter((user) => (user.department || 'Chưa phân phòng') === department).length,
+      }))
+      : [];
+
+    return rows.sort((a, b) => b.value - a.value).slice(0, 5);
+  }, [supabaseDashboard.users]);
+
+  const courseProgress = dashboardCourses.map((course) => {
+    const courseLessons = dashboardLessons.filter((lesson) => lesson.courseId === course.id);
+    const rows = courseLessons.map((lesson) => dashboardProgress.find((item) => item.userId === currentUser.id && item.lessonId === lesson.id)?.percent ?? 0);
     const percent = rows.length ? Math.round(rows.reduce((sum, item) => sum + item, 0) / rows.length) : 0;
     return { course, percent };
   });
 
   const completionRate = courseProgress.length ? Math.round(courseProgress.reduce((sum, item) => sum + item.percent, 0) / courseProgress.length) : 0;
-  const passRate = results.length ? Math.round((results.filter((item) => item.passed).length / results.length) * 100) : 0;
-  const activeCandidates = candidates.filter((candidate) => candidate.stage !== 'official' && candidate.stage !== 'rejected').length;
-  const hiredCandidates = candidates.filter((candidate) => candidate.stage === 'official').length;
-  const openJobs = recruitmentJobs.filter((job) => job.status === 'Đang mở').length;
-  const scheduledInterviews = candidateInterviews.filter((interview) => !interview.result).length;
-  const recentActivity = candidateActivities.length;
+  const passRate = dashboardResults.length ? Math.round((dashboardResults.filter((item) => item.passed).length / dashboardResults.length) * 100) : 0;
+  const activeCandidates = dashboardCandidates.filter((candidate) => candidate.stage !== 'official' && candidate.stage !== 'rejected').length;
+  const hiredCandidates = dashboardCandidates.filter((candidate) => candidate.stage === 'official').length;
+  const openJobs = dashboardJobs.filter((job) => job.status === 'Đang mở').length;
+  const scheduledInterviews = dashboardInterviews.filter((interview) => !interview.result).length;
+  const recentActivity = dashboardActivities.length;
   const departments = ['Sale', 'Kỹ thuật', 'Marketing'].map((department) => {
     const rows = courseProgress.filter((item) => item.course.department === department);
     return {
@@ -155,26 +410,29 @@ export default function Dashboard() {
   });
 
   const metricCards = [
-    { label: 'Khóa học', value: courses.length, detail: `${lessons.length} bài học`, icon: GraduationCap, tone: 'bg-primary/10 text-primary' },
-    { label: 'Hoàn thành LMS', value: `${completionRate}%`, detail: `${enrollments.length} lượt gán`, icon: Gauge, tone: 'bg-secondary-container text-on-secondary-container' },
-    { label: 'Quiz pass', value: results.length ? `${passRate}%` : '0%', detail: `${results.length}/${questions.length} kết quả`, icon: FileQuestion, tone: 'bg-tertiary-container/15 text-tertiary' },
+    { label: 'Khóa học', value: dashboardCourses.length, detail: `${dashboardLessons.length} bài học`, icon: GraduationCap, tone: 'bg-primary/10 text-primary' },
+    { label: 'Hoàn thành LMS', value: `${completionRate}%`, detail: `${dashboardEnrollments.length} lượt gán`, icon: Gauge, tone: 'bg-secondary-container text-on-secondary-container' },
+    { label: 'Quiz pass', value: dashboardResults.length ? `${passRate}%` : '0%', detail: `${dashboardResults.length}/${questions.length} kết quả`, icon: FileQuestion, tone: 'bg-tertiary-container/15 text-tertiary' },
     { label: 'Ứng viên', value: activeCandidates, detail: `${hiredCandidates} chính thức`, icon: Users, tone: 'bg-primary-fixed text-on-primary-fixed' },
   ];
-  const operationsTrend = [
-    courses.length * 8,
-    enrollments.length * 12,
-    Math.max(completionRate, 8),
-    activeCandidates * 14,
-    Math.max(attendanceStats.checkedInToday * 16, 10),
-    Math.max(attendanceStats.checkedOutToday * 18, attendanceStats.workingNow * 12, 12),
-  ];
-  const pipelineBars = candidateStages
+  const operationsTrend = attendanceTrend.some(Boolean)
+    ? attendanceTrend
+    : [
+      dashboardCourses.length * 8,
+      dashboardEnrollments.length * 12,
+      Math.max(completionRate, 8),
+      activeCandidates * 14,
+      Math.max(attendanceStats.checkedInToday * 16, 10),
+      Math.max(attendanceStats.checkedOutToday * 18, attendanceStats.workingNow * 12, 12),
+    ];
+  const candidateStageBars = candidateStages
     .map((stage) => ({
       label: stage.label,
-      value: candidates.filter((candidate) => candidate.stage === stage.id).length,
+      value: dashboardCandidates.filter((candidate) => candidate.stage === stage.id).length,
     }))
     .filter((item) => item.value > 0)
     .slice(0, 5);
+  const pipelineBars = candidateStageBars.length ? candidateStageBars : userDepartmentBars;
   const maxPipelineValue = Math.max(...pipelineBars.map((item) => item.value), 1);
 
   return (
@@ -191,6 +449,11 @@ export default function Dashboard() {
               <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
                 Quản lý đào tạo, tuyển dụng và chấm công hằng ngày trong một giao diện làm việc thống nhất.
               </p>
+              {supabaseDashboard.loaded && (
+                <span className="mt-3 inline-flex rounded-full border border-primary/20 bg-primary-fixed px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">
+                  Dữ liệu trực tiếp
+                </span>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-2 md:flex">
               <Link to="/training" className="btn-primary">
@@ -308,7 +571,7 @@ export default function Dashboard() {
             </div>
             <h2 className="mt-1 text-base font-black text-on-surface">Tiến độ LMS</h2>
             <p className="mt-2 text-xs font-semibold leading-5 text-on-surface-variant">
-              {enrollments.length} lượt gán khóa, {courses.length} khóa đang theo dõi.
+              {dashboardEnrollments.length} lượt gán khóa, {dashboardCourses.length} khóa đang theo dõi.
             </p>
           </div>
         </div>
@@ -317,7 +580,7 @@ export default function Dashboard() {
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="eyebrow">Pipeline</p>
-              <h2 className="mt-1 text-base font-black text-on-surface">Trạng thái nổi bật</h2>
+              <h2 className="mt-1 text-base font-black text-on-surface">{candidateStageBars.length ? 'Trạng thái nổi bật' : 'Nhân sự theo phòng ban'}</h2>
             </div>
             <BarChart3 className="size-5 text-primary" />
           </div>
@@ -378,7 +641,7 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-2 gap-px bg-outline-variant/70 sm:grid-cols-5">
             {candidateStages.map((stage) => {
-              const count = candidates.filter((candidate) => candidate.stage === stage.id).length;
+              const count = dashboardCandidates.filter((candidate) => candidate.stage === stage.id).length;
               return (
                 <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-2.5 transition-all duration-300 hover:bg-surface-container-low hover:text-home-primary md:p-3">
                   <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant md:text-[10px]">{stage.label}</p>
