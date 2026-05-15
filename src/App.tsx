@@ -141,25 +141,25 @@ function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[158px] flex-col border-r border-home-outline bg-home-surface md:flex">
-      <div className="border-b border-home-outline px-5 py-5">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[220px] flex-col border-r border-home-outline bg-home-surface md:flex">
+      <div className="border-b border-home-outline px-6 py-6">
         <div>
-          <h2 className="font-display text-[25px] font-bold leading-none tracking-[0.08em] text-home-on-surface">XOXO</h2>
+          <h2 className="font-display text-[31px] font-bold leading-none tracking-[0.08em] text-home-on-surface">XOXO</h2>
           <p className="mt-1 text-[10px] font-semibold tracking-[0.22em] text-home-on-surface-variant">CRM</p>
         </div>
       </div>
 
-      <div className="px-3 py-4">
-        <div className="mb-3 rounded-lg border border-home-outline bg-[#fbf7eb] p-3 text-center">
-          <div className="mx-auto mb-2 flex size-11 items-center justify-center rounded-md bg-[#f2ead9] text-home-primary">
-            <Trees className="size-5" />
+      <div className="px-4 py-5">
+        <div className="mb-4 rounded-lg border border-home-outline bg-[#fbf7eb] p-4 text-center">
+          <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-md bg-[#f2ead9] text-home-primary">
+            <Trees className="size-6" />
           </div>
-          <p className="font-display text-[13px] font-bold">People Ops</p>
-          <p className="mt-1 text-[9px] leading-3 text-home-on-surface-variant">Đào tạo, tuyển dụng và chấm công</p>
+          <p className="font-display text-[16px] font-bold leading-none">People Ops</p>
+          <p className="mx-auto mt-2 max-w-[150px] text-[11px] leading-4 text-home-on-surface-variant">Đào tạo, tuyển dụng và chấm công</p>
         </div>
       </div>
       
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1.5 px-4">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           const Icon = item.icon;
@@ -168,38 +168,38 @@ function Sidebar() {
               key={item.path}
               to={item.path}
               className={cn(
-                "group flex items-center gap-2.5 rounded px-2.5 py-2 text-[12px] font-semibold transition",
+                "group flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-semibold transition",
                 isActive 
                   ? "bg-home-primary text-white shadow-sm" 
                   : "text-home-on-surface-variant hover:bg-home-bg hover:text-home-primary"
               )}
             >
-              <Icon className="size-[15px]" />
+              <Icon className="size-4 shrink-0" />
               <span className="truncate">{item.label}</span>
               {item.count !== null && item.count !== undefined && (
                 <span className={cn("ml-auto rounded px-1.5 py-0.5 text-[9px] font-black", isActive ? "bg-white/15 text-white" : "bg-home-bg text-home-on-surface-variant")}>
                   {item.count}
                 </span>
               )}
-              {isActive && <ChevronRight className={cn("size-3.5", item.count == null && "ml-auto")} />}
+              {isActive && <ChevronRight className={cn("size-4 shrink-0", item.count == null && "ml-auto")} />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto border-t border-home-outline p-3">
-        <div className="rounded-lg border border-home-outline bg-[#fbf7eb] p-3">
-          <div className="mb-2 flex items-center gap-2">
+      <div className="mt-auto border-t border-home-outline p-4">
+        <div className="rounded-lg border border-home-outline bg-[#fbf7eb] p-3.5">
+          <div className="flex items-center gap-3">
             {user?.avatar ? (
-              <img src={user.avatar} alt="" className="size-8 rounded-full object-cover" />
+              <img src={user.avatar} alt="" className="size-10 rounded-full object-cover" />
             ) : (
-              <div className="flex size-8 items-center justify-center rounded-full bg-[#8f7a33] text-[10px] font-bold text-white">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#8f7a33] text-[11px] font-bold text-white">
                 {(user?.name || currentUser.name).slice(0, 2).toUpperCase()}
               </div>
             )}
             <div className="min-w-0">
-              <p className="truncate text-[12px] font-semibold text-home-on-surface">{user?.name || currentUser.name}</p>
-              <p className="truncate text-[10px] text-home-on-surface-variant">{user?.employeeCode || user?.department || currentUser.department}</p>
+              <p className="truncate text-[13px] font-bold text-home-on-surface">{user?.name || currentUser.name}</p>
+              <p className="mt-0.5 truncate text-[11px] font-semibold text-home-on-surface-variant">{user?.employeeCode || user?.department || currentUser.department}</p>
             </div>
           </div>
         </div>
@@ -212,7 +212,7 @@ function MainLayout({ children, hideNav = false }: { children: React.ReactNode, 
   return (
     <div className="min-h-screen bg-home-bg text-home-on-surface">
       <Sidebar />
-      <div className={cn("flex min-h-screen flex-col", !hideNav && "md:ml-[158px]")}>
+      <div className={cn("flex min-h-screen flex-col", !hideNav && "md:ml-[220px]")}>
         {!hideNav && <TopBar />}
         <main className="flex-1">
           <AnimatePresence mode="wait">
