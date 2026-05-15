@@ -6,12 +6,11 @@ import {
   Clock3,
   MoreHorizontal,
   Search,
-  SlidersHorizontal,
   UserRound,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { appSupabase } from '../lib/supabase';
-import { AttendanceDbRecord, getAttendanceRecordsInRange, getTodayKey } from '../lib/attendanceService';
+import { getTodayKey } from '../lib/attendanceService';
 import { cn } from '../lib/utils';
 
 interface AttendanceUser {
@@ -30,6 +29,27 @@ interface ShiftGroup {
   name: string;
   time: string;
   employees: AttendanceUser[];
+}
+
+interface TimesheetRecord {
+  id: string;
+  user_id: string;
+  shift_id: string | null;
+  schedule_date: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: string | null;
+}
+
+interface ShiftRow {
+  id: string;
+  name?: string | null;
+  shift_name?: string | null;
+  code?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
 }
 
 const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -58,10 +78,6 @@ function userSearchText(user: AttendanceUser) {
   return [user.name, user.email, user.employee_code, user.timekeeping_code, user.department, user.role].filter(Boolean).join(' ').toLowerCase();
 }
 
-function employeeKeys(user: AttendanceUser) {
-  return [user.employee_code, user.timekeeping_code, user.id, user.email, user.name].filter(Boolean).map(String);
-}
-
 function shiftForUser(user: AttendanceUser) {
   const source = `${user.role || ''} ${user.department || ''}`.toLowerCase();
   if (source.includes('sale') || source.includes('kinh doanh')) {
@@ -73,11 +89,30 @@ function shiftForUser(user: AttendanceUser) {
   return { id: 'office', name: 'CA VĂN PHÒNG', time: '08:00 - 17:30' };
 }
 
-function groupUsersByShift(users: AttendanceUser[]) {
+function formatShiftTime(shift: ShiftRow) {
+  const start = shift.start_time || shift.scheduled_start;
+  const end = shift.end_time || shift.scheduled_end;
+  if (!start || !end) return '';
+  return `${String(start).slice(0, 5)} - ${String(end).slice(0, 5)}`;
+}
+
+function shiftFromRow(shift: ShiftRow) {
+  return {
+    id: shift.id,
+    name: shift.name || shift.shift_name || shift.code || 'CA LÀM VIỆC',
+    time: formatShiftTime(shift) || 'Theo lịch phân ca',
+  };
+}
+
+function groupUsersByShift(users: AttendanceUser[], records: TimesheetRecord[], shifts: ShiftRow[]) {
   const map = new Map<string, ShiftGroup>();
+  const shiftMap = new Map(shifts.map((shift) => [shift.id, shiftFromRow(shift)]));
 
   users.forEach((user) => {
-    const shift = shiftForUser(user);
+    const userShiftId = records.find((record) => record.user_id === user.id)?.shift_id;
+    const shift = userShiftId && shiftMap.has(userShiftId)
+      ? shiftMap.get(userShiftId)!
+      : shiftForUser(user);
     const current = map.get(shift.id) || { ...shift, employees: [] };
     current.employees.push(user);
     map.set(shift.id, current);
@@ -103,7 +138,8 @@ function shortName(name: string) {
 
 export default function Attendance() {
   const [users, setUsers] = useState<AttendanceUser[]>([]);
-  const [records, setRecords] = useState<AttendanceDbRecord[]>([]);
+  const [records, setRecords] = useState<TimesheetRecord[]>([]);
+  const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<'shift' | 'employee'>('shift');
@@ -119,8 +155,20 @@ export default function Attendance() {
 
       try {
         const range = monthBounds(selectedMonth);
-        const [attendanceRows, usersResult] = await Promise.all([
-          getAttendanceRecordsInRange(range.startKey, range.endKey),
+        const [timesheetsResult, shiftsResult, usersResult] = await Promise.all([
+          appSupabase
+            ? appSupabase
+              .from('timesheets')
+              .select('id,user_id,shift_id,schedule_date,check_in,check_out,status')
+              .gte('schedule_date', range.startKey)
+              .lte('schedule_date', range.endKey)
+              .order('schedule_date', { ascending: true })
+            : Promise.resolve({ data: [], error: new Error('Chưa cấu hình Supabase timesheets.') }),
+          appSupabase
+            ? appSupabase
+              .from('shifts')
+              .select('*')
+            : Promise.resolve({ data: [], error: null }),
           appSupabase
             ? appSupabase
               .from('users')
@@ -130,9 +178,31 @@ export default function Attendance() {
         ]);
 
         if (cancelled) return;
+        if (timesheetsResult.error) throw timesheetsResult.error;
         if (usersResult.error) throw usersResult.error;
 
-        setRecords(attendanceRows);
+        const timesheets = (timesheetsResult.data || []) as TimesheetRecord[];
+
+        if (!timesheets.length) {
+          const latestResult = appSupabase
+            ? await appSupabase
+              .from('timesheets')
+              .select('schedule_date')
+              .order('schedule_date', { ascending: false })
+              .limit(1)
+              .maybeSingle<{ schedule_date: string }>()
+            : { data: null };
+          if (!cancelled && latestResult.data?.schedule_date) {
+            const latestDate = new Date(`${latestResult.data.schedule_date}T00:00:00`);
+            if (!sameMonth(latestDate, selectedMonth)) {
+              setSelectedMonth(latestDate);
+              return;
+            }
+          }
+        }
+
+        setRecords(timesheets);
+        setShifts(((shiftsResult.data || []) as ShiftRow[]));
         setUsers((usersResult.data || []) as AttendanceUser[]);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Không tải được dữ liệu chấm công.');
@@ -153,27 +223,29 @@ export default function Attendance() {
 
   const filteredUsers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    const activeUsers = users.filter((user) => !user.status || user.status === 'active');
-    if (!normalized) return activeUsers;
-    return activeUsers.filter((user) => userSearchText(user).includes(normalized));
-  }, [query, users]);
+    const scheduledUserIds = new Set(records.map((record) => record.user_id));
+    const activeUsers = users.filter((user) => (!user.status || user.status === 'active') && scheduledUserIds.has(user.id));
+    const sourceUsers = activeUsers.length ? activeUsers : users.filter((user) => !user.status || user.status === 'active');
+    if (!normalized) return sourceUsers;
+    return sourceUsers.filter((user) => userSearchText(user).includes(normalized));
+  }, [query, records, users]);
 
-  const groups = useMemo(() => groupUsersByShift(filteredUsers), [filteredUsers]);
+  const groups = useMemo(() => groupUsersByShift(filteredUsers, records, shifts), [filteredUsers, records, shifts]);
 
   const recordMap = useMemo(() => {
-    const map = new Map<string, AttendanceDbRecord>();
+    const map = new Map<string, TimesheetRecord>();
     records.forEach((record) => {
-      map.set(recordKey(record.employee_id, record.work_date), record);
+      map.set(recordKey(record.user_id, record.schedule_date), record);
     });
     return map;
   }, [records]);
 
   const monthLabel = formatMonth(selectedMonth);
-  const checkedInCount = records.filter((record) => Boolean(record.check_in_at)).length;
-  const uniqueEmployees = new Set(records.filter((record) => record.check_in_at).map((record) => record.employee_id)).size;
+  const checkedInCount = records.filter((record) => Boolean(record.check_in)).length;
+  const uniqueEmployees = new Set(records.filter((record) => record.check_in).map((record) => record.user_id)).size;
 
   function findRecord(user: AttendanceUser, dateKey: string) {
-    return employeeKeys(user).map((key) => recordMap.get(recordKey(key, dateKey))).find(Boolean);
+    return recordMap.get(recordKey(user.id, dateKey));
   }
 
   function changeMonth(offset: number) {
@@ -186,13 +258,13 @@ export default function Attendance() {
     const isFuture = date.getTime() > new Date(`${todayKey}T23:59:59`).getTime();
     const isToday = dateKey === todayKey;
 
-    if (record?.check_in_at) {
+    if (record?.check_in) {
       return (
         <span
           title={`${user.name} - ${dateKey}`}
           className={cn(
             'mx-auto block size-2 rounded-full',
-            record.status === 'checked_out' ? 'bg-[#f47c20]' : 'bg-[#4f6540]',
+            record.check_out || record.status === 'on_time' ? 'bg-[#f47c20]' : 'bg-[#4f6540]',
           )}
         />
       );
@@ -355,8 +427,8 @@ export default function Attendance() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4 border-t border-home-outline px-4 py-3 text-[11px] font-semibold text-home-on-surface-variant">
-          <span className="inline-flex items-center gap-2"><span className="size-2 rounded-full bg-[#f47c20]" /> Đã chấm công</span>
-          <span className="inline-flex items-center gap-2"><span className="size-2 rounded-full bg-[#4f6540]" /> Đang làm</span>
+          <span className="inline-flex items-center gap-2"><span className="size-2 rounded-full bg-[#f47c20]" /> Có dữ liệu timesheets</span>
+          <span className="inline-flex items-center gap-2"><span className="size-2 rounded-full bg-[#4f6540]" /> Chưa check-out</span>
           <span className="inline-flex items-center gap-2"><span className="size-5 rounded bg-[#e6e6e8]" /> Chưa tới ngày</span>
           <span className="inline-flex items-center gap-2"><Clock3 className="size-3.5" /> Dữ liệu từ Supabase</span>
         </div>
