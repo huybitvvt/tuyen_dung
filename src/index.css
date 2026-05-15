@@ -80,11 +80,24 @@
     scroll-behavior: smooth;
   }
 
+  @media (min-width: 768px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    html {
+      font-size: 14.5px;
+    }
+  }
+
   body {
     @apply bg-home-bg text-home-on-surface font-sans;
     background:
       linear-gradient(180deg, rgba(79, 101, 64, 0.08), rgba(201, 130, 58, 0.06) 42%, rgba(251, 248, 239, 1) 100%),
       #fbf8ef;
+    text-rendering: geometricPrecision;
   }
 
   button,
@@ -101,15 +114,15 @@
 
 @layer components {
   .page-shell {
-    @apply mx-auto flex w-full max-w-6xl flex-col gap-3 px-3 pt-3 pb-24 md:gap-4 md:px-5 md:py-5;
+    @apply mx-auto flex w-full max-w-6xl flex-col gap-3 px-3 pt-3 pb-24 md:gap-3.5 md:px-5 md:py-4;
   }
 
   .section-card {
-    @apply rounded-lg border border-home-outline bg-home-surface shadow-sm shadow-home-primary/5;
+    @apply rounded-lg border border-home-outline bg-home-surface shadow-sm shadow-home-primary/5 transition-all duration-300 ease-out;
   }
 
   .metric-card {
-    @apply rounded-lg border border-home-outline bg-home-surface p-3 shadow-sm shadow-home-primary/5 md:p-3.5;
+    @apply rounded-lg border border-home-outline bg-home-surface p-3 shadow-sm shadow-home-primary/5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-home-primary/25 hover:shadow-md hover:shadow-home-primary/10 md:p-3;
   }
 
   .eyebrow {
@@ -117,11 +130,11 @@
   }
 
   .btn-primary {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-home-primary px-3 text-[11px] font-black uppercase tracking-widest text-white shadow-sm shadow-home-primary/20 transition-all hover:bg-home-primary-light active:scale-[0.98] md:h-10 md:px-4 md:text-xs;
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-home-primary px-3 text-[11px] font-black uppercase tracking-widest text-white shadow-sm shadow-home-primary/20 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-home-primary-light hover:shadow-md hover:shadow-home-primary/20 active:translate-y-0 active:scale-[0.98] md:h-9 md:px-3.5 md:text-[11px];
   }
 
   .btn-secondary {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-home-outline bg-home-surface px-3 text-[11px] font-black uppercase tracking-widest text-home-on-surface-variant transition-all hover:border-home-primary/40 hover:bg-home-bg hover:text-home-primary active:scale-[0.98] md:h-10 md:px-4 md:text-xs;
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-home-outline bg-home-surface px-3 text-[11px] font-black uppercase tracking-widest text-home-on-surface-variant transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-home-primary/40 hover:bg-home-bg hover:text-home-primary hover:shadow-sm active:translate-y-0 active:scale-[0.98] md:h-9 md:px-3.5 md:text-[11px];
   }
 
   .status-pill {

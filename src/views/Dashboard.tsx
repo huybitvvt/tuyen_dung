@@ -90,15 +90,15 @@ export default function Dashboard() {
 
   return (
     <div className="page-shell">
-      <section className="section-card overflow-hidden">
-        <div className="p-4 md:p-6">
-          <p className="eyebrow mb-2 md:mb-3">Bảng điều hành nhân sự</p>
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+        <div className="p-3.5 md:p-5">
+          <p className="eyebrow mb-2">Bảng điều hành nhân sự</p>
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h1 className="max-w-2xl text-xl font-black leading-tight text-on-surface md:text-3xl">
+              <h1 className="max-w-2xl text-xl font-black leading-tight text-on-surface md:text-2xl">
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
-              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:mt-3 md:text-sm md:leading-6">
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
                 Theo dõi tiến độ học, pipeline ứng viên và chấm công GPS bằng Supabase trong cùng một giao diện.
               </p>
             </div>
@@ -120,30 +120,30 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <Link to="/attendance" className="section-card flex flex-col gap-4 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-sm shadow-primary/20">
-            <Fingerprint className="size-6" />
+      <Link to="/attendance" className="section-card flex flex-col gap-3 p-3.5 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md hover:shadow-primary/10 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-sm shadow-primary/20">
+            <Fingerprint className="size-5" />
           </div>
           <div>
             <p className="eyebrow">Chấm công hôm nay</p>
-            <h2 className="mt-1 text-base font-black text-on-surface">Check-in, check-out và GPS</h2>
+            <h2 className="mt-0.5 text-sm font-black text-on-surface md:text-base">Check-in, check-out và GPS</h2>
             <p className="mt-1 text-xs font-semibold text-on-surface-variant">
               Theo dõi trạng thái vào ca, tan ca và vị trí làm việc theo dữ liệu Supabase.
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center md:min-w-80">
-          <div className="rounded-lg bg-surface-container-low px-3 py-2">
-            <p className="text-lg font-black text-on-surface">{attendanceStats.checkedInToday}</p>
+        <div className="grid grid-cols-3 gap-2 text-center md:min-w-72">
+          <div className="rounded-md bg-surface-container-low px-3 py-2">
+            <p className="text-base font-black text-on-surface md:text-lg">{attendanceStats.checkedInToday}</p>
             <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Đã vào</p>
           </div>
-          <div className="rounded-lg bg-secondary-container px-3 py-2 text-on-secondary-container">
-            <p className="text-lg font-black">{attendanceStats.workingNow}</p>
+          <div className="rounded-md bg-secondary-container px-3 py-2 text-on-secondary-container">
+            <p className="text-base font-black md:text-lg">{attendanceStats.workingNow}</p>
             <p className="text-[10px] font-bold uppercase tracking-widest">Đang làm</p>
           </div>
-          <div className="rounded-lg bg-primary/10 px-3 py-2 text-primary">
-            <p className="text-lg font-black">{attendanceStats.checkedOutToday}</p>
+          <div className="rounded-md bg-primary/10 px-3 py-2 text-primary">
+            <p className="text-base font-black md:text-lg">{attendanceStats.checkedOutToday}</p>
             <p className="text-[10px] font-bold uppercase tracking-widest">Đã ra</p>
           </div>
         </div>
@@ -152,37 +152,37 @@ export default function Dashboard() {
       <section className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         {metricCards.map((metric) => (
           <div key={metric.label} className="metric-card">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-2.5">
               <div>
                 <p className="eyebrow">{metric.label}</p>
-                <p className="mt-1 text-xl font-black text-on-surface md:mt-2 md:text-2xl">{metric.value}</p>
+                <p className="mt-1 text-lg font-black text-on-surface md:text-xl">{metric.value}</p>
                 <p className="mt-1 text-[11px] font-semibold text-on-surface-variant md:text-xs">{metric.detail}</p>
               </div>
-              <div className={cn('flex size-8 items-center justify-center rounded-lg md:size-9', metric.tone)}>
-                <metric.icon className="size-4 md:size-5" />
+              <div className={cn('flex size-8 items-center justify-center rounded-lg', metric.tone)}>
+                <metric.icon className="size-4" />
               </div>
             </div>
           </div>
         ))}
       </section>
 
-      <div className="grid gap-3 md:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="section-card p-4">
-          <div className="mb-5 flex items-center justify-between">
+      <div className="grid gap-3 md:gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="eyebrow">Đào tạo</p>
             <h2 className="mt-1 text-base font-black text-on-surface">Tiến độ theo phòng ban</h2>
             </div>
             <ClipboardList className="size-5 text-primary" />
           </div>
-          <div className="space-y-4 md:space-y-5">
+          <div className="space-y-3.5">
             {departments.map((dept) => (
               <div key={dept.name}>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-black text-on-surface">{dept.name}</span>
                   <span className="font-mono text-xs font-bold text-on-surface-variant">{dept.progress}%</span>
                 </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-container">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${dept.progress}%` }}
@@ -195,8 +195,8 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className="section-card overflow-hidden">
-          <div className="border-b border-outline-variant p-4">
+        <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <div className="border-b border-outline-variant p-3.5">
             <p className="eyebrow">Pipeline tuyển dụng</p>
             <h2 className="mt-1 text-base font-black text-on-surface">Ứng viên theo trạng thái</h2>
           </div>
@@ -204,9 +204,9 @@ export default function Dashboard() {
             {candidateStages.map((stage) => {
               const count = candidates.filter((candidate) => candidate.stage === stage.id).length;
               return (
-                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-2.5 transition-colors hover:bg-surface-container-low md:p-3">
+                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-2.5 transition-all duration-300 hover:bg-surface-container-low hover:text-home-primary md:p-3">
                   <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant md:text-[10px]">{stage.label}</p>
-                  <p className="mt-1 text-lg font-black text-on-surface md:mt-2 md:text-xl">{count}</p>
+                  <p className="mt-1 text-base font-black text-on-surface md:text-lg">{count}</p>
                 </Link>
               );
             })}
@@ -214,11 +214,11 @@ export default function Dashboard() {
         </section>
       </div>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-3 lg:grid-cols-2">
         {courseProgress.slice(0, 2).map(({ course, percent }) => (
-          <Link key={course.id} to={`/training/${course.id}`} className="section-card flex items-center gap-4 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
-            <div className={cn('flex size-12 items-center justify-center rounded-lg', course.department === 'Sale' ? 'bg-primary/10 text-primary' : 'bg-secondary-container text-on-secondary-container')}>
-              {course.kpiLeadEligible ? <UserCheck className="size-6" /> : <GraduationCap className="size-6" />}
+          <Link key={course.id} to={`/training/${course.id}`} className="section-card flex items-center gap-3 p-3.5 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
+            <div className={cn('flex size-10 items-center justify-center rounded-lg', course.department === 'Sale' ? 'bg-primary/10 text-primary' : 'bg-secondary-container text-on-secondary-container')}>
+              {course.kpiLeadEligible ? <UserCheck className="size-5" /> : <GraduationCap className="size-5" />}
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-sm font-black text-on-surface">{course.name}</h3>

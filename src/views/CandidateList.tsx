@@ -64,13 +64,13 @@ export default function CandidateList() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-3 py-3 pb-24 md:gap-4 md:px-6 md:py-5">
-        <section className="section-card p-4 md:p-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-3 py-3 pb-24 md:gap-3.5 md:px-5 md:py-4">
+        <section className="section-card p-3.5 md:p-5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="eyebrow mb-2">Recruitment pipeline</p>
-              <h1 className="text-xl font-black text-on-surface md:text-3xl">Kanban ứng viên</h1>
-              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-sm md:leading-6">
+              <h1 className="text-xl font-black text-on-surface md:text-2xl">Kanban ứng viên</h1>
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
                 Kéo thả ứng viên qua 10 stage. Mỗi lần đổi stage sẽ tự động ghi vào lịch sử hoạt động của ứng viên.
               </p>
             </div>
@@ -96,7 +96,7 @@ export default function CandidateList() {
         </section>
 
         <div className="overflow-x-auto pb-4">
-          <div className="grid min-w-[1500px] gap-3" style={{ gridTemplateColumns: `repeat(${candidateStages.length}, minmax(250px, 1fr))` }}>
+          <div className="grid min-w-[1360px] gap-2.5" style={{ gridTemplateColumns: `repeat(${candidateStages.length}, minmax(220px, 1fr))` }}>
             {candidateStages.map((stage, index) => {
               const stageCandidates = filteredCandidates.filter((candidate) => candidate.stage === stage.id);
               const tone = stageTone[index] ?? 'bg-primary';
@@ -109,11 +109,11 @@ export default function CandidateList() {
                     setDraggingId(null);
                   }}
                   className={cn(
-                    'min-h-[560px] rounded-lg border border-outline-variant/70 bg-surface-container-low p-3 transition-colors',
+                    'min-h-[520px] rounded-lg border border-outline-variant/70 bg-surface-container-low p-2.5 transition-all duration-300',
                     draggingId && 'border-primary/40 bg-primary/5'
                   )}
                 >
-                  <div className="mb-3 rounded-lg bg-surface p-3 shadow-sm ring-1 ring-outline-variant/60">
+                  <div className="mb-2.5 rounded-lg bg-surface p-2.5 shadow-sm ring-1 ring-outline-variant/60">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2">
                         <span className={cn('h-7 w-1.5 rounded-full', tone)} />
@@ -123,7 +123,7 @@ export default function CandidateList() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2.5">
                     {stageCandidates.map((candidate) => {
                       const job = recruitmentJobs.find((item) => item.id === candidate.jobId);
                       return (
@@ -134,17 +134,17 @@ export default function CandidateList() {
                           onDragStart={() => setDraggingId(candidate.id)}
                           onDragEnd={() => setDraggingId(null)}
                           className={cn(
-                            'group rounded-lg border border-outline-variant/70 bg-surface p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md active:cursor-grabbing',
+                            'group rounded-lg border border-outline-variant/70 bg-surface p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md active:cursor-grabbing',
                             draggingId === candidate.id && 'opacity-50'
                           )}
                         >
-                          <div className="mb-3 flex items-start justify-between gap-3">
+                          <div className="mb-2.5 flex items-start justify-between gap-2.5">
                             <div className="min-w-0">
                               <div className="mb-2 flex items-center gap-2">
                                 <GripVertical className="size-4 text-outline" />
                                 <span className="status-pill border-primary/20 bg-primary/10 text-primary">{stageLabel(candidate.stage)}</span>
                               </div>
-                              <h3 className="truncate text-sm font-black text-on-surface group-hover:text-primary">{candidate.name}</h3>
+                              <h3 className="truncate text-[13px] font-black text-on-surface transition-colors group-hover:text-primary">{candidate.name}</h3>
                               <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{job?.title}</p>
                             </div>
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-fixed font-black text-on-primary-fixed">
@@ -152,7 +152,7 @@ export default function CandidateList() {
                             </div>
                           </div>
 
-                          <div className="space-y-2 text-xs font-semibold text-on-surface-variant">
+                          <div className="space-y-1.5 text-[11px] font-semibold text-on-surface-variant">
                             <div className="flex items-center gap-2">
                               <Phone className="size-3.5 text-outline" />
                               <span className="font-mono">{candidate.phone}</span>
@@ -164,12 +164,12 @@ export default function CandidateList() {
                           </div>
 
                           {candidate.notes && (
-                            <div className="mt-3 rounded-lg bg-surface-container-low p-2 text-[10px] font-semibold leading-4 text-on-surface-variant">
+                            <div className="mt-2.5 line-clamp-3 rounded-lg bg-surface-container-low p-2 text-[10px] font-semibold leading-4 text-on-surface-variant">
                               {candidate.notes}
                             </div>
                           )}
 
-                          <div className="mt-4 flex items-center justify-between border-t border-outline-variant/60 pt-3">
+                          <div className="mt-3 flex items-center justify-between border-t border-outline-variant/60 pt-2.5">
                             <div className="flex items-center gap-1 text-[10px] font-bold text-outline">
                               <Clock className="size-3" />
                               {new Date(candidate.createdAt).toLocaleDateString('vi-VN')}

@@ -88,47 +88,46 @@ export default function TrainingList() {
   }
 
   return (
-    <div className="page-shell max-w-[1600px] bg-[#fbf8ef] text-[#1b1c19] md:rounded-tl-lg">
-      <section className="overflow-hidden rounded-lg border border-[#e5dfd2] bg-[#fffdf7] shadow-sm shadow-[#4f6540]/5">
-        <div className="grid gap-0 lg:grid-cols-[1fr_420px]">
-          <div className="relative overflow-hidden p-5 md:p-6">
-            <div className="absolute inset-y-0 right-0 hidden w-72 bg-[radial-gradient(circle_at_center,#f2ead9,transparent_68%)] opacity-80 md:block" />
+    <div className="page-shell max-w-7xl text-[#1b1c19]">
+      <section className="section-card overflow-hidden hover:border-[#4f6540]/25 hover:shadow-md hover:shadow-[#4f6540]/10">
+        <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
+          <div className="relative overflow-hidden p-4 md:p-5">
             <div className="relative">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#e5dfd2] bg-[#fbf8ef] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#4f6540]">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#e5dfd2] bg-[#fbf8ef] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#4f6540]">
                 <Sparkles className="size-3.5" />
                 Training / LMS
               </div>
-              <h1 className="max-w-3xl font-display text-[34px] font-bold leading-none tracking-tight text-[#1b1c19] md:text-[48px]">
+              <h1 className="max-w-3xl font-display text-[30px] font-bold leading-none tracking-tight text-[#1b1c19] md:text-[38px]">
                 Đào tạo nội bộ
               </h1>
-              <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-[#444840]">
+              <p className="mt-2 max-w-2xl text-[13px] font-semibold leading-5 text-[#444840]">
                 Quản lý khóa học theo phòng ban, theo dõi video/tài liệu, gán khóa cho nhân viên và đánh giá năng lực bằng quiz.
               </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <button onClick={() => setIsCreateOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#4f6540] px-4 text-xs font-black uppercase tracking-widest text-white shadow-sm shadow-[#4f6540]/20 transition hover:bg-[#6b7f4e] active:scale-[0.98]">
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button onClick={() => setIsCreateOpen(true)} className="btn-primary">
                   <Plus className="size-4" />
                   Tạo khóa học
                 </button>
-                <span className="inline-flex h-10 items-center gap-2 rounded-md border border-[#e5dfd2] bg-[#fbf8ef] px-4 text-xs font-bold text-[#444840]">
+                <span className="inline-flex h-9 items-center gap-2 rounded-md border border-[#e5dfd2] bg-[#fbf8ef] px-3 text-[11px] font-bold text-[#444840]">
                   <GraduationCap className="size-4 text-[#c9823a]" />
                   {pendingCount} khóa cần học
                 </span>
               </div>
             </div>
           </div>
-          <div className="border-t border-[#e5dfd2] bg-[#fbf8ef] p-4 lg:border-l lg:border-t-0">
-            <div className="grid h-full grid-cols-3 gap-3">
+          <div className="border-t border-[#e5dfd2] bg-[#fbf8ef] p-3.5 lg:border-l lg:border-t-0">
+            <div className="grid h-full grid-cols-3 gap-2.5">
               {[
                 { label: 'Khóa', value: courses.length, icon: Layers3 },
                 { label: 'TB', value: `${averageProgress}%`, icon: Loader2 },
                 { label: 'Cần học', value: pendingCount, icon: NotebookPen },
               ].map((metric) => (
-                <div key={metric.label} className="rounded-lg border border-[#e5dfd2] bg-[#fffdf7] p-3 shadow-sm">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-[#f2ead9] text-[#4f6540]">
+                <div key={metric.label} className="rounded-lg border border-[#e5dfd2] bg-[#fffdf7] p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#4f6540]/25 hover:shadow-md">
+                  <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-[#f2ead9] text-[#4f6540]">
                     <metric.icon className="size-4" />
                   </div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#676b62]">{metric.label}</p>
-                  <p className="mt-1 text-2xl font-bold leading-none text-[#1b1c19]">{metric.value}</p>
+                  <p className="mt-1 text-xl font-bold leading-none text-[#1b1c19]">{metric.value}</p>
                 </div>
               ))}
             </div>
@@ -138,23 +137,23 @@ export default function TrainingList() {
 
       <section className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value as 'all' | Department)} className="h-9 min-w-max rounded-md border border-[#e5dfd2] bg-[#fffdf7] px-3 text-xs font-bold text-[#1b1c19] outline-none focus:ring-2 focus:ring-[#4f6540]/20 md:h-10 md:text-sm">
+          <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value as 'all' | Department)} className="h-9 min-w-max rounded-md border border-[#e5dfd2] bg-[#fffdf7] px-3 text-xs font-bold text-[#1b1c19] outline-none transition focus:border-[#4f6540] focus:ring-2 focus:ring-[#4f6540]/20">
             <option value="all">Tất cả phòng ban</option>
             <option value="Sale">Sale</option>
             <option value="Kỹ thuật">Kỹ thuật</option>
             <option value="Marketing">Marketing</option>
           </select>
-          <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)} className="h-9 min-w-max rounded-md border border-[#e5dfd2] bg-[#fffdf7] px-3 text-xs font-bold text-[#1b1c19] outline-none focus:ring-2 focus:ring-[#4f6540]/20 md:h-10 md:text-sm">
+          <select value={levelFilter} onChange={(event) => setLevelFilter(event.target.value)} className="h-9 min-w-max rounded-md border border-[#e5dfd2] bg-[#fffdf7] px-3 text-xs font-bold text-[#1b1c19] outline-none transition focus:border-[#4f6540] focus:ring-2 focus:ring-[#4f6540]/20">
             <option value="all">Mọi cấp độ</option>
             <option value="Cơ bản">Cơ bản</option>
             <option value="Trung cấp">Trung cấp</option>
             <option value="Nâng cao">Nâng cao</option>
           </select>
-          <button className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-[#e5dfd2] bg-[#fffdf7] px-3 text-[11px] font-black uppercase tracking-widest text-[#444840] transition hover:border-[#4f6540]/40 hover:text-[#4f6540] md:h-10 md:px-4 md:text-xs">
+          <button className="btn-secondary">
             <SlidersHorizontal className="size-4" /> Lọc
           </button>
         </div>
-        <button onClick={() => setIsCreateOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#4f6540] px-4 text-xs font-black uppercase tracking-widest text-white shadow-sm shadow-[#4f6540]/20 transition hover:bg-[#6b7f4e] active:scale-[0.98]">
+        <button onClick={() => setIsCreateOpen(true)} className="btn-primary">
           <Plus className="size-4" />
           Tạo khóa học
         </button>
@@ -169,51 +168,51 @@ export default function TrainingList() {
               ? 'border-[#c9823a]/25 bg-[#fff0e2] text-[#c9823a]'
               : 'border-[#b99137]/25 bg-[#fff5d8] text-[#b99137]';
           return (
-            <Link key={course.id} to={`/training/${course.id}`} className="overflow-hidden rounded-lg border border-[#e5dfd2] bg-[#fffdf7] shadow-sm shadow-[#4f6540]/5 transition-all hover:-translate-y-0.5 hover:border-[#4f6540]/40 hover:shadow-md">
-              <div className={cn('h-2', course.department === 'Sale' ? 'bg-[#4f6540]' : course.department === 'Kỹ thuật' ? 'bg-[#c9823a]' : 'bg-[#e0ad24]')} />
-              <div className="p-3.5 md:p-4">
-                <div className="mb-3 flex items-start justify-between gap-2 md:gap-3">
+            <Link key={course.id} to={`/training/${course.id}`} className="overflow-hidden rounded-lg border border-[#e5dfd2] bg-[#fffdf7] shadow-sm shadow-[#4f6540]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#4f6540]/35 hover:shadow-md hover:shadow-[#4f6540]/10">
+              <div className={cn('h-1.5', course.department === 'Sale' ? 'bg-[#4f6540]' : course.department === 'Kỹ thuật' ? 'bg-[#c9823a]' : 'bg-[#e0ad24]')} />
+              <div className="p-3">
+                <div className="mb-2.5 flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="mb-2 flex flex-wrap gap-2">
-                      <span className="rounded border border-[#e5dfd2] bg-[#fbf8ef] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#444840]">{course.department}</span>
-                      <span className="rounded border border-[#e5dfd2] bg-[#fbf8ef] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#444840]">{course.level}</span>
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      <span className="rounded border border-[#e5dfd2] bg-[#fbf8ef] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#444840]">{course.department}</span>
+                      <span className="rounded border border-[#e5dfd2] bg-[#fbf8ef] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#444840]">{course.level}</span>
                     </div>
-                    <h2 className="line-clamp-2 text-sm font-black leading-5 text-[#1b1c19] md:text-base md:leading-6">{course.name}</h2>
+                    <h2 className="line-clamp-2 text-sm font-black leading-5 text-[#1b1c19]">{course.name}</h2>
                   </div>
                   <span className={cn('status-pill shrink-0', statusClass)}>{course.status}</span>
                 </div>
 
-                <p className="min-h-10 text-xs font-semibold leading-5 text-[#444840] md:text-sm">{course.description}</p>
+                <p className="line-clamp-2 min-h-10 text-xs font-semibold leading-5 text-[#444840]">{course.description}</p>
 
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-3">
-                    <BookOpen className="mb-2 size-4 text-[#4f6540]" />
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2.5">
+                    <BookOpen className="mb-1.5 size-4 text-[#4f6540]" />
                     <p className="text-xs font-black">{course.lessons}</p>
                     <p className="text-[10px] font-bold text-[#676b62]">Bài học</p>
                   </div>
-                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-3">
-                    <Users className="mb-2 size-4 text-[#c9823a]" />
+                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2.5">
+                    <Users className="mb-1.5 size-4 text-[#c9823a]" />
                     <p className="text-xs font-black">{course.members}</p>
                     <p className="text-[10px] font-bold text-[#676b62]">Nhân viên</p>
                   </div>
-                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-3">
-                    <FileQuestion className="mb-2 size-4 text-[#b99137]" />
+                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2.5">
+                    <FileQuestion className="mb-1.5 size-4 text-[#b99137]" />
                     <p className="text-xs font-black">{course.questionCount}</p>
                     <p className="text-[10px] font-bold text-[#676b62]">Câu hỏi</p>
                   </div>
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-3.5">
                   <div className="mb-2 flex justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#676b62]">Tiến độ</span>
                     <span className="font-mono text-xs font-black text-[#1b1c19]">{course.progress}%</span>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#e5dfd2]">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-[#e5dfd2]">
                     <motion.div initial={{ width: 0 }} animate={{ width: `${course.progress}%` }} transition={{ duration: 0.8 }} className={cn('h-full rounded-full', isCompleted ? 'bg-[#4f6540]' : 'bg-[#c9823a]')} />
                   </div>
                 </div>
 
-                <div className="mt-5 flex items-center justify-between border-t border-[#e5dfd2]/80 pt-4">
+                <div className="mt-4 flex items-center justify-between border-t border-[#e5dfd2]/80 pt-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-[#444840]">
                     {isCompleted ? <CheckCircle2 className="size-4 text-[#4f6540]" /> : <Bell className="size-4 text-[#c9823a]" />}
                     {course.videos} video • {course.documents} tài liệu

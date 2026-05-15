@@ -80,12 +80,12 @@ export default function RecruitmentDashboard() {
 
   return (
     <div className="page-shell max-w-7xl">
-      <section className="section-card p-4 md:p-5">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <section className="section-card p-3.5 md:p-5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="eyebrow mb-2">Recruitment / Kanban</p>
-            <h1 className="text-xl font-black text-on-surface md:text-3xl">Tuyển dụng</h1>
-            <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-sm md:leading-6">
+            <h1 className="text-xl font-black text-on-surface md:text-2xl">Tuyển dụng</h1>
+            <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
               Quản lý vị trí tuyển dụng, nguồn ứng viên, lịch phỏng vấn, kết quả đánh giá và pipeline tuyển dụng rõ ràng.
             </p>
           </div>
@@ -108,19 +108,19 @@ export default function RecruitmentDashboard() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="eyebrow">{stat.label}</p>
-                <p className="mt-1 text-xl font-black text-on-surface md:mt-2 md:text-2xl">{stat.value}</p>
+                <p className="mt-1 text-lg font-black text-on-surface md:text-xl">{stat.value}</p>
                 <p className="mt-1 text-[11px] font-semibold text-on-surface-variant md:text-xs">{stat.detail}</p>
               </div>
-              <div className={cn('flex size-8 items-center justify-center rounded-lg md:size-9', stat.tone)}>
-                <stat.icon className="size-4 md:size-5" />
+              <div className={cn('flex size-8 items-center justify-center rounded-lg', stat.tone)}>
+                <stat.icon className="size-4" />
               </div>
             </div>
           </div>
         ))}
       </section>
 
-      <section className="section-card overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-outline-variant p-4 md:flex-row md:items-center md:justify-between">
+      <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+        <div className="flex flex-col gap-3 border-b border-outline-variant p-3.5 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="eyebrow">Recruitment jobs</p>
             <h2 className="mt-1 text-base font-black text-on-surface">Bảng vị trí tuyển dụng</h2>
@@ -130,31 +130,31 @@ export default function RecruitmentDashboard() {
           </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-[13px]">
             <thead className="bg-surface-container-low text-[10px] uppercase tracking-widest text-on-surface-variant">
               <tr>
-                <th className="p-3 text-left">Vị trí</th>
-                <th className="p-3 text-left">Phòng ban</th>
-                <th className="p-3 text-center">Cần tuyển</th>
-                <th className="p-3 text-center">Đã nhận</th>
-                <th className="p-3 text-left">Trạng thái</th>
+                <th className="p-2.5 text-left">Vị trí</th>
+                <th className="p-2.5 text-left">Phòng ban</th>
+                <th className="p-2.5 text-center">Cần tuyển</th>
+                <th className="p-2.5 text-center">Đã nhận</th>
+                <th className="p-2.5 text-left">Trạng thái</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/60">
               {recruitmentJobs.map((job) => {
                 const fill = job.quantityNeeded ? Math.round((job.quantityHired / job.quantityNeeded) * 100) : 0;
                 return (
-                  <tr key={job.id} className="hover:bg-surface-container-low/50">
-                    <td className="p-3">
+                  <tr key={job.id} className="transition-colors hover:bg-surface-container-low/50">
+                    <td className="p-2.5">
                       <p className="font-black text-on-surface">{job.title}</p>
                       <div className="mt-2 h-1.5 w-36 overflow-hidden rounded-full bg-surface-container">
                         <div className="h-full rounded-full bg-secondary" style={{ width: `${fill}%` }} />
                       </div>
                     </td>
-                    <td className="p-3 font-semibold text-on-surface-variant">{job.department}</td>
-                    <td className="p-3 text-center font-mono font-bold">{job.quantityNeeded}</td>
-                    <td className="p-3 text-center font-mono font-black text-primary">{job.quantityHired}</td>
-                    <td className="p-3">
+                    <td className="p-2.5 font-semibold text-on-surface-variant">{job.department}</td>
+                    <td className="p-2.5 text-center font-mono font-bold">{job.quantityNeeded}</td>
+                    <td className="p-2.5 text-center font-mono font-black text-primary">{job.quantityHired}</td>
+                    <td className="p-2.5">
                       <span className="status-pill border-primary/20 bg-primary/10 text-primary">{job.status}</span>
                     </td>
                   </tr>
@@ -165,9 +165,9 @@ export default function RecruitmentDashboard() {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="section-card p-4">
-          <div className="mb-5 flex items-center justify-between">
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="eyebrow">Kanban stages</p>
               <h2 className="mt-1 text-base font-black text-on-surface">Ứng viên theo pipeline</h2>
@@ -189,15 +189,15 @@ export default function RecruitmentDashboard() {
           </div>
         </section>
 
-        <section className="section-card overflow-hidden">
-          <div className="border-b border-outline-variant bg-surface-container-low/50 p-4">
+        <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <div className="border-b border-outline-variant bg-surface-container-low/50 p-3.5">
             <p className="eyebrow">Interview schedule</p>
             <h2 className="mt-1 text-base font-black text-on-surface">Lịch phỏng vấn</h2>
           </div>
           <ul className="divide-y divide-outline-variant/60">
             {upcomingInterviews.map(({ interview, candidate }) => (
-              <li key={interview.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-surface-container-low">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-fixed font-black text-on-primary-fixed">
+              <li key={interview.id} className="flex items-center gap-3 p-3.5 transition-colors hover:bg-surface-container-low">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-fixed font-black text-on-primary-fixed">
                   {candidate?.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -212,15 +212,15 @@ export default function RecruitmentDashboard() {
         </section>
       </div>
 
-      <section className="section-card p-5">
-        <div className="mb-5">
+      <section className="section-card p-3.5 md:p-4 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+        <div className="mb-4">
           <p className="eyebrow">Candidate sources</p>
-          <h2 className="mt-1 text-lg font-black text-on-surface">Nguồn ứng viên</h2>
+          <h2 className="mt-1 text-base font-black text-on-surface">Nguồn ứng viên</h2>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           {sources.map((source) => (
-            <div key={source.label} className="rounded-lg border border-outline-variant/60 bg-surface-container-low p-4">
-              <div className="mb-4 flex items-center justify-between">
+            <div key={source.label} className="rounded-lg border border-outline-variant/60 bg-surface-container-low p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-lg bg-surface text-on-surface-variant ring-1 ring-outline-variant/70">
                     <source.icon className="size-4" />

@@ -70,19 +70,19 @@ function TopBar() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 flex h-14 w-full items-center justify-between border-b border-home-outline bg-home-surface/90 px-3 shadow-sm backdrop-blur-md md:px-5">
+    <header className="sticky top-0 z-50 flex h-12 w-full items-center justify-between border-b border-home-outline bg-home-surface/88 px-3 shadow-sm backdrop-blur-md md:px-4">
       <div className="flex items-center gap-3 min-w-0">
         <button className="-ml-2 rounded-md p-2 text-home-on-surface-variant transition-colors hover:bg-home-bg md:hidden">
           <Menu className="size-5" />
         </button>
         <div className="min-w-0">
           <p className="eyebrow hidden sm:block">People Operations</p>
-          <h1 className="truncate text-sm font-bold text-home-on-surface md:text-base">
+          <h1 className="truncate text-sm font-bold text-home-on-surface">
             Dashboard quản lý nhân sự
           </h1>
         </div>
       </div>
-      <div className="relative hidden w-[260px] lg:block">
+      <div className="relative hidden w-[260px] xl:w-[320px] lg:block">
         <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-home-on-surface-variant" />
         <input
           type="text"
@@ -91,7 +91,7 @@ function TopBar() {
         />
       </div>
       <div className="flex items-center gap-2">
-        <div className="hidden items-center gap-2 rounded-md border border-home-outline bg-home-bg px-3 py-2 text-[11px] font-semibold text-home-on-surface-variant xl:flex">
+        <div className="hidden h-9 items-center gap-2 rounded-md border border-home-outline bg-home-bg px-3 text-[11px] font-semibold text-home-on-surface-variant xl:flex">
           <CalendarDays className="size-3.5 text-home-primary" />
           30 ngày gần nhất
         </div>
@@ -141,25 +141,25 @@ function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[220px] flex-col border-r border-home-outline bg-home-surface md:flex">
-      <div className="border-b border-home-outline px-6 py-6">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[204px] flex-col border-r border-home-outline bg-home-surface md:flex">
+      <div className="border-b border-home-outline px-5 py-5">
         <div>
-          <h2 className="font-display text-[31px] font-bold leading-none tracking-[0.08em] text-home-on-surface">XOXO</h2>
+          <h2 className="font-display text-[28px] font-bold leading-none tracking-[0.08em] text-home-on-surface">XOXO</h2>
           <p className="mt-1 text-[10px] font-semibold tracking-[0.22em] text-home-on-surface-variant">CRM</p>
         </div>
       </div>
 
-      <div className="px-4 py-5">
-        <div className="mb-4 rounded-lg border border-home-outline bg-[#fbf7eb] p-4 text-center">
-          <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-md bg-[#f2ead9] text-home-primary">
-            <Trees className="size-6" />
+      <div className="px-3.5 py-4">
+        <div className="mb-3 rounded-lg border border-home-outline bg-[#fbf7eb] p-3 text-center shadow-sm shadow-home-primary/5">
+          <div className="mx-auto mb-2.5 flex size-11 items-center justify-center rounded-md bg-[#f2ead9] text-home-primary">
+            <Trees className="size-5" />
           </div>
-          <p className="font-display text-[16px] font-bold leading-none">People Ops</p>
-          <p className="mx-auto mt-2 max-w-[150px] text-[11px] leading-4 text-home-on-surface-variant">Đào tạo, tuyển dụng và chấm công</p>
+          <p className="font-display text-[15px] font-bold leading-none">People Ops</p>
+          <p className="mx-auto mt-1.5 max-w-[140px] text-[10px] leading-4 text-home-on-surface-variant">Đào tạo, tuyển dụng và chấm công</p>
         </div>
       </div>
       
-      <nav className="flex-1 space-y-1.5 px-4">
+      <nav className="flex-1 space-y-1 px-3.5">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           const Icon = item.icon;
@@ -168,10 +168,10 @@ function Sidebar() {
               key={item.path}
               to={item.path}
               className={cn(
-                "group flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-semibold transition",
+                "group flex items-center gap-2.5 rounded-md px-3 py-2 text-[12px] font-semibold transition-all duration-300 ease-out",
                 isActive 
-                  ? "bg-home-primary text-white shadow-sm" 
-                  : "text-home-on-surface-variant hover:bg-home-bg hover:text-home-primary"
+                  ? "bg-home-primary text-white shadow-sm shadow-home-primary/20" 
+                  : "text-home-on-surface-variant hover:translate-x-0.5 hover:bg-home-bg hover:text-home-primary"
               )}
             >
               <Icon className="size-4 shrink-0" />
@@ -187,18 +187,18 @@ function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-home-outline p-4">
-        <div className="rounded-lg border border-home-outline bg-[#fbf7eb] p-3.5">
+      <div className="mt-auto border-t border-home-outline p-3.5">
+        <div className="rounded-lg border border-home-outline bg-[#fbf7eb] p-3">
           <div className="flex items-center gap-3">
             {user?.avatar ? (
               <img src={user.avatar} alt="" className="size-10 rounded-full object-cover" />
             ) : (
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#8f7a33] text-[11px] font-bold text-white">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#8f7a33] text-[10px] font-bold text-white">
                 {(user?.name || currentUser.name).slice(0, 2).toUpperCase()}
               </div>
             )}
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-bold text-home-on-surface">{user?.name || currentUser.name}</p>
+              <p className="truncate text-xs font-bold text-home-on-surface">{user?.name || currentUser.name}</p>
               <p className="mt-0.5 truncate text-[11px] font-semibold text-home-on-surface-variant">{user?.employeeCode || user?.department || currentUser.department}</p>
             </div>
           </div>
@@ -212,16 +212,16 @@ function MainLayout({ children, hideNav = false }: { children: React.ReactNode, 
   return (
     <div className="min-h-screen bg-home-bg text-home-on-surface">
       <Sidebar />
-      <div className={cn("flex min-h-screen flex-col", !hideNav && "md:ml-[220px]")}>
+      <div className={cn("flex min-h-screen flex-col", !hideNav && "md:ml-[204px]")}>
         {!hideNav && <TopBar />}
         <main className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={useLocation().pathname}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8, scale: 0.995 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, y: -8, scale: 0.995 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
               {children}
             </motion.div>
