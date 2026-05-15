@@ -78,6 +78,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   @media (min-width: 768px) {
@@ -98,6 +99,7 @@
       linear-gradient(180deg, rgba(79, 101, 64, 0.08), rgba(201, 130, 58, 0.06) 42%, rgba(251, 248, 239, 1) 100%),
       #fbf8ef;
     text-rendering: geometricPrecision;
+    overflow-x: hidden;
   }
 
   button,
@@ -114,13 +116,14 @@
 
 @layer components {
   .page-shell {
-    @apply mx-auto flex w-full flex-col gap-3 px-3 pt-3 pb-3;
+    @apply mx-auto flex w-full flex-col gap-2.5 px-2.5 pt-2.5 pb-20 sm:gap-3 sm:px-3 sm:pt-3;
   }
 
   /* ─────────── APP SHELL (phone frame) ─────────── */
   .app-stage {
     min-height: 100dvh;
     background: var(--color-home-bg);
+    overflow-x: hidden;
   }
 
   .app-shell {
@@ -130,6 +133,7 @@
     width: 100%;
     min-height: 100dvh;
     background: var(--color-home-bg);
+    overflow-x: hidden;
   }
 
   .app-top-bar {
@@ -140,7 +144,9 @@
   .app-bottom-nav {
     position: sticky;
     bottom: 0;
+    min-height: calc(3.5rem + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -10px 24px -18px rgba(79, 101, 64, 0.35);
   }
 
   .app-main {
@@ -163,7 +169,7 @@
     }
 
     .app-shell {
-      width: 28rem;
+      width: clamp(20.25rem, calc(100vw - 2rem), 28rem);
       max-width: 28rem;
       height: calc(100vh - 3rem);
       max-height: 900px;
@@ -207,6 +213,29 @@
     }
     .app-main::-webkit-scrollbar-thumb:hover {
       background: rgba(79, 101, 64, 0.32);
+    }
+  }
+
+  @media (max-width: 380px) {
+    .page-shell {
+      padding-left: 0.625rem;
+      padding-right: 0.625rem;
+    }
+
+    .app-top-bar {
+      padding-left: 0.625rem;
+      padding-right: 0.625rem;
+    }
+
+    .app-bottom-nav {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+
+    .app-bottom-nav a {
+      min-width: 4.35rem;
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
     }
   }
 

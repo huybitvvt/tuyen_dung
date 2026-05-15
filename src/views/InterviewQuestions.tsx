@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -1142,7 +1143,7 @@ function BottomSheet({
   tone,
   size = 'normal',
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   onClose: () => void;
   title: string;
   icon: typeof Award;
