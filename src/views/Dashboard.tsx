@@ -150,7 +150,7 @@ function mapDbResult(row: Record<string, unknown>): Result {
   };
 }
 
-function SparklineChart({ values }: { values: number[] }) {
+function SparklineChart({ values, delay = 0 }: { values: number[]; delay?: number }) {
   const width = 280;
   const height = 92;
   const max = Math.max(...values, 1);
@@ -162,6 +162,7 @@ function SparklineChart({ values }: { values: number[] }) {
     return `${x},${y}`;
   });
   const areaPoints = `0,${height} ${points.join(' ')} ${width},${height}`;
+  const lineLength = 360;
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="h-24 w-full overflow-visible" role="img" aria-label="Biểu đồ xu hướng vận hành">
@@ -170,19 +171,48 @@ function SparklineChart({ values }: { values: number[] }) {
           <stop offset="0%" stopColor="#4f6540" stopOpacity="0.28" />
           <stop offset="100%" stopColor="#4f6540" stopOpacity="0" />
         </linearGradient>
+        <filter id="dashboardLineGlow" x="-20%" y="-35%" width="140%" height="170%">
+          <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="#4f6540" floodOpacity="0.16" />
+        </filter>
       </defs>
-      <polygon points={areaPoints} fill="url(#dashboardLineFill)" />
-      <polyline
+      <motion.polygon
+        points={areaPoints}
+        fill="url(#dashboardLineFill)"
+        initial={{ opacity: 0, scaleY: 0.2, originY: 1 }}
+        whileInView={{ opacity: 1, scaleY: 1 }}
+        viewport={{ once: false, amount: 0.55 }}
+        transition={{ delay: delay + 0.28, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      />
+      <motion.polyline
         points={points.join(' ')}
         fill="none"
         stroke="#4f6540"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="4"
+        filter="url(#dashboardLineGlow)"
+        initial={{ pathLength: 0, strokeDasharray: lineLength, strokeDashoffset: lineLength }}
+        whileInView={{ pathLength: 1, strokeDashoffset: 0 }}
+        viewport={{ once: false, amount: 0.55 }}
+        transition={{ delay, duration: 1.25, ease: [0.22, 1, 0.36, 1] }}
       />
       {points.map((point, index) => {
         const [x, y] = point.split(',').map(Number);
-        return <circle key={index} cx={x} cy={y} r="4" fill="#fffdf7" stroke="#4f6540" strokeWidth="3" />;
+        return (
+          <motion.circle
+            key={index}
+            cx={x}
+            cy={y}
+            r="4"
+            fill="#fffdf7"
+            stroke="#4f6540"
+            strokeWidth="3"
+            initial={{ opacity: 0, scale: 0 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: false, amount: 0.55 }}
+            transition={{ delay: delay + 0.15 + index * 0.08, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+          />
+        );
       })}
     </svg>
   );
@@ -480,7 +510,7 @@ export default function Dashboard() {
                 </div>
                 <TrendingUp className="size-5 text-primary" />
               </div>
-              <SparklineChart values={operationsTrend} />
+              <SparklineChart values={operationsTrend} delay={0.08} />
               <div className="mt-2 grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md bg-primary-fixed p-2">
                   <p className="text-sm font-black text-primary">{openJobs}</p>
@@ -555,7 +585,7 @@ export default function Dashboard() {
             </div>
             <LineChart className="size-5 text-primary" />
           </div>
-          <SparklineChart values={operationsTrend} />
+          <SparklineChart values={operationsTrend} delay={0.12} />
           <div className="mt-3 flex items-center justify-between rounded-md border border-home-outline bg-home-bg px-3 py-2">
             <span className="text-xs font-bold text-on-surface-variant">Đào tạo, tuyển dụng, chấm công</span>
             <span className="font-mono text-sm font-black text-primary">+{Math.max(completionRate, activeCandidates * 5)}%</span>
