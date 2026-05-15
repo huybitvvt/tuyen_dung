@@ -582,12 +582,6 @@ export default function Attendance() {
           </table>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 border-t border-home-outline px-4 py-3 text-[11px] font-semibold text-home-on-surface-variant">
-          <span className="inline-flex items-center gap-2"><span className="size-2 rounded-full bg-[#f47c20]" /> Có dữ liệu timesheets</span>
-          <span className="inline-flex items-center gap-2"><span className="size-2 rounded-full bg-[#4f6540]" /> Chưa check-out</span>
-          <span className="inline-flex items-center gap-2"><span className="size-5 rounded bg-[#e6e6e8]" /> Chưa tới ngày</span>
-          <span className="inline-flex items-center gap-2"><Clock3 className="size-3.5" /> Dữ liệu từ Supabase</span>
-        </div>
       </section>
     </div>
   );
