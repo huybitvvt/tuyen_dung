@@ -15,20 +15,34 @@ import { useState, useEffect } from 'react';
 
 function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null;
-  
-  // Extract video ID from various YouTube URL formats
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/watch\?.*v=([^&\n?#]+)/
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+
+  const value = url.trim();
+
+  try {
+    const parsed = new URL(value);
+    const host = parsed.hostname.replace(/^www\./, '');
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+    let videoId: string | null = null;
+
+    if (host === 'youtu.be') {
+      videoId = pathParts[0] || null;
+    } else if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (parsed.pathname === '/watch') {
+        videoId = parsed.searchParams.get('v');
+      } else if (['embed', 'shorts', 'live'].includes(pathParts[0])) {
+        videoId = pathParts[1] || null;
+      }
+    }
+
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+    }
+  } catch {
+    if (/^[a-zA-Z0-9_-]{11}$/.test(value)) {
+      return `https://www.youtube.com/embed/${value}?rel=0&modestbranding=1`;
     }
   }
-  
+
   return null;
 }
 
@@ -45,7 +59,8 @@ export default function LessonViewer() {
   const nextLesson = courseLessons[index + 1];
   const previousLesson = courseLessons[index - 1];
   const [isPlaying, setIsPlaying] = useState(false);
-  const embedUrl = lesson?.videoUrl ? getYouTubeEmbedUrl(lesson.videoUrl) : null;
+  const videoSource = lesson?.type === 'video' ? lesson.videoUrl || lesson.contentUrl : '';
+  const embedUrl = videoSource ? getYouTubeEmbedUrl(videoSource) : null;
 
   if (!course || !lesson) {
     return (
