@@ -30,7 +30,6 @@ import RecruitmentDashboard from './views/RecruitmentDashboard';
 import CandidateList from './views/CandidateList';
 import CandidateProfile from './views/CandidateProfile';
 import Attendance from './views/Attendance';
-import Login from './views/Login';
 
 function BottomNav() {
   const location = useLocation();
@@ -246,10 +245,6 @@ export default function App() {
 }
 
 function AuthenticatedRoutes() {
-  const { user } = useAuth();
-
-  if (!user) return <Login />;
-
   return (
     <Routes>
       <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />

@@ -217,7 +217,10 @@ export default function Attendance() {
     let cancelled = false;
 
     async function loadTodayRecord() {
-      if (!employeeIdentity) return;
+      if (!employeeIdentity) {
+        setTodayRecord(null);
+        return;
+      }
       setAttendanceError(null);
 
       try {
@@ -326,7 +329,10 @@ export default function Attendance() {
   }
 
   async function handleCheckIn() {
-    if (!employeeIdentity) return;
+    if (!employeeIdentity) {
+      setAttendanceError('Chưa nhận diện nhân viên từ hệ thống đăng nhập.');
+      return;
+    }
 
     setAttendanceLoading(true);
     setAttendanceError(null);
@@ -346,6 +352,10 @@ export default function Attendance() {
   }
 
   async function handleCheckOut() {
+    if (!employeeIdentity) {
+      setAttendanceError('Chưa nhận diện nhân viên từ hệ thống đăng nhập.');
+      return;
+    }
     if (!todayRecord) return;
 
     setAttendanceLoading(true);
@@ -405,7 +415,13 @@ export default function Attendance() {
               <p className="eyebrow">Chấm công của tôi</p>
               <h1 className="mt-1 text-base font-black text-home-on-surface md:text-lg">{attendanceLabel(todayRecord)}</h1>
               <p className="mt-1 text-xs font-semibold leading-5 text-home-on-surface-variant">
-                Nhân viên: <span className="text-home-on-surface">{employeeIdentity?.name}</span> • User ID: <span className="font-mono text-home-on-surface">{employeeIdentity?.id}</span> • Ngày {todayKey}
+                {employeeIdentity ? (
+                  <>
+                    Nhân viên: <span className="text-home-on-surface">{employeeIdentity.name}</span> • User ID: <span className="font-mono text-home-on-surface">{employeeIdentity.id}</span>
+                  </>
+                ) : (
+                  <span>Chưa nhận diện nhân viên từ hệ thống đăng nhập</span>
+                )} • Ngày {todayKey}
               </p>
             </div>
           </div>
@@ -438,7 +454,7 @@ export default function Attendance() {
             <div className="flex flex-col gap-2 sm:flex-row md:flex-col xl:flex-row">
               <button
                 onClick={handleCheckIn}
-                disabled={attendanceLoading || Boolean(todayRecord?.check_in)}
+                disabled={attendanceLoading || !employeeIdentity || Boolean(todayRecord?.check_in)}
                 className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {attendanceLoading ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
@@ -446,7 +462,7 @@ export default function Attendance() {
               </button>
               <button
                 onClick={handleCheckOut}
-                disabled={attendanceLoading || !todayRecord?.check_in || Boolean(todayRecord?.check_out)}
+                disabled={attendanceLoading || !employeeIdentity || !todayRecord?.check_in || Boolean(todayRecord?.check_out)}
                 className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {attendanceLoading ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
@@ -456,8 +472,9 @@ export default function Attendance() {
           </div>
         </div>
 
-        {(attendanceError || attendanceMessage || todayRecord?.location_captured_at) && (
+        {(!employeeIdentity || attendanceError || attendanceMessage || todayRecord?.location_captured_at) && (
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-home-outline bg-home-bg px-3 py-2 text-xs font-semibold text-home-on-surface-variant">
+            {!employeeIdentity && <span className="font-bold text-[#c55d24]">Mở từ màn hình đã đăng nhập để chấm công.</span>}
             {attendanceMessage && <span className="font-bold text-primary">{attendanceMessage}</span>}
             {attendanceError && <span className="font-bold text-[#c55d24]">{attendanceError}</span>}
             {todayRecord?.location_captured_at && (
