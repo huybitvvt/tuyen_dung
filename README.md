@@ -1,23 +1,47 @@
-# XOXO CRM - Internal Training and Recruitment
+<div align="center">
+  <h1>XOXO CRM</h1>
+  <p><strong>Internal Training LMS and Recruitment Kanban for HR operations</strong></p>
 
-A React/Vite prototype for managing two core HR workflows in one CRM-style interface:
+  <p>
+    <a href="https://tuyen-dung-steel.vercel.app"><strong>Open Live Demo</strong></a>
+    ·
+    <a href="#features">Features</a>
+    ·
+    <a href="#run-locally">Run Locally</a>
+  </p>
 
-- **Internal Training / LMS**: manage courses by department, lessons, videos, documents, employee assignments, learning progress, and quiz pass/fail results.
-- **Recruitment / Kanban Pipeline**: manage jobs, candidates, CV/files, interviews, evaluation results, candidate activity history, and a full 10-stage hiring pipeline.
+  <p>
+    <img alt="React" src="https://img.shields.io/badge/React-19-155eef?style=for-the-badge&logo=react&logoColor=white" />
+    <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-0f766e?style=for-the-badge&logo=typescript&logoColor=white" />
+    <img alt="Vite" src="https://img.shields.io/badge/Vite-6-f59e0b?style=for-the-badge&logo=vite&logoColor=white" />
+    <img alt="Vercel" src="https://img.shields.io/badge/Deployed_on-Vercel-111827?style=for-the-badge&logo=vercel&logoColor=white" />
+  </p>
+</div>
 
-## Key Features
+---
+
+## Overview
+
+XOXO CRM is a mobile-friendly React/Vite prototype for managing two HR workflows in one CRM-style interface:
+
+- **Internal Training / LMS**: courses, lessons, videos, documents, assignments, progress tracking, and quiz pass/fail results.
+- **Recruitment / Kanban Pipeline**: jobs, candidates, CV/files, interviews, evaluation results, activity history, and a full 10-stage hiring process.
+
+> The GitHub URL shows the source code and project documentation. To view the actual app interface, open the live Vercel demo: **https://tuyen-dung-steel.vercel.app**
+
+## Features
 
 ### Training Module
 
-- Courses grouped by department: Sales, Technical, and Marketing.
-- Course metadata including level, description, assigned roles, and assigned employees.
-- Lessons with video and document content types.
-- Learning progress tracking by lesson.
+- Courses grouped by Sales, Technical, and Marketing departments.
+- Course level, description, assigned roles, and assigned employees.
+- Video and document lessons.
+- Lesson progress tracking.
 - Enrollment status: not started, in progress, completed.
 - Multiple-choice quizzes.
 - Percentage-based scoring.
 - Pass/fail evaluation with a `>= 70%` threshold.
-- Demo data persisted with `localStorage`.
+- Demo persistence through `localStorage`.
 
 ### Recruitment Module
 
@@ -49,6 +73,7 @@ A React/Vite prototype for managing two core HR workflows in one CRM-style inter
 - React Router
 - Lucide React icons
 - Motion
+- Vercel deployment
 - `localStorage` for demo persistence
 
 ## Run Locally
@@ -72,6 +97,15 @@ Type-check and build:
 npm run lint
 npm run build
 ```
+
+## Deployment
+
+This project is configured for Vercel as a Vite single-page app.
+
+- Framework preset: `Vite`
+- Build command: `npm run build`
+- Output directory: `dist`
+- SPA rewrite config: `vercel.json`
 
 ## Notes
 
