@@ -23,11 +23,9 @@ import {
   RotateCcw,
   Search,
   Sparkles,
-  Star,
   Target,
   ThumbsDown,
   ThumbsUp,
-  TrendingUp,
   UserRound,
   X,
 } from 'lucide-react';
@@ -469,6 +467,20 @@ export default function InterviewQuestions() {
 
   return (
     <div className="iq-page relative">
+      {/* PRINT HEADER (flows in document flow on print) */}
+      <div className="print-header hidden print:block">
+        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#c9823a]">XOXO Luxury · Báo cáo phỏng vấn</p>
+        <h1 className="mt-1.5 font-display text-[22px] font-bold leading-tight text-[#1b1c19]">
+          {session.candidateName || 'Ứng viên'}
+        </h1>
+        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-semibold text-[#444840]">
+          <p><span className="font-black">Vị trí:</span> {session.position}</p>
+          <p><span className="font-black">Ngày PV:</span> {formatDateVN(session.date)}</p>
+          <p><span className="font-black">Người PV:</span> {session.interviewer || '________________'}</p>
+          <p><span className="font-black">Tổng điểm:</span> {stats.overallPercent}/100 ({stats.passCount} đạt · {stats.neutralCount} TB · {stats.failCount} chưa)</p>
+        </div>
+      </div>
+
       {/* HERO */}
       <section className="iq-hero relative overflow-hidden">
         <div className="absolute inset-0 -z-0 bg-gradient-to-br from-primary/12 via-transparent to-secondary/15" />
@@ -883,43 +895,63 @@ export default function InterviewQuestions() {
             tone={recommendation.tone}
             size="large"
           >
+            {/* Recommendation hero with score ring */}
             <div
               className={cn(
-                'relative overflow-hidden border-b border-outline-variant px-4 pb-5 pt-4',
+                'relative overflow-hidden border-b border-outline-variant px-4 py-4',
                 recommendation.tone === 'pass' && 'bg-gradient-to-br from-primary-fixed via-primary-fixed to-secondary-container',
                 recommendation.tone === 'neutral' && 'bg-gradient-to-br from-tertiary-container/50 to-secondary-container',
                 recommendation.tone === 'fail' && 'bg-gradient-to-br from-error-container/40 to-surface-container'
               )}
             >
-              <div className="absolute -right-12 -top-12 size-40 rounded-full bg-white/40 blur-3xl" />
-              <div className="relative flex items-start gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface text-primary shadow-sm ring-4 ring-primary/15">
-                  {recommendation.tone === 'pass' && <Award className="size-6" strokeWidth={2.2} />}
-                  {recommendation.tone === 'neutral' && <Sparkles className="size-6" strokeWidth={2.2} />}
-                  {recommendation.tone === 'fail' && <ThumbsDown className="size-6" strokeWidth={2.2} />}
-                </div>
+              <div className="absolute -right-10 -top-10 size-32 rounded-full bg-white/40 blur-3xl" />
+              <div className="relative flex items-center gap-3.5">
+                <ScoreRing percent={stats.overallPercent} tone={recommendation.tone} />
                 <div className="min-w-0 flex-1">
-                  <p className="eyebrow">Đề xuất</p>
-                  <h3 className="mt-0.5 font-display text-[22px] font-bold leading-tight text-on-surface">{recommendation.title}</h3>
-                  <p className="mt-1.5 text-[12.5px] font-semibold leading-5 text-on-surface-variant">{recommendation.text}</p>
+                  <div className="flex items-center gap-1.5">
+                    {recommendation.tone === 'pass' && <Award className="size-3.5 text-primary" strokeWidth={2.5} />}
+                    {recommendation.tone === 'neutral' && <Sparkles className="size-3.5 text-on-tertiary-container" strokeWidth={2.5} />}
+                    {recommendation.tone === 'fail' && <ThumbsDown className="size-3.5 text-on-error-container" strokeWidth={2.5} />}
+                    <p className="eyebrow">Đề xuất</p>
+                  </div>
+                  <h3 className="mt-0.5 font-display text-[20px] font-bold leading-tight text-on-surface">{recommendation.title}</h3>
+                  <p className="mt-1 text-[12px] font-semibold leading-[1.45] text-on-surface-variant">{recommendation.text}</p>
                 </div>
-              </div>
-
-              <div className="relative mt-4 grid grid-cols-3 gap-2">
-                <SummaryStat label="Tổng điểm" value={`${stats.overallPercent}%`} icon={TrendingUp} />
-                <SummaryStat label="Đã đánh giá" value={`${stats.answered}/${totalQuestions}`} icon={ListChecks} />
-                <SummaryStat label="Câu đạt" value={`${stats.passCount}`} icon={Star} highlight />
               </div>
             </div>
 
-            <div className="max-h-[50vh] overflow-y-auto px-4 py-3 md:max-h-[55vh]">
-              <div className="mb-4 grid grid-cols-3 gap-2">
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-4 py-3.5">
+              {/* Score counts */}
+              <p className="eyebrow mb-2">Phân bố đánh giá</p>
+              <div className="grid grid-cols-3 gap-2">
                 <ScoreCount label="Đạt" value={stats.passCount} tone="pass" />
                 <ScoreCount label="Trung bình" value={stats.neutralCount} tone="neutral" />
                 <ScoreCount label="Chưa đạt" value={stats.failCount} tone="fail" />
               </div>
 
-              <p className="eyebrow mb-2.5">Theo nhóm câu hỏi</p>
+              {/* Progress info */}
+              <div className="mt-3 flex items-center gap-2 rounded-2xl border border-outline-variant bg-surface-container-low/40 px-3 py-2.5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+                  <ListChecks className="size-4" strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Đã đánh giá</p>
+                  <p className="font-mono text-[14px] font-black tabular-nums text-on-surface">
+                    {stats.answered}<span className="text-on-surface-variant">/{totalQuestions}</span> câu
+                  </p>
+                </div>
+                <div className="h-8 w-px bg-outline-variant/60" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Còn lại</p>
+                  <p className="font-mono text-[14px] font-black tabular-nums text-on-surface">
+                    {totalQuestions - stats.answered} câu
+                  </p>
+                </div>
+              </div>
+
+              {/* Section breakdown */}
+              <p className="eyebrow mb-2 mt-4">Theo nhóm câu hỏi</p>
               <div className="space-y-2">
                 {sectionStats.map((stat) => (
                   <div key={stat.id} className="rounded-2xl border border-outline-variant bg-surface-container-low/40 p-3">
@@ -928,7 +960,8 @@ export default function InterviewQuestions() {
                         <span className="text-on-surface-variant">{stat.roman}.</span> {stat.title}
                       </p>
                       <span className="font-mono text-[10.5px] font-black tabular-nums text-on-surface-variant">
-                        {stat.filled}/{stat.total} · {stat.pass}✓
+                        {stat.filled}/{stat.total}
+                        {stat.pass > 0 && <span className="ml-1 text-primary">· {stat.pass}✓</span>}
                       </span>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-container">
@@ -944,52 +977,41 @@ export default function InterviewQuestions() {
               </div>
             </div>
 
+            {/* Action buttons */}
             <div className="grid grid-cols-3 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3">
               <button
                 type="button"
                 onClick={() => copyText(buildReportText(), 'report')}
                 className={cn(
-                  'flex h-12 items-center justify-center gap-1.5 rounded-2xl border bg-surface text-[10.5px] font-black uppercase tracking-[0.12em] transition active:scale-95',
+                  'flex h-12 flex-col items-center justify-center gap-0.5 rounded-2xl border bg-surface text-on-surface-variant transition active:scale-95',
                   copyState === 'report'
                     ? 'border-primary bg-primary-fixed text-primary'
-                    : 'border-outline-variant text-on-surface-variant hover:border-primary/30 hover:text-primary'
+                    : 'border-outline-variant hover:border-primary/30 hover:text-primary'
                 )}
               >
                 {copyState === 'report' ? <CheckCircle2 className="size-4" strokeWidth={2.5} /> : <Download className="size-4" strokeWidth={2.5} />}
-                <span className="hidden sm:inline">{copyState === 'report' ? 'Đã copy' : 'Báo cáo'}</span>
-                <span className="sm:hidden">{copyState === 'report' ? 'OK' : 'Báo cáo'}</span>
+                <span className="text-[9.5px] font-black uppercase tracking-[0.1em]">{copyState === 'report' ? 'Đã copy' : 'Báo cáo'}</span>
               </button>
               <button
                 type="button"
                 onClick={handlePrint}
-                className="flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-outline-variant bg-surface text-[10.5px] font-black uppercase tracking-[0.12em] text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
+                className="flex h-12 flex-col items-center justify-center gap-0.5 rounded-2xl border border-outline-variant bg-surface text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
               >
                 <Printer className="size-4" strokeWidth={2.5} />
-                <span>In</span>
+                <span className="text-[9.5px] font-black uppercase tracking-[0.1em]">In</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowSummary(false)}
-                className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-primary text-[10.5px] font-black uppercase tracking-[0.12em] text-on-primary shadow-md shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
+                className="flex h-12 flex-col items-center justify-center gap-0.5 rounded-2xl bg-primary text-on-primary shadow-md shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
               >
                 <Check className="size-4" strokeWidth={2.5} />
-                <span>Tiếp tục</span>
+                <span className="text-[9.5px] font-black uppercase tracking-[0.1em]">Tiếp tục</span>
               </button>
             </div>
           </BottomSheet>
         )}
       </AnimatePresence>
-
-      {/* PRINT HEADER */}
-      <div className="hidden print:block fixed inset-x-0 top-0 border-b-2 border-primary bg-white p-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-secondary">XOXO Luxury · Báo cáo phỏng vấn</p>
-        <h1 className="mt-1 font-display text-xl font-bold">
-          {session.candidateName || 'Ứng viên'} · {session.position}
-        </h1>
-        <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">
-          Ngày: {formatDateVN(session.date)} · Người PV: {session.interviewer || '________'} · Tổng điểm: {stats.overallPercent}/100
-        </p>
-      </div>
     </div>
   );
 }
@@ -1027,24 +1049,52 @@ function ScoreButton({
   );
 }
 
-function SummaryStat({
-  label,
-  value,
-  icon: Icon,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  icon: typeof TrendingUp;
-  highlight?: boolean;
-}) {
+function ScoreRing({ percent, tone }: { percent: number; tone: 'pass' | 'neutral' | 'fail' }) {
+  const radius = 32;
+  const circumference = 2 * Math.PI * radius;
+  const safePercent = Math.max(0, Math.min(100, percent));
+  const offset = circumference - (safePercent / 100) * circumference;
+  const trackClass =
+    tone === 'pass'
+      ? 'stroke-primary/15'
+      : tone === 'neutral'
+      ? 'stroke-tertiary/20'
+      : 'stroke-error/20';
+  const valueClass =
+    tone === 'pass'
+      ? 'stroke-primary'
+      : tone === 'neutral'
+      ? 'stroke-tertiary'
+      : 'stroke-error';
+  const textClass =
+    tone === 'pass'
+      ? 'text-primary'
+      : tone === 'neutral'
+      ? 'text-on-tertiary-container'
+      : 'text-on-error-container';
+
   return (
-    <div className={cn('rounded-2xl border bg-surface/85 p-2.5 backdrop-blur', highlight ? 'border-primary/30' : 'border-outline-variant')}>
-      <div className="flex items-center gap-1.5">
-        <Icon className={cn('size-3.5', highlight ? 'text-primary' : 'text-on-surface-variant')} strokeWidth={2.5} />
-        <span className="text-[9px] font-black uppercase tracking-[0.14em] text-on-surface-variant">{label}</span>
+    <div className="relative flex size-[76px] shrink-0 items-center justify-center rounded-full bg-surface shadow-sm ring-1 ring-outline-variant/40">
+      <svg viewBox="0 0 80 80" className="absolute inset-0 size-full -rotate-90">
+        <circle cx="40" cy="40" r={radius} fill="none" strokeWidth="6" className={trackClass} strokeLinecap="round" />
+        <motion.circle
+          cx="40"
+          cy="40"
+          r={radius}
+          fill="none"
+          strokeWidth="6"
+          strokeLinecap="round"
+          className={valueClass}
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </svg>
+      <div className="relative flex flex-col items-center leading-none">
+        <span className={cn('font-mono text-[18px] font-black tabular-nums', textClass)}>{safePercent}</span>
+        <span className="mt-0.5 text-[8px] font-black uppercase tracking-[0.16em] text-on-surface-variant">điểm</span>
       </div>
-      <p className="mt-1 font-mono text-[17px] font-black tabular-nums text-on-surface">{value}</p>
     </div>
   );
 }
