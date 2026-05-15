@@ -133,7 +133,7 @@ function formatMonth(date: Date) {
 }
 
 function shortName(name: string) {
-  return name.length > 13 ? `${name.slice(0, 11)}...` : name;
+  return name;
 }
 
 export default function Attendance() {
@@ -343,16 +343,16 @@ export default function Attendance() {
         )}
 
         <div className="overflow-auto">
-          <table className="min-w-[1320px] w-full border-collapse text-left">
+          <table className="min-w-[1680px] w-full border-separate border-spacing-0 text-left">
             <thead>
               <tr className="bg-[#fbf8ef] text-[11px] font-bold text-home-on-surface-variant">
-                <th className="sticky left-0 z-20 w-[150px] border-b border-r border-home-outline bg-[#fbf8ef] px-4 py-3">
+                <th className="sticky left-0 z-30 w-[180px] min-w-[180px] border-b border-r border-home-outline bg-[#fbf8ef] px-4 py-3 shadow-[8px_0_12px_-12px_rgba(0,0,0,0.35)]">
                   <div className="flex items-center gap-2">
                     Ca làm việc
                     <span className="flex size-4 items-center justify-center rounded-full border border-home-outline text-[11px]">+</span>
                   </div>
                 </th>
-                <th className="sticky left-[150px] z-20 w-[170px] border-b border-r border-home-outline bg-[#fbf8ef] px-4 py-3">
+                <th className="sticky left-[180px] z-30 w-[320px] min-w-[320px] border-b border-r border-home-outline bg-[#fbf8ef] px-4 py-3 shadow-[8px_0_12px_-12px_rgba(0,0,0,0.35)]">
                   <div className="flex items-center gap-2">
                     Nhân viên
                     <span className="flex size-4 items-center justify-center rounded-full border border-home-outline text-[11px]">+</span>
@@ -386,18 +386,18 @@ export default function Attendance() {
                 group.employees.map((user, index) => (
                   <tr key={`${group.id}-${user.id}`} className="text-[11px] hover:bg-[#fbf8ef]/70">
                     {index === 0 && (
-                      <td rowSpan={group.employees.length} className="sticky left-0 z-10 w-[150px] border-b border-r border-home-outline bg-white px-4 py-3 align-top">
+                      <td rowSpan={group.employees.length} className="sticky left-0 z-20 w-[180px] min-w-[180px] border-b border-r border-home-outline bg-white px-4 py-4 align-top shadow-[8px_0_12px_-12px_rgba(0,0,0,0.35)]">
                         <p className="font-black uppercase text-home-on-surface">{group.name}</p>
                         <p className="mt-1 text-[11px] font-semibold text-home-on-surface-variant">{group.time}</p>
                       </td>
                     )}
-                    <td className="sticky left-[150px] z-10 w-[170px] border-b border-r border-home-outline bg-white px-4 py-3">
+                    <td className="sticky left-[180px] z-20 w-[320px] min-w-[320px] border-b border-r border-home-outline bg-white px-4 py-3 shadow-[8px_0_12px_-12px_rgba(0,0,0,0.35)]">
                       <div className="flex items-center gap-2">
                         <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#f2ead9] text-home-primary">
                           <UserRound className="size-3.5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-black uppercase text-home-on-surface" title={user.name}>{shortName(user.name)}</p>
+                          <p className="whitespace-normal break-words font-black uppercase leading-4 text-home-on-surface" title={user.name}>{shortName(user.name)}</p>
                           <p className="truncate text-[10px] font-semibold text-home-on-surface-variant">{user.employee_code || user.timekeeping_code || user.email}</p>
                         </div>
                       </div>
