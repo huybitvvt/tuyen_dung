@@ -12,6 +12,7 @@ export interface AttendanceDbRecord {
   check_out: string | null;
   status: string | null;
   notes: string | null;
+  shift?: AttendanceShift;
   check_in_lat: number | null;
   check_in_lng: number | null;
   check_out_lat: number | null;
@@ -27,6 +28,12 @@ export interface AttendanceDbRecord {
 export interface EmployeeIdentity {
   id: string;
   name: string;
+}
+
+export interface AttendanceShift {
+  id: string;
+  name: string;
+  time: string;
 }
 
 export interface GeoPoint {
@@ -50,6 +57,7 @@ interface TimesheetRow {
 }
 
 interface AttendanceNotes {
+  attendanceShift?: AttendanceShift;
   checkInLocation?: GeoPoint;
   checkOutLocation?: GeoPoint;
   lastLocation?: GeoPoint;
@@ -189,6 +197,7 @@ function mapTimesheet(row: TimesheetRow): AttendanceDbRecord {
     check_out_lng: checkOutLocation?.lng ?? null,
     last_lat: lastLocation?.lat ?? null,
     last_lng: lastLocation?.lng ?? null,
+    shift: notes.attendanceShift,
     location_accuracy_m: lastLocation?.accuracy ?? null,
     location_captured_at: lastLocation?.capturedAt ?? null,
     created_at: row.created_at,
@@ -226,11 +235,12 @@ export async function getAttendanceRecordsInRange(startDate: string, endDate: st
   return ((data || []) as TimesheetRow[]).map(mapTimesheet);
 }
 
-export async function checkIn(employee: EmployeeIdentity, location: GeoPoint) {
+export async function checkIn(employee: EmployeeIdentity, location: GeoPoint, shift?: AttendanceShift) {
   const client = assertSupabase();
   const existing = await getTodayAttendance(employee);
   const notes = stringifyNotes({
     ...parseNotes(existing?.notes || null),
+    ...(shift ? { attendanceShift: shift } : {}),
     checkInLocation: location,
     lastLocation: location,
   });

@@ -15,6 +15,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { appSupabase } from '../lib/supabase';
 import {
+  AttendanceShift,
   AttendanceDbRecord,
   checkIn,
   checkOut,
@@ -51,6 +52,7 @@ interface TimesheetRecord {
   check_in: string | null;
   check_out: string | null;
   status: string | null;
+  notes: string | null;
 }
 
 interface ShiftRow {
@@ -65,6 +67,11 @@ interface ShiftRow {
 }
 
 const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const defaultAttendanceShifts: AttendanceShift[] = [
+  { id: 'sale', name: 'CA SALE', time: '09:00 - 21:00' },
+  { id: 'technical', name: 'CA KỸ THUẬT', time: '08:00 - 17:30' },
+  { id: 'office', name: 'CA VĂN PHÒNG', time: '08:00 - 17:30' },
+];
 
 function monthBounds(date: Date) {
   const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -90,15 +97,19 @@ function userSearchText(user: AttendanceUser) {
   return [user.name, user.email, user.employee_code, user.timekeeping_code, user.department, user.role].filter(Boolean).join(' ').toLowerCase();
 }
 
-function shiftForUser(user: AttendanceUser) {
-  const source = `${user.role || ''} ${user.department || ''}`.toLowerCase();
+function shiftForSource(sourceValue: string) {
+  const source = sourceValue.toLowerCase();
   if (source.includes('sale') || source.includes('kinh doanh')) {
-    return { id: 'sale', name: 'CA SALE', time: '09:00 - 21:00' };
+    return defaultAttendanceShifts[0];
   }
   if (source.includes('tech') || source.includes('kỹ thuật') || source.includes('ky thuat')) {
-    return { id: 'technical', name: 'CA KỸ THUẬT', time: '08:00 - 17:30' };
+    return defaultAttendanceShifts[1];
   }
-  return { id: 'office', name: 'CA VĂN PHÒNG', time: '08:00 - 17:30' };
+  return defaultAttendanceShifts[2];
+}
+
+function shiftForUser(user: AttendanceUser) {
+  return shiftForSource(`${user.role || ''} ${user.department || ''}`);
 }
 
 function formatShiftTime(shift: ShiftRow) {
@@ -116,15 +127,31 @@ function shiftFromRow(shift: ShiftRow) {
   };
 }
 
+function getRecordShift(record: TimesheetRecord | undefined) {
+  if (!record?.notes) return null;
+
+  try {
+    const parsed = JSON.parse(record.notes);
+    const shift = parsed?.attendanceShift;
+    if (shift?.id && shift?.name && shift?.time) return shift as AttendanceShift;
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function groupUsersByShift(users: AttendanceUser[], records: TimesheetRecord[], shifts: ShiftRow[]) {
   const map = new Map<string, ShiftGroup>();
   const shiftMap = new Map(shifts.map((shift) => [shift.id, shiftFromRow(shift)]));
 
   users.forEach((user) => {
-    const userShiftId = records.find((record) => record.user_id === user.id)?.shift_id;
-    const shift = userShiftId && shiftMap.has(userShiftId)
+    const userRecord = records.find((record) => record.user_id === user.id);
+    const userShiftId = userRecord?.shift_id;
+    const noteShift = getRecordShift(userRecord);
+    const shift = noteShift || (userShiftId && shiftMap.has(userShiftId)
       ? shiftMap.get(userShiftId)!
-      : shiftForUser(user);
+      : shiftForUser(user));
     const current = map.get(shift.id) || { ...shift, employees: [] };
     current.employees.push(user);
     map.set(shift.id, current);
@@ -171,6 +198,7 @@ export default function Attendance() {
   const [loading, setLoading] = useState(true);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceReloadKey, setAttendanceReloadKey] = useState(0);
+  const [selectedShiftId, setSelectedShiftId] = useState('office');
   const [error, setError] = useState<string | null>(null);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [attendanceMessage, setAttendanceMessage] = useState<string | null>(null);
@@ -179,6 +207,8 @@ export default function Attendance() {
     id: user.id,
     name: user.name || user.email,
   } : null, [user]);
+  const suggestedShift = useMemo(() => shiftForSource(`${user?.role || ''} ${user?.department || ''}`), [user?.role, user?.department]);
+  const selectedShift = defaultAttendanceShifts.find((shift) => shift.id === selectedShiftId) || suggestedShift;
 
   useEffect(() => {
     let cancelled = false;
@@ -203,6 +233,10 @@ export default function Attendance() {
   }, [employeeIdentity]);
 
   useEffect(() => {
+    setSelectedShiftId(todayRecord?.shift?.id || suggestedShift.id);
+  }, [suggestedShift.id, todayRecord?.shift?.id]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadData() {
@@ -215,7 +249,7 @@ export default function Attendance() {
           appSupabase
             ? appSupabase
               .from('timesheets')
-              .select('id,user_id,shift_id,schedule_date,check_in,check_out,status')
+              .select('id,user_id,shift_id,schedule_date,check_in,check_out,status,notes')
               .gte('schedule_date', range.startKey)
               .lte('schedule_date', range.endKey)
               .order('schedule_date', { ascending: true })
@@ -237,27 +271,7 @@ export default function Attendance() {
         if (timesheetsResult.error) throw timesheetsResult.error;
         if (usersResult.error) throw usersResult.error;
 
-        const timesheets = (timesheetsResult.data || []) as TimesheetRecord[];
-
-        if (!timesheets.length) {
-          const latestResult = appSupabase
-            ? await appSupabase
-              .from('timesheets')
-              .select('schedule_date')
-              .order('schedule_date', { ascending: false })
-              .limit(1)
-              .maybeSingle<{ schedule_date: string }>()
-            : { data: null };
-          if (!cancelled && latestResult.data?.schedule_date) {
-            const latestDate = new Date(`${latestResult.data.schedule_date}T00:00:00`);
-            if (!sameMonth(latestDate, selectedMonth)) {
-              setSelectedMonth(latestDate);
-              return;
-            }
-          }
-        }
-
-        setRecords(timesheets);
+        setRecords((timesheetsResult.data || []) as TimesheetRecord[]);
         setShifts(((shiftsResult.data || []) as ShiftRow[]));
         setUsers((usersResult.data || []) as AttendanceUser[]);
       } catch (err) {
@@ -317,10 +331,10 @@ export default function Attendance() {
 
     try {
       const location = await getBrowserLocation();
-      const record = await checkIn(employeeIdentity, location);
+      const record = await checkIn(employeeIdentity, location, selectedShift);
       setTodayRecord(record);
       setAttendanceReloadKey((value) => value + 1);
-      setAttendanceMessage(`Đã check-in lúc ${formatTime(record.check_in)}.`);
+      setAttendanceMessage(`Đã check-in ${selectedShift.name} lúc ${formatTime(record.check_in)}.`);
     } catch (err) {
       setAttendanceError(err instanceof Error ? err.message : 'Không check-in được.');
     } finally {
@@ -393,7 +407,20 @@ export default function Attendance() {
             </div>
           </div>
 
-          <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto] xl:min-w-[720px]">
+          <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto] xl:min-w-[860px]">
+            <label className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Ca làm việc</span>
+              <select
+                value={selectedShiftId}
+                onChange={(event) => setSelectedShiftId(event.target.value)}
+                disabled={Boolean(todayRecord?.check_in)}
+                className="mt-1 w-full bg-transparent text-sm font-black text-home-on-surface outline-none disabled:opacity-70"
+              >
+                {defaultAttendanceShifts.map((shift) => (
+                  <option key={shift.id} value={shift.id}>{shift.name} • {shift.time}</option>
+                ))}
+              </select>
+            </label>
             <div className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Giờ vào</p>
               <p className="mt-1 font-mono text-base font-black text-home-on-surface">{formatTime(todayRecord?.check_in || null)}</p>
