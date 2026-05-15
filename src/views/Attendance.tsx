@@ -4,13 +4,25 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Loader2,
+  LogIn,
+  LogOut,
+  MapPin,
   MoreHorizontal,
   Search,
   UserRound,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { appSupabase } from '../lib/supabase';
-import { getTodayKey } from '../lib/attendanceService';
+import {
+  AttendanceDbRecord,
+  checkIn,
+  checkOut,
+  getBrowserLocation,
+  getTodayAttendance,
+  getTodayKey,
+} from '../lib/attendanceService';
+import { useAuth } from '../lib/authStore';
 import { cn } from '../lib/utils';
 
 interface AttendanceUser {
@@ -136,15 +148,58 @@ function shortName(name: string) {
   return name;
 }
 
+function formatTime(value: string | null) {
+  if (!value) return '--:--';
+  return new Date(value).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function attendanceLabel(record: AttendanceDbRecord | null) {
+  if (!record?.check_in_at) return 'Chưa vào ca';
+  if (record.check_out_at) return 'Đã tan ca';
+  return 'Đang làm việc';
+}
+
 export default function Attendance() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<AttendanceUser[]>([]);
   const [records, setRecords] = useState<TimesheetRecord[]>([]);
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
+  const [todayRecord, setTodayRecord] = useState<AttendanceDbRecord | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<'shift' | 'employee'>('shift');
   const [loading, setLoading] = useState(true);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [attendanceMessage, setAttendanceMessage] = useState<string | null>(null);
+
+  const employeeIdentity = useMemo(() => user ? {
+    id: user.employeeCode || user.id,
+    name: user.name || user.email,
+  } : null, [user]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTodayRecord() {
+      if (!employeeIdentity) return;
+      setAttendanceError(null);
+
+      try {
+        const record = await getTodayAttendance(employeeIdentity);
+        if (!cancelled) setTodayRecord(record);
+      } catch (err) {
+        if (!cancelled) setAttendanceError(err instanceof Error ? err.message : 'Không tải được trạng thái chấm công hôm nay.');
+      }
+    }
+
+    void loadTodayRecord();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [employeeIdentity]);
 
   useEffect(() => {
     let cancelled = false;
@@ -252,6 +307,44 @@ export default function Attendance() {
     setSelectedMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   }
 
+  async function handleCheckIn() {
+    if (!employeeIdentity) return;
+
+    setAttendanceLoading(true);
+    setAttendanceError(null);
+    setAttendanceMessage(null);
+
+    try {
+      const location = await getBrowserLocation();
+      const record = await checkIn(employeeIdentity, location);
+      setTodayRecord(record);
+      setAttendanceMessage(`Đã check-in lúc ${formatTime(record.check_in_at)}.`);
+    } catch (err) {
+      setAttendanceError(err instanceof Error ? err.message : 'Không check-in được.');
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }
+
+  async function handleCheckOut() {
+    if (!todayRecord) return;
+
+    setAttendanceLoading(true);
+    setAttendanceError(null);
+    setAttendanceMessage(null);
+
+    try {
+      const location = await getBrowserLocation();
+      const record = await checkOut(todayRecord, location);
+      setTodayRecord(record);
+      setAttendanceMessage(`Đã check-out lúc ${formatTime(record.check_out_at)}.`);
+    } catch (err) {
+      setAttendanceError(err instanceof Error ? err.message : 'Không check-out được.');
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }
+
   function renderCell(user: AttendanceUser, date: Date) {
     const dateKey = getTodayKey(date);
     const record = findRecord(user, dateKey);
@@ -279,6 +372,69 @@ export default function Attendance() {
 
   return (
     <div className="page-shell max-w-[1800px]">
+      <section className="section-card overflow-hidden p-3.5 md:p-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-start gap-3">
+            <div className={cn(
+              'flex size-11 shrink-0 items-center justify-center rounded-lg text-white shadow-sm',
+              todayRecord?.check_out_at ? 'bg-primary' : todayRecord?.check_in_at ? 'bg-secondary' : 'bg-home-primary',
+            )}>
+              <Clock3 className="size-5" />
+            </div>
+            <div>
+              <p className="eyebrow">Chấm công của tôi</p>
+              <h1 className="mt-1 text-base font-black text-home-on-surface md:text-lg">{attendanceLabel(todayRecord)}</h1>
+              <p className="mt-1 text-xs font-semibold leading-5 text-home-on-surface-variant">
+                Nhân viên: <span className="text-home-on-surface">{employeeIdentity?.name}</span> • Mã: <span className="font-mono text-home-on-surface">{employeeIdentity?.id}</span> • Ngày {todayKey}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto] xl:min-w-[720px]">
+            <div className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Giờ vào</p>
+              <p className="mt-1 font-mono text-base font-black text-home-on-surface">{formatTime(todayRecord?.check_in_at || null)}</p>
+            </div>
+            <div className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Giờ ra</p>
+              <p className="mt-1 font-mono text-base font-black text-home-on-surface">{formatTime(todayRecord?.check_out_at || null)}</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row md:flex-col xl:flex-row">
+              <button
+                onClick={handleCheckIn}
+                disabled={attendanceLoading || Boolean(todayRecord?.check_in_at)}
+                className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {attendanceLoading ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+                Check-in
+              </button>
+              <button
+                onClick={handleCheckOut}
+                disabled={attendanceLoading || !todayRecord?.check_in_at || Boolean(todayRecord?.check_out_at)}
+                className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {attendanceLoading ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
+                Check-out
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {(attendanceError || attendanceMessage || todayRecord?.location_captured_at) && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-home-outline bg-home-bg px-3 py-2 text-xs font-semibold text-home-on-surface-variant">
+            {attendanceMessage && <span className="font-bold text-primary">{attendanceMessage}</span>}
+            {attendanceError && <span className="font-bold text-[#c55d24]">{attendanceError}</span>}
+            {todayRecord?.location_captured_at && (
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-primary" />
+                GPS đã ghi lúc {formatTime(todayRecord.location_captured_at)}
+                {todayRecord.location_accuracy_m ? ` • sai số khoảng ${Math.round(todayRecord.location_accuracy_m)}m` : ''}
+              </span>
+            )}
+          </div>
+        )}
+      </section>
+
       <section className="overflow-hidden rounded-lg border border-home-outline bg-home-surface shadow-sm shadow-home-primary/5">
         <div className="flex flex-col gap-3 border-b border-home-outline bg-[#fffdf7] p-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
