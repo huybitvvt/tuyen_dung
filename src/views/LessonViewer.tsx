@@ -16,7 +16,10 @@ import { useState, useEffect } from 'react';
 function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null;
 
-  const value = url.trim();
+  let value = url.trim();
+  if (!/^https?:\/\//i.test(value) && /(^|\.)youtu(\.be|be\.com)|youtube-nocookie\.com/i.test(value)) {
+    value = `https://${value}`;
+  }
 
   try {
     const parsed = new URL(value);
@@ -26,24 +29,28 @@ function getYouTubeEmbedUrl(url: string): string | null {
 
     if (host === 'youtu.be') {
       videoId = pathParts[0] || null;
-    } else if (host === 'youtube.com' || host === 'm.youtube.com') {
+    } else if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com' || host === 'youtube-nocookie.com') {
       if (parsed.pathname === '/watch') {
         videoId = parsed.searchParams.get('v');
-      } else if (['embed', 'shorts', 'live'].includes(pathParts[0])) {
+      } else if (['embed', 'shorts', 'live', 'v'].includes(pathParts[0])) {
         videoId = pathParts[1] || null;
       }
     }
 
-    if (videoId) {
-      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+    if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+      return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1`;
     }
   } catch {
     if (/^[a-zA-Z0-9_-]{11}$/.test(value)) {
-      return `https://www.youtube.com/embed/${value}?rel=0&modestbranding=1`;
+      return `https://www.youtube-nocookie.com/embed/${value}?rel=0&modestbranding=1&playsinline=1`;
     }
   }
 
   return null;
+}
+
+function isDirectVideoUrl(url: string) {
+  return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url.trim());
 }
 
 export default function LessonViewer() {
@@ -61,6 +68,7 @@ export default function LessonViewer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoSource = lesson?.type === 'video' ? lesson.videoUrl || lesson.contentUrl : '';
   const embedUrl = videoSource ? getYouTubeEmbedUrl(videoSource) : null;
+  const directVideoUrl = videoSource && !embedUrl && isDirectVideoUrl(videoSource) ? videoSource : null;
 
   if (!course || !lesson) {
     return (
@@ -76,9 +84,8 @@ export default function LessonViewer() {
     updateLessonProgress(lesson.id, nextPercent, Math.round((lesson.duration * nextPercent) / 100));
   }
 
-  function handlePlayVideo() {
+  function handleVideoStarted() {
     setIsPlaying(true);
-    // Auto update progress when video starts
     if (percent < 25) {
       updateLessonProgress(lesson.id, 25, Math.round((lesson.duration * 25) / 100));
     }
@@ -128,18 +135,27 @@ export default function LessonViewer() {
             </nav>
 
             <div className={cn(
-              'w-full rounded-2xl overflow-hidden aspect-video shadow-2xl relative group',
+              'w-full overflow-hidden rounded-lg aspect-video shadow-2xl shadow-[#4f6540]/10 relative group ring-1 ring-[#e5dfd2]',
               lesson.type === 'video' ? 'bg-black' : 'bg-surface'
             )}>
               {lesson.type === 'video' ? (
                 <>
-                  {embedUrl && isPlaying ? (
+                  {embedUrl ? (
                     <iframe
-                      src={`${embedUrl}&autoplay=1`}
+                      src={embedUrl}
                       className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
+                      loading="lazy"
+                      onLoad={handleVideoStarted}
                       title={lesson.title}
+                    />
+                  ) : directVideoUrl ? (
+                    <video
+                      src={directVideoUrl}
+                      controls
+                      className="h-full w-full bg-black"
+                      onPlay={handleVideoStarted}
                     />
                   ) : (
                     <>
@@ -149,11 +165,14 @@ export default function LessonViewer() {
                       )} />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <button 
-                          onClick={embedUrl ? handlePlayVideo : simulateWatch} 
+                          onClick={simulateWatch} 
                           className="relative z-10 w-16 h-16 bg-primary/95 text-on-primary rounded-full flex items-center justify-center shadow-2xl hover:scale-105 transition-transform backdrop-blur-sm"
                         >
                           <Play className="size-8 fill-current ml-1" />
                         </button>
+                      </div>
+                      <div className="absolute inset-x-4 bottom-16 rounded-md border border-white/20 bg-black/45 px-3 py-2 text-center text-xs font-bold text-white backdrop-blur">
+                        Link video chưa đúng định dạng YouTube hoặc file video trực tiếp.
                       </div>
                     </>
                   )}
@@ -173,7 +192,7 @@ export default function LessonViewer() {
                 </>
               )}
 
-              {(!isPlaying || lesson.type !== 'video') && (
+              {(!isPlaying || lesson.type !== 'video') && !embedUrl && !directVideoUrl && (
                 <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col gap-3">
                   <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
                     <div className="h-full bg-primary" style={{ width: `${percent}%` }}></div>

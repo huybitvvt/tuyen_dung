@@ -1,13 +1,16 @@
 import {
+  BarChart3,
   BookOpenCheck,
   BriefcaseBusiness,
-  CheckCircle2,
   ChevronRight,
   ClipboardList,
   FileQuestion,
   Fingerprint,
   Gauge,
   GraduationCap,
+  LineChart,
+  PieChart,
+  TrendingUp,
   UserCheck,
   Users,
 } from 'lucide-react';
@@ -18,6 +21,73 @@ import { candidateStages, useCrm } from '../lib/crmStore';
 import { useEffect, useState } from 'react';
 import { appSupabase } from '../lib/supabase';
 import { getTodayKey } from '../lib/attendanceService';
+
+function SparklineChart({ values }: { values: number[] }) {
+  const width = 280;
+  const height = 92;
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(max - min, 1);
+  const points = values.map((value, index) => {
+    const x = (index / Math.max(values.length - 1, 1)) * width;
+    const y = height - ((value - min) / range) * (height - 18) - 9;
+    return `${x},${y}`;
+  });
+  const areaPoints = `0,${height} ${points.join(' ')} ${width},${height}`;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-24 w-full overflow-visible" role="img" aria-label="Biểu đồ xu hướng vận hành">
+      <defs>
+        <linearGradient id="dashboardLineFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#4f6540" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#4f6540" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={areaPoints} fill="url(#dashboardLineFill)" />
+      <polyline
+        points={points.join(' ')}
+        fill="none"
+        stroke="#4f6540"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="4"
+      />
+      {points.map((point, index) => {
+        const [x, y] = point.split(',').map(Number);
+        return <circle key={index} cx={x} cy={y} r="4" fill="#fffdf7" stroke="#4f6540" strokeWidth="3" />;
+      })}
+    </svg>
+  );
+}
+
+function DonutChart({ value }: { value: number }) {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(Math.max(value, 0), 100) / 100) * circumference;
+
+  return (
+    <div className="relative flex size-32 items-center justify-center">
+      <svg viewBox="0 0 112 112" className="-rotate-90">
+        <circle cx="56" cy="56" r={radius} fill="none" stroke="#f2ead9" strokeWidth="12" />
+        <circle
+          cx="56"
+          cy="56"
+          r={radius}
+          fill="none"
+          stroke="#c9823a"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          strokeWidth="12"
+        />
+      </svg>
+      <div className="absolute text-center">
+        <p className="font-mono text-2xl font-black leading-none text-on-surface">{value}%</p>
+        <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-on-surface-variant">LMS</p>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { courses, lessons, progress, enrollments, currentUser, questions, results, recruitmentJobs, candidates, candidateActivities, candidateInterviews } = useCrm();
@@ -72,6 +142,9 @@ export default function Dashboard() {
   const passRate = results.length ? Math.round((results.filter((item) => item.passed).length / results.length) * 100) : 0;
   const activeCandidates = candidates.filter((candidate) => candidate.stage !== 'official' && candidate.stage !== 'rejected').length;
   const hiredCandidates = candidates.filter((candidate) => candidate.stage === 'official').length;
+  const openJobs = recruitmentJobs.filter((job) => job.status === 'Đang mở').length;
+  const scheduledInterviews = candidateInterviews.filter((interview) => !interview.result).length;
+  const recentActivity = candidateActivities.length;
   const departments = ['Sale', 'Kỹ thuật', 'Marketing'].map((department) => {
     const rows = courseProgress.filter((item) => item.course.department === department);
     return {
@@ -87,11 +160,28 @@ export default function Dashboard() {
     { label: 'Quiz pass', value: results.length ? `${passRate}%` : '0%', detail: `${results.length}/${questions.length} kết quả`, icon: FileQuestion, tone: 'bg-tertiary-container/15 text-tertiary' },
     { label: 'Ứng viên', value: activeCandidates, detail: `${hiredCandidates} chính thức`, icon: Users, tone: 'bg-primary-fixed text-on-primary-fixed' },
   ];
+  const operationsTrend = [
+    courses.length * 8,
+    enrollments.length * 12,
+    Math.max(completionRate, 8),
+    activeCandidates * 14,
+    Math.max(attendanceStats.checkedInToday * 16, 10),
+    Math.max(attendanceStats.checkedOutToday * 18, attendanceStats.workingNow * 12, 12),
+  ];
+  const pipelineBars = candidateStages
+    .map((stage) => ({
+      label: stage.label,
+      value: candidates.filter((candidate) => candidate.stage === stage.id).length,
+    }))
+    .filter((item) => item.value > 0)
+    .slice(0, 5);
+  const maxPipelineValue = Math.max(...pipelineBars.map((item) => item.value), 1);
 
   return (
     <div className="page-shell">
       <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-        <div className="p-3.5 md:p-5">
+        <div className="grid gap-0 xl:grid-cols-[1fr_360px]">
+          <div className="p-3.5 md:p-5">
           <p className="eyebrow mb-2">Bảng điều hành nhân sự</p>
           <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
             <div>
@@ -115,6 +205,33 @@ export default function Dashboard() {
                 <Fingerprint className="size-4" />
                 Chấm công
               </Link>
+            </div>
+          </div>
+          </div>
+          <div className="border-t border-home-outline bg-[#fbf8ef] p-3.5 xl:border-l xl:border-t-0">
+            <div className="rounded-lg border border-home-outline bg-home-surface p-3 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="eyebrow">Nhịp hôm nay</p>
+                  <p className="mt-1 text-sm font-black text-on-surface">Vận hành tổng quan</p>
+                </div>
+                <TrendingUp className="size-5 text-primary" />
+              </div>
+              <SparklineChart values={operationsTrend} />
+              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-md bg-primary-fixed p-2">
+                  <p className="text-sm font-black text-primary">{openJobs}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Job mở</p>
+                </div>
+                <div className="rounded-md bg-secondary-container p-2">
+                  <p className="text-sm font-black text-secondary">{scheduledInterviews}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">PV</p>
+                </div>
+                <div className="rounded-md bg-surface-container-low p-2">
+                  <p className="text-sm font-black text-on-surface">{recentActivity}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Log</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -164,6 +281,65 @@ export default function Dashboard() {
             </div>
           </div>
         ))}
+      </section>
+
+      <section className="grid gap-3 lg:grid-cols-[1fr_0.82fr_1fr]">
+        <div className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="eyebrow">Xu hướng</p>
+              <h2 className="mt-1 text-base font-black text-on-surface">Hiệu suất vận hành</h2>
+            </div>
+            <LineChart className="size-5 text-primary" />
+          </div>
+          <SparklineChart values={operationsTrend} />
+          <div className="mt-3 flex items-center justify-between rounded-md border border-home-outline bg-home-bg px-3 py-2">
+            <span className="text-xs font-bold text-on-surface-variant">Đào tạo, tuyển dụng, chấm công</span>
+            <span className="font-mono text-sm font-black text-primary">+{Math.max(completionRate, activeCandidates * 5)}%</span>
+          </div>
+        </div>
+
+        <div className="section-card flex items-center gap-4 p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <DonutChart value={completionRate} />
+          <div className="min-w-0">
+            <div className="mb-1 flex items-center gap-2">
+              <PieChart className="size-4 text-secondary" />
+              <p className="eyebrow">Hoàn thành</p>
+            </div>
+            <h2 className="mt-1 text-base font-black text-on-surface">Tiến độ LMS</h2>
+            <p className="mt-2 text-xs font-semibold leading-5 text-on-surface-variant">
+              {enrollments.length} lượt gán khóa, {courses.length} khóa đang theo dõi.
+            </p>
+          </div>
+        </div>
+
+        <div className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="eyebrow">Pipeline</p>
+              <h2 className="mt-1 text-base font-black text-on-surface">Trạng thái nổi bật</h2>
+            </div>
+            <BarChart3 className="size-5 text-primary" />
+          </div>
+          <div className="space-y-3">
+            {pipelineBars.map((item) => (
+              <div key={item.label}>
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <span className="truncate text-xs font-black text-on-surface">{item.label}</span>
+                  <span className="font-mono text-xs font-black text-on-surface-variant">{item.value}</span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-surface-container">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(item.value / maxPipelineValue) * 100}%` }}
+                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <div className="grid gap-3 md:gap-4 lg:grid-cols-[0.95fr_1.05fr]">
