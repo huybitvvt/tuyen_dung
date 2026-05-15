@@ -8,7 +8,8 @@ import {
   Menu, 
   ChevronRight,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Fingerprint
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -23,6 +24,7 @@ import QuizScreen from './views/QuizScreen';
 import RecruitmentDashboard from './views/RecruitmentDashboard';
 import CandidateList from './views/CandidateList';
 import CandidateProfile from './views/CandidateProfile';
+import Attendance from './views/Attendance';
 
 function BottomNav() {
   const location = useLocation();
@@ -30,6 +32,7 @@ function BottomNav() {
     { path: '/', label: 'Tổng quan', icon: LayoutDashboard },
     { path: '/training', label: 'Đào tạo', icon: GraduationCap },
     { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound },
+    { path: '/attendance', label: 'Chấm công', icon: Fingerprint },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
@@ -95,6 +98,7 @@ function Sidebar() {
     { path: '/', label: 'Tổng quan', icon: LayoutDashboard, count: null },
     { path: '/training', label: 'Đào tạo', icon: GraduationCap, count: courses.length },
     { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound, count: candidates.length },
+    { path: '/attendance', label: 'Chấm công', icon: Fingerprint, count: null },
     { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
@@ -195,6 +199,7 @@ export default function App() {
           <Route path="/recruitment" element={<MainLayout><RecruitmentDashboard /></MainLayout>} />
           <Route path="/recruitment/candidates" element={<MainLayout><CandidateList /></MainLayout>} />
           <Route path="/recruitment/candidate/:id" element={<MainLayout hideNav><CandidateProfile /></MainLayout>} />
+          <Route path="/attendance" element={<MainLayout><Attendance /></MainLayout>} />
           <Route path="/settings" element={<MainLayout><div className="p-4">Cài đặt (Coming soon)</div></MainLayout>} />
         </Routes>
       </BrowserRouter>

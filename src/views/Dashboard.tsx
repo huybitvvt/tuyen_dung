@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ClipboardList,
   FileQuestion,
+  Fingerprint,
   Gauge,
   GraduationCap,
   UserCheck,
@@ -14,9 +15,45 @@ import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { candidateStages, useCrm } from '../lib/crmStore';
+import { useEffect, useState } from 'react';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { getAttendanceRecordsInRange, getTodayKey } from '../lib/attendanceService';
 
 export default function Dashboard() {
   const { courses, lessons, progress, enrollments, currentUser, questions, results, recruitmentJobs, candidates, candidateActivities, candidateInterviews } = useCrm();
+  const [attendanceStats, setAttendanceStats] = useState({
+    checkedInToday: 0,
+    workingNow: 0,
+    checkedOutToday: 0,
+  });
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    let cancelled = false;
+
+    async function loadAttendanceStats() {
+      try {
+        const today = getTodayKey();
+        const rows = await getAttendanceRecordsInRange(today, today);
+        if (cancelled) return;
+
+        setAttendanceStats({
+          checkedInToday: new Set(rows.filter((row) => row.check_in_at).map((row) => row.employee_id)).size,
+          workingNow: rows.filter((row) => row.status === 'working').length,
+          checkedOutToday: rows.filter((row) => row.status === 'checked_out').length,
+        });
+      } catch {
+        setAttendanceStats({ checkedInToday: 0, workingNow: 0, checkedOutToday: 0 });
+      }
+    }
+
+    void loadAttendanceStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const courseProgress = courses.map((course) => {
     const courseLessons = lessons.filter((lesson) => lesson.courseId === course.id);
@@ -56,10 +93,10 @@ export default function Dashboard() {
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
               <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:mt-3 md:text-sm md:leading-6">
-                Theo dõi tiến độ học, chấm quiz, quản lý pipeline ứng viên, lịch phỏng vấn và chuyển ứng viên nhận việc thành nhân viên.
+                Theo dõi tiến độ học, pipeline ứng viên và chấm công GPS bằng Supabase trong cùng một giao diện.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2 md:flex">
+            <div className="grid grid-cols-3 gap-2 md:flex">
               <Link to="/training" className="btn-primary">
                 <BookOpenCheck className="size-4" />
                 LMS
@@ -68,10 +105,43 @@ export default function Dashboard() {
                 <BriefcaseBusiness className="size-4" />
                 Kanban
               </Link>
+              <Link to="/attendance" className="btn-secondary">
+                <Fingerprint className="size-4" />
+                Chấm công
+              </Link>
             </div>
           </div>
         </div>
       </section>
+
+      <Link to="/attendance" className="section-card flex flex-col gap-4 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-sm shadow-primary/20">
+            <Fingerprint className="size-6" />
+          </div>
+          <div>
+            <p className="eyebrow">Chấm công đã tích hợp</p>
+            <h2 className="mt-1 text-base font-black text-on-surface">Nhúng nguyên app chấm công cũ bằng iframe</h2>
+            <p className="mt-1 text-xs font-semibold text-on-surface-variant">
+              Giao diện và logic chấm công giữ nguyên, dữ liệu check-in/check-out đọc chung từ Supabase.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center md:min-w-80">
+          <div className="rounded-lg bg-surface-container-low px-3 py-2">
+            <p className="text-lg font-black text-on-surface">{attendanceStats.checkedInToday}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Đã vào</p>
+          </div>
+          <div className="rounded-lg bg-secondary-container px-3 py-2 text-on-secondary-container">
+            <p className="text-lg font-black">{attendanceStats.workingNow}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest">Đang làm</p>
+          </div>
+          <div className="rounded-lg bg-primary/10 px-3 py-2 text-primary">
+            <p className="text-lg font-black">{attendanceStats.checkedOutToday}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest">Đã ra</p>
+          </div>
+        </div>
+      </Link>
 
       <section className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
         {metricCards.map((metric) => (

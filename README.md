@@ -26,6 +26,7 @@ XOXO CRM is a mobile-friendly React/Vite prototype for managing two HR workflows
 
 - **Internal Training / LMS**: courses, lessons, videos, documents, assignments, progress tracking, and quiz pass/fail results.
 - **Recruitment / Kanban Pipeline**: jobs, candidates, CV/files, interviews, evaluation results, activity history, and a full 10-stage hiring process.
+- **Attendance**: employee check-in/check-out, GPS capture, and monthly attendance records stored in Supabase.
 
 > The GitHub URL shows the source code and project documentation. To view the actual app interface, open the live Vercel demo: **https://tuyen-dung-steel.vercel.app**
 
@@ -64,6 +65,14 @@ XOXO CRM is a mobile-friendly React/Vite prototype for managing two HR workflows
 - Interview scheduling and interview result recording.
 - Candidate conversion to employee when moved to the official stage.
 
+### Attendance Module
+
+- New `Chấm công` menu item at `/attendance`.
+- The original Jarviz Attendance app is embedded with an iframe so the old UI and behavior stay unchanged.
+- The embedded attendance app and this CRM use the same Supabase project/database.
+- The overview dashboard reads today's attendance counters from Supabase.
+- GPS permission is passed to the iframe with `allow="geolocation"`.
+
 ## Tech Stack
 
 - React 19
@@ -71,10 +80,11 @@ XOXO CRM is a mobile-friendly React/Vite prototype for managing two HR workflows
 - Vite
 - Tailwind CSS 4
 - React Router
+- Supabase JS
 - Lucide React icons
 - Motion
 - Vercel deployment
-- `localStorage` for demo persistence
+- `localStorage` for training and recruitment demo persistence
 
 ## Run Locally
 
@@ -98,6 +108,18 @@ npm run lint
 npm run build
 ```
 
+## Supabase Attendance Setup
+
+Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor, then set these variables in `.env.local` or in Vercel Environment Variables:
+
+```env
+VITE_SUPABASE_URL="https://YOUR_PROJECT_ID.supabase.co"
+VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+VITE_ATTENDANCE_IFRAME_URL="https://jarviz-attendance.vercel.app"
+```
+
+The local `.env.local` file is ignored by Git. The iframe URL should point to the deployed attendance app. Check-in, check-out, GPS, and the monthly attendance history are stored in Supabase table `attendance_records`, so both apps share the same data.
+
 ## Deployment
 
 This project is configured for Vercel as a Vite single-page app.
@@ -109,4 +131,4 @@ This project is configured for Vercel as a Vite single-page app.
 
 ## Notes
 
-This is a complete frontend prototype for demo and workflow validation based on the training and recruitment specification. For production use, it should be extended with a real backend/API, database, authentication, authorization, real file upload, and a deployment pipeline.
+This is a complete frontend prototype for demo and workflow validation based on the training and recruitment specification. The attendance module is integrated as an iframe of the original attendance app and shares the same Supabase database. For production use, it should be extended with authentication, authorization, stricter RLS policies, real file upload, and a deployment pipeline.
