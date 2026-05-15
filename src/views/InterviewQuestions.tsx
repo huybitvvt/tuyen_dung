@@ -467,8 +467,7 @@ export default function InterviewQuestions() {
   }
 
   return (
-    <div className="iq-stage">
-      <div className="iq-page relative">
+    <div className="iq-page relative">
       {/* HERO */}
       <section className="iq-hero relative overflow-hidden">
         <div className="absolute inset-0 -z-0 bg-gradient-to-br from-primary/12 via-transparent to-secondary/15" />
@@ -787,8 +786,8 @@ export default function InterviewQuestions() {
         )}
       </div>
 
-      {/* FLOATING ACTION BAR (always shown - mobile-first design) */}
-      <div className="iq-action-bar fixed inset-x-0 z-40 mx-auto max-w-md border-t border-outline-variant/80 bg-surface/95 px-3 pt-2.5 shadow-[0_-8px_32px_rgba(79,101,64,0.08)] backdrop-blur-xl print:hidden">
+      {/* FLOATING ACTION BAR (sticky inside scroll container) */}
+      <div className="iq-action-bar z-40 mx-3 mt-4 rounded-2xl border border-outline-variant/80 bg-surface/95 px-3 pt-2.5 shadow-[0_-8px_32px_rgba(79,101,64,0.10)] backdrop-blur-xl print:hidden">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -989,7 +988,6 @@ export default function InterviewQuestions() {
         <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">
           Ngày: {formatDateVN(session.date)} · Người PV: {session.interviewer || '________'} · Tổng điểm: {stats.overallPercent}/100
         </p>
-      </div>
       </div>
     </div>
   );

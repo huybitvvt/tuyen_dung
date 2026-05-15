@@ -1,18 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { 
+import {
   Bell,
-  CalendarDays,
-  LayoutDashboard, 
-  GraduationCap, 
+  LayoutDashboard,
+  GraduationCap,
   LogOut,
-  UsersRound, 
-  Settings, 
-  Menu, 
-  ChevronRight,
+  UsersRound,
+  Settings,
   RotateCcw,
-  Search,
-  Trees
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -40,7 +35,7 @@ function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-around border-t border-home-outline bg-home-surface/95 px-1 backdrop-blur-md pb-safe md:hidden">
+    <nav className="app-bottom-nav z-50 flex h-14 w-full items-center justify-around border-t border-home-outline bg-home-surface/95 px-1 backdrop-blur-md">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
         const Icon = item.icon;
@@ -49,12 +44,14 @@ function BottomNav() {
             key={item.path}
             to={item.path}
             className={cn(
-              "flex min-w-14 flex-col items-center justify-center px-2 py-1 rounded transition-all duration-200",
-              isActive ? "bg-home-primary text-white shadow-sm" : "text-home-on-surface-variant hover:bg-home-bg hover:text-home-primary"
+              'flex min-w-14 flex-col items-center justify-center px-2 py-1 rounded-lg transition-all duration-200 active:scale-95',
+              isActive
+                ? 'bg-home-primary text-white shadow-sm shadow-home-primary/25'
+                : 'text-home-on-surface-variant hover:bg-home-bg hover:text-home-primary'
             )}
           >
-            <Icon className="size-5" />
-            <span className={cn("text-[9px] font-bold mt-0.5")}>{item.label}</span>
+            <Icon className="size-5" strokeWidth={isActive ? 2.4 : 2} />
+            <span className="mt-0.5 text-[9px] font-bold">{item.label}</span>
           </Link>
         );
       })}
@@ -65,157 +62,65 @@ function BottomNav() {
 function TopBar() {
   const { resetDemoData, currentUser } = useCrm();
   const { user, logout } = useAuth();
+  const initials = (user?.name || currentUser.name).slice(0, 2).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50 flex h-12 w-full items-center justify-between border-b border-home-outline bg-home-surface/88 px-3 shadow-sm backdrop-blur-md md:px-4">
-      <div className="flex items-center gap-3 min-w-0">
-        <button className="-ml-2 rounded-md p-2 text-home-on-surface-variant transition-colors hover:bg-home-bg md:hidden">
-          <Menu className="size-5" />
-        </button>
+    <header className="app-top-bar z-50 flex h-12 w-full items-center justify-between gap-2 border-b border-home-outline bg-home-surface/95 px-3 shadow-sm backdrop-blur-md">
+      <div className="flex min-w-0 items-center gap-2.5">
+        {user?.avatar ? (
+          <img src={user.avatar} alt="" className="size-8 shrink-0 rounded-full object-cover ring-2 ring-home-outline" />
+        ) : (
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-home-primary to-home-primary-light text-[10px] font-black text-white shadow-sm">
+            {initials}
+          </div>
+        )}
         <div className="min-w-0">
-          <p className="eyebrow hidden sm:block">People Operations</p>
-          <h1 className="truncate text-sm font-bold text-home-on-surface">
-            Dashboard quản lý nhân sự
-          </h1>
+          <p className="text-[9.5px] font-black uppercase tracking-[0.16em] text-home-on-surface-variant">XOXO CRM</p>
+          <p className="truncate text-[12.5px] font-black leading-tight text-home-on-surface">
+            Chào, {(user?.name || currentUser.name).split(' ').slice(-1)[0]}
+          </p>
         </div>
       </div>
-      <div className="relative hidden w-[260px] xl:w-[320px] lg:block">
-        <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-home-on-surface-variant" />
-        <input
-          type="text"
-          placeholder="Tìm kiếm..."
-          className="h-9 w-full rounded-md border border-home-outline bg-home-bg pl-9 pr-3 text-xs font-semibold outline-none transition focus:border-home-primary"
-        />
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="hidden h-9 items-center gap-2 rounded-md border border-home-outline bg-home-bg px-3 text-[11px] font-semibold text-home-on-surface-variant xl:flex">
-          <CalendarDays className="size-3.5 text-home-primary" />
-          30 ngày gần nhất
-        </div>
-        <button className="relative hidden text-home-on-surface-variant transition hover:text-home-primary sm:block">
-          <Bell className="size-5" />
-          <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-[#d45b37]" />
+      <div className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          className="relative flex size-9 items-center justify-center rounded-full text-home-on-surface-variant transition active:scale-90 hover:bg-home-bg hover:text-home-primary"
+          aria-label="Thông báo"
+        >
+          <Bell className="size-4.5" strokeWidth={2.2} />
+          <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-[#d45b37]" />
         </button>
         <button
           onClick={resetDemoData}
           title="Khôi phục dữ liệu demo"
-          className="btn-secondary h-9 px-3"
+          className="flex size-9 items-center justify-center rounded-full text-home-on-surface-variant transition active:scale-90 hover:bg-home-bg hover:text-home-primary"
+          aria-label="Reset"
         >
-          <RotateCcw className="size-4" />
-          <span className="hidden sm:inline">Reset</span>
+          <RotateCcw className="size-4" strokeWidth={2.2} />
         </button>
-        <div className="hidden items-center gap-2 rounded-md border border-home-outline bg-home-bg px-2 py-1.5 sm:flex">
-          {user?.avatar ? (
-            <img src={user.avatar} alt="" className="size-7 rounded-full object-cover" />
-          ) : (
-            <div className="flex size-7 items-center justify-center rounded-full bg-[#8f7a33] text-[10px] font-bold text-white">
-              {(user?.name || currentUser.name).slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <div className="hidden min-w-0 lg:block">
-            <p className="max-w-28 truncate text-xs font-bold text-home-on-surface">{user?.name || currentUser.name}</p>
-            <p className="max-w-28 truncate text-[10px] text-home-on-surface-variant">{user?.role || currentUser.role}</p>
-          </div>
-          <button onClick={logout} className="rounded p-1 text-home-on-surface-variant transition hover:bg-white hover:text-home-primary" title="Đăng xuất">
-            <LogOut className="size-4" />
-          </button>
-        </div>
+        <button
+          onClick={logout}
+          className="flex size-9 items-center justify-center rounded-full text-home-on-surface-variant transition active:scale-90 hover:bg-home-bg hover:text-home-primary"
+          aria-label="Đăng xuất"
+        >
+          <LogOut className="size-4" strokeWidth={2.2} />
+        </button>
       </div>
     </header>
   );
 }
 
-function Sidebar() {
-  const location = useLocation();
-  const { currentUser, courses, candidates } = useCrm();
-  const { user } = useAuth();
-  const navItems = [
-    { path: '/', label: 'Tổng quan', icon: LayoutDashboard, count: null },
-    { path: '/training', label: 'Đào tạo', icon: GraduationCap, count: courses.length },
-    { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound, count: candidates.length },
-    { path: '/settings', label: 'Cài đặt', icon: Settings },
-  ];
-
-  return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[204px] flex-col border-r border-home-outline bg-home-surface md:flex">
-      <div className="border-b border-home-outline px-5 py-5">
-        <div>
-          <h2 className="font-display text-[28px] font-bold leading-none tracking-[0.08em] text-home-on-surface">XOXO</h2>
-          <p className="mt-1 text-[10px] font-semibold tracking-[0.22em] text-home-on-surface-variant">CRM</p>
-        </div>
-      </div>
-
-      <div className="px-3.5 py-4">
-        <div className="mb-3 rounded-lg border border-home-outline bg-[#fbf7eb] p-3 text-center shadow-sm shadow-home-primary/5">
-          <div className="mx-auto mb-2.5 flex size-11 items-center justify-center rounded-md bg-[#f2ead9] text-home-primary">
-            <Trees className="size-5" />
-          </div>
-          <p className="font-display text-[15px] font-bold leading-none">People Ops</p>
-          <p className="mx-auto mt-1.5 max-w-[140px] text-[10px] leading-4 text-home-on-surface-variant">Đào tạo và tuyển dụng</p>
-        </div>
-      </div>
-      
-      <nav className="flex-1 space-y-1 px-3.5">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "group flex items-center gap-2.5 rounded-md px-3 py-2 text-[12px] font-semibold transition-all duration-300 ease-out",
-                isActive 
-                  ? "bg-home-primary text-white shadow-sm shadow-home-primary/20" 
-                  : "text-home-on-surface-variant hover:translate-x-0.5 hover:bg-home-bg hover:text-home-primary"
-              )}
-            >
-              <Icon className="size-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
-              {item.count !== null && item.count !== undefined && (
-                <span className={cn("ml-auto rounded px-1.5 py-0.5 text-[9px] font-black", isActive ? "bg-white/15 text-white" : "bg-home-bg text-home-on-surface-variant")}>
-                  {item.count}
-                </span>
-              )}
-              {isActive && <ChevronRight className={cn("size-4 shrink-0", item.count == null && "ml-auto")} />}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-auto border-t border-home-outline p-3.5">
-        <div className="rounded-lg border border-home-outline bg-[#fbf7eb] p-3">
-          <div className="flex items-center gap-3">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="" className="size-10 rounded-full object-cover" />
-            ) : (
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#8f7a33] text-[10px] font-bold text-white">
-                {(user?.name || currentUser.name).slice(0, 2).toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-xs font-bold text-home-on-surface">{user?.name || currentUser.name}</p>
-              <p className="mt-0.5 truncate text-[11px] font-semibold text-home-on-surface-variant">{user?.employeeCode || user?.department || currentUser.department}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
 function MainLayout({ children, hideNav = false }: { children: React.ReactNode, hideNav?: boolean }) {
   return (
-    <div className="min-h-screen bg-home-bg text-home-on-surface">
-      {!hideNav && <Sidebar />}
-      <div className={cn("flex min-h-screen flex-col", !hideNav && "md:ml-[204px]")}>
+    <div className="app-stage">
+      <div className="app-shell">
         {!hideNav && <TopBar />}
-        <main className="flex-1">
+        <main className="app-main flex-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={useLocation().pathname}
               initial={{ opacity: 0, y: 8, scale: 0.995 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.995 }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
