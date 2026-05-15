@@ -207,7 +207,7 @@ function Sidebar() {
 function MainLayout({ children, hideNav = false }: { children: React.ReactNode, hideNav?: boolean }) {
   return (
     <div className="min-h-screen bg-home-bg text-home-on-surface">
-      <Sidebar />
+      {!hideNav && <Sidebar />}
       <div className={cn("flex min-h-screen flex-col", !hideNav && "md:ml-[204px]")}>
         {!hideNav && <TopBar />}
         <main className="flex-1">
@@ -252,7 +252,7 @@ function AuthenticatedRoutes() {
       <Route path="/recruitment" element={<MainLayout><RecruitmentDashboard /></MainLayout>} />
       <Route path="/recruitment/candidates" element={<MainLayout><CandidateList /></MainLayout>} />
       <Route path="/recruitment/candidate/:id" element={<MainLayout hideNav><CandidateProfile /></MainLayout>} />
-      <Route path="/recruitment/interview-questions" element={<MainLayout><InterviewQuestions /></MainLayout>} />
+      <Route path="/recruitment/interview-questions" element={<MainLayout hideNav><InterviewQuestions /></MainLayout>} />
       <Route path="/settings" element={<MainLayout><div className="p-4">Cài đặt (Coming soon)</div></MainLayout>} />
     </Routes>
   );

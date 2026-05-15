@@ -118,17 +118,67 @@
   }
 
   .iq-page {
-    @apply mx-auto w-full max-w-3xl md:px-5 md:py-4 md:pb-12;
-    padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
+    @apply mx-auto w-full max-w-md;
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
   }
+
   @media (min-width: 768px) {
     .iq-page {
-      padding-bottom: 3rem;
+      max-width: 28rem;
+      width: 28rem;
+      height: calc(100vh - 3rem);
+      max-height: 900px;
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--color-home-outline);
+      border-radius: 2.25rem;
+      background: var(--color-home-bg);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 30px 60px -20px rgba(79, 101, 64, 0.20),
+        0 8px 24px -8px rgba(79, 101, 64, 0.12);
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      padding-bottom: 7rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(79, 101, 64, 0.25) transparent;
+    }
+    .iq-page::-webkit-scrollbar {
+      width: 6px;
+    }
+    .iq-page::-webkit-scrollbar-thumb {
+      background: rgba(79, 101, 64, 0.18);
+      border-radius: 3px;
+    }
+    .iq-page::-webkit-scrollbar-thumb:hover {
+      background: rgba(79, 101, 64, 0.32);
+    }
+  }
+
+  .iq-stage {
+    min-height: 100dvh;
+  }
+  @media (min-width: 768px) {
+    .iq-stage {
+      height: 100vh;
+      min-height: 100vh;
+      padding: 1.25rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201, 130, 58, 0.10), transparent 60%),
+        radial-gradient(ellipse 70% 50% at 50% 110%, rgba(79, 101, 64, 0.10), transparent 60%),
+        var(--color-home-bg);
+      overflow: hidden;
     }
   }
 
   .iq-hero {
-    @apply border-b border-home-outline bg-gradient-to-b from-home-surface to-home-bg md:rounded-3xl md:border md:shadow-sm;
+    @apply border-b border-home-outline bg-gradient-to-b from-home-surface to-home-bg;
   }
 
   .iq-section {
@@ -136,7 +186,22 @@
   }
 
   .iq-action-bar {
-    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: 0;
+    padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 768px) {
+    .iq-action-bar {
+      width: 28rem;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      bottom: 1.5rem;
+      max-width: 28rem;
+      border-bottom-left-radius: 2.25rem;
+      border-bottom-right-radius: 2.25rem;
+      padding-bottom: 0.625rem;
+    }
   }
 
   .section-card {

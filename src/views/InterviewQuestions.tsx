@@ -11,7 +11,6 @@ import {
   ChevronDown,
   Circle,
   ClipboardCheck,
-  ClipboardCopy,
   Crown,
   Download,
   FileText,
@@ -468,7 +467,8 @@ export default function InterviewQuestions() {
   }
 
   return (
-    <div className="iq-page relative">
+    <div className="iq-stage">
+      <div className="iq-page relative">
       {/* HERO */}
       <section className="iq-hero relative overflow-hidden">
         <div className="absolute inset-0 -z-0 bg-gradient-to-br from-primary/12 via-transparent to-secondary/15" />
@@ -787,8 +787,8 @@ export default function InterviewQuestions() {
         )}
       </div>
 
-      {/* MOBILE FLOATING ACTION BAR (above app's BottomNav) */}
-      <div className="iq-action-bar fixed inset-x-0 z-40 border-t border-outline-variant/80 bg-surface/95 px-3 pt-2.5 pb-2.5 shadow-[0_-8px_32px_rgba(79,101,64,0.08)] backdrop-blur-xl print:hidden md:hidden">
+      {/* FLOATING ACTION BAR (always shown - mobile-first design) */}
+      <div className="iq-action-bar fixed inset-x-0 z-40 mx-auto max-w-md border-t border-outline-variant/80 bg-surface/95 px-3 pt-2.5 shadow-[0_-8px_32px_rgba(79,101,64,0.08)] backdrop-blur-xl print:hidden">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -821,52 +821,6 @@ export default function InterviewQuestions() {
           >
             <Award className="size-4" strokeWidth={2.5} />
             <span>Kết quả</span>
-          </button>
-        </div>
-      </div>
-
-      {/* DESKTOP STICKY ACTION BAR */}
-      <div className="sticky bottom-3 z-30 mt-4 hidden print:hidden md:block">
-        <div className="section-card flex items-center gap-3 border-home-outline/70 bg-surface/95 p-3 shadow-md backdrop-blur">
-          <div className="flex flex-1 items-center gap-3">
-            <div className="rounded-xl bg-primary-fixed p-2.5">
-              <TrendingUp className="size-5 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between">
-                <span className="eyebrow">Tổng quan buổi PV</span>
-                <span className="font-mono text-[11px] font-black tabular-nums text-on-surface">
-                  {stats.answered}/{totalQuestions} câu · {stats.overallPercent}%
-                </span>
-              </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-container">
-                <motion.div
-                  initial={false}
-                  animate={{ width: `${stats.overallPercent}%` }}
-                  transition={{ duration: 0.4 }}
-                  className="h-full rounded-full bg-gradient-to-r from-primary via-primary-container to-secondary"
-                />
-              </div>
-            </div>
-          </div>
-          <button onClick={handleResetSession} className="btn-secondary flex h-9 items-center gap-1.5">
-            <RotateCcw className="size-4" />
-            <span className="text-[11px]">Bắt đầu mới</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => copyText(buildQuestionsText(), 'copied')}
-            className={cn(
-              'btn-secondary flex h-9 items-center gap-1.5',
-              copyState === 'copied' && 'border-primary/30 bg-primary-fixed text-primary'
-            )}
-          >
-            {copyState === 'copied' ? <CheckCircle2 className="size-4" /> : <ClipboardCopy className="size-4" />}
-            <span className="text-[11px]">{copyState === 'copied' ? 'Đã copy' : 'Copy câu hỏi'}</span>
-          </button>
-          <button onClick={() => setShowSummary(true)} className="btn-primary flex h-9 items-center gap-1.5">
-            <Award className="size-4" />
-            <span className="text-[11px]">Tổng kết</span>
           </button>
         </div>
       </div>
@@ -1035,6 +989,7 @@ export default function InterviewQuestions() {
         <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">
           Ngày: {formatDateVN(session.date)} · Người PV: {session.interviewer || '________'} · Tổng điểm: {stats.overallPercent}/100
         </p>
+      </div>
       </div>
     </div>
   );
