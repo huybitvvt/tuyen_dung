@@ -32,6 +32,7 @@ export interface EmployeeIdentity {
 
 export interface AttendanceShift {
   id: string;
+  shiftId: string;
   name: string;
   time: string;
 }
@@ -62,6 +63,8 @@ interface AttendanceNotes {
   checkOutLocation?: GeoPoint;
   lastLocation?: GeoPoint;
 }
+
+const DEFAULT_TIMESHEET_SHIFT_ID = '9eb7602c-9d90-4dfd-95c1-269a18c1e0ab';
 
 export function getStoredEmployee(): EmployeeIdentity | null {
   try {
@@ -265,6 +268,7 @@ export async function checkIn(employee: EmployeeIdentity, location: GeoPoint, sh
     .from('timesheets')
     .insert({
       user_id: employee.id,
+      shift_id: shift?.shiftId || DEFAULT_TIMESHEET_SHIFT_ID,
       schedule_date: getTodayKey(),
       check_in: new Date().toISOString(),
       status: 'incomplete',

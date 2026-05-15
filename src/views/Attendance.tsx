@@ -67,10 +67,11 @@ interface ShiftRow {
 }
 
 const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const defaultTimesheetShiftId = '9eb7602c-9d90-4dfd-95c1-269a18c1e0ab';
 const defaultAttendanceShifts: AttendanceShift[] = [
-  { id: 'sale', name: 'CA SALE', time: '09:00 - 21:00' },
-  { id: 'technical', name: 'CA KỸ THUẬT', time: '08:00 - 17:30' },
-  { id: 'office', name: 'CA VĂN PHÒNG', time: '08:00 - 17:30' },
+  { id: 'sale', shiftId: defaultTimesheetShiftId, name: 'CA SALE', time: '09:00 - 21:00' },
+  { id: 'technical', shiftId: defaultTimesheetShiftId, name: 'CA KỸ THUẬT', time: '08:00 - 17:30' },
+  { id: 'office', shiftId: defaultTimesheetShiftId, name: 'CA VĂN PHÒNG', time: '08:00 - 17:30' },
 ];
 
 function monthBounds(date: Date) {
@@ -133,7 +134,9 @@ function getRecordShift(record: TimesheetRecord | undefined) {
   try {
     const parsed = JSON.parse(record.notes);
     const shift = parsed?.attendanceShift;
-    if (shift?.id && shift?.name && shift?.time) return shift as AttendanceShift;
+    if (shift?.id && shift?.name && shift?.time) {
+      return { ...shift, shiftId: shift.shiftId || defaultTimesheetShiftId } as AttendanceShift;
+    }
   } catch {
     return null;
   }
