@@ -467,15 +467,15 @@ export default function Dashboard() {
   return (
     <div className="page-shell">
       <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-        <div className="grid gap-0 xl:grid-cols-[1fr_360px]">
-          <div className="p-3.5 md:p-5">
+        <div className="grid gap-0">
+          <div className="p-3.5">
           <p className="eyebrow mb-2">Bảng điều hành nhân sự</p>
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <div className="flex flex-col gap-3">
             <div>
-              <h1 className="max-w-2xl text-xl font-black leading-tight text-on-surface md:text-2xl">
+              <h1 className="max-w-2xl text-xl font-black leading-tight text-on-surface">
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
-              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant">
                 Quản lý đào tạo và tuyển dụng trong một giao diện làm việc thống nhất.
               </p>
               {supabaseDashboard.loaded && (
@@ -484,7 +484,7 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-2 md:flex">
+            <div className="grid grid-cols-2 gap-2">
               <Link to="/training" className="btn-primary">
                 <BookOpenCheck className="size-4" />
                 LMS
@@ -496,7 +496,7 @@ export default function Dashboard() {
             </div>
           </div>
           </div>
-          <div className="border-t border-home-outline bg-[#fbf8ef] p-3.5 xl:border-l xl:border-t-0">
+          <div className="border-t border-home-outline bg-[#fbf8ef] p-3.5">
             <div className="rounded-lg border border-home-outline bg-home-surface p-3 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <div>
@@ -525,14 +525,14 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2">
         {metricCards.map((metric) => (
           <div key={metric.label} className="metric-card">
             <div className="flex items-start justify-between gap-2.5">
               <div>
                 <p className="eyebrow">{metric.label}</p>
-                <p className="mt-1 text-lg font-black text-on-surface md:text-xl">{metric.value}</p>
-                <p className="mt-1 text-[11px] font-semibold text-on-surface-variant md:text-xs">{metric.detail}</p>
+                <p className="mt-1 text-lg font-black text-on-surface">{metric.value}</p>
+                <p className="mt-1 text-[11px] font-semibold text-on-surface-variant">{metric.detail}</p>
               </div>
               <div className={cn('flex size-8 items-center justify-center rounded-lg', metric.tone)}>
                 <metric.icon className="size-4" />
@@ -542,7 +542,7 @@ export default function Dashboard() {
         ))}
       </section>
 
-      <section className="grid gap-3 lg:grid-cols-[1fr_0.82fr_1fr]">
+      <section className="grid gap-3">
         <div className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
           <div className="mb-3 flex items-center justify-between">
             <div>
@@ -601,7 +601,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <div className="grid gap-3 md:gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-3">
         <section className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -635,13 +635,13 @@ export default function Dashboard() {
             <p className="eyebrow">Pipeline tuyển dụng</p>
             <h2 className="mt-1 text-base font-black text-on-surface">Ứng viên theo trạng thái</h2>
           </div>
-          <div className="grid grid-cols-2 gap-px bg-outline-variant/70 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-px bg-outline-variant/70">
             {candidateStages.map((stage) => {
               const count = dashboardCandidates.filter((candidate) => candidate.stage === stage.id).length;
               return (
-                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-2.5 transition-all duration-300 hover:bg-surface-container-low hover:text-home-primary md:p-3">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant md:text-[10px]">{stage.label}</p>
-                  <p className="mt-1 text-base font-black text-on-surface md:text-lg">{count}</p>
+                <Link key={stage.id} to="/recruitment/candidates" className="bg-surface p-2.5 transition-all duration-300 hover:bg-surface-container-low hover:text-home-primary">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">{stage.label}</p>
+                  <p className="mt-1 text-base font-black text-on-surface">{count}</p>
                 </Link>
               );
             })}
@@ -649,7 +649,7 @@ export default function Dashboard() {
         </section>
       </div>
 
-      <section className="grid gap-3 lg:grid-cols-2">
+      <section className="grid gap-3">
         {courseProgress.slice(0, 2).map(({ course, percent }) => (
           <Link key={course.id} to={`/training/${course.id}`} className="section-card flex items-center gap-3 p-3.5 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
             <div className={cn('flex size-10 items-center justify-center rounded-lg', course.department === 'Sale' ? 'bg-primary/10 text-primary' : 'bg-secondary-container text-on-secondary-container')}>

@@ -169,13 +169,13 @@
     }
 
     .app-shell {
-      width: clamp(20.25rem, calc(100vw - 2rem), 28rem);
-      max-width: 28rem;
+      width: clamp(20.25rem, calc(100vw - 2rem), 23rem);
+      max-width: 23rem;
       height: calc(100vh - 3rem);
       max-height: 900px;
       min-height: 0;
       border: 1px solid var(--color-home-outline);
-      border-radius: 2.25rem;
+      border-radius: 1.85rem;
       overflow: hidden;
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.6) inset,
@@ -185,13 +185,13 @@
     }
 
     .app-top-bar {
-      border-top-left-radius: 2.25rem;
-      border-top-right-radius: 2.25rem;
+      border-top-left-radius: 1.85rem;
+      border-top-right-radius: 1.85rem;
     }
 
     .app-bottom-nav {
-      border-bottom-left-radius: 2.25rem;
-      border-bottom-right-radius: 2.25rem;
+      border-bottom-left-radius: 1.85rem;
+      border-bottom-right-radius: 1.85rem;
     }
 
     .app-main {

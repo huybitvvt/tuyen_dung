@@ -90,20 +90,20 @@ export default function TrainingList() {
   return (
     <div className="page-shell max-w-7xl text-[#1b1c19]">
       <section className="section-card overflow-hidden hover:border-[#4f6540]/25 hover:shadow-md hover:shadow-[#4f6540]/10">
-        <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
-          <div className="relative overflow-hidden p-3.5 md:p-5">
+        <div className="grid gap-0">
+          <div className="relative overflow-hidden p-3.5">
             <div className="relative">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#e5dfd2] bg-[#fbf8ef] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#4f6540] md:mb-3 md:px-3 md:text-[10px]">
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#e5dfd2] bg-[#fbf8ef] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[#4f6540]">
                 <Sparkles className="size-3.5" />
                 Training / LMS
               </div>
-              <h1 className="max-w-3xl font-display text-[26px] font-bold leading-none tracking-tight text-[#1b1c19] md:text-[38px]">
+              <h1 className="max-w-3xl font-display text-[26px] font-bold leading-none tracking-tight text-[#1b1c19]">
                 Đào tạo nội bộ
               </h1>
-              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-[#444840] md:text-[13px]">
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-[#444840]">
                 Quản lý khóa học theo phòng ban, theo dõi video/tài liệu, gán khóa cho nhân viên và đánh giá năng lực bằng quiz.
               </p>
-              <div className="mt-3 flex flex-wrap gap-2 md:mt-4">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button onClick={() => setIsCreateOpen(true)} className="btn-primary">
                   <Plus className="size-4" />
                   Tạo khóa học
@@ -115,19 +115,19 @@ export default function TrainingList() {
               </div>
             </div>
           </div>
-          <div className="border-t border-[#e5dfd2] bg-[#fbf8ef] p-2.5 md:p-3.5 lg:border-l lg:border-t-0">
+          <div className="border-t border-[#e5dfd2] bg-[#fbf8ef] p-2.5">
             <div className="grid h-full grid-cols-3 gap-2">
               {[
                 { label: 'Khóa', value: courses.length, icon: Layers3 },
                 { label: 'TB', value: `${averageProgress}%`, icon: Loader2 },
                 { label: 'Cần học', value: pendingCount, icon: NotebookPen },
               ].map((metric) => (
-                <div key={metric.label} className="rounded-lg border border-[#e5dfd2] bg-[#fffdf7] p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#4f6540]/25 hover:shadow-md md:p-3">
-                  <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-md bg-[#f2ead9] text-[#4f6540] md:h-8 md:w-8">
+                <div key={metric.label} className="rounded-lg border border-[#e5dfd2] bg-[#fffdf7] p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#4f6540]/25 hover:shadow-md">
+                  <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-md bg-[#f2ead9] text-[#4f6540]">
                     <metric.icon className="size-4" />
                   </div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#676b62]">{metric.label}</p>
-                  <p className="mt-1 text-lg font-bold leading-none text-[#1b1c19] md:text-xl">{metric.value}</p>
+                  <p className="mt-1 text-lg font-bold leading-none text-[#1b1c19]">{metric.value}</p>
                 </div>
               ))}
             </div>
@@ -135,7 +135,7 @@ export default function TrainingList() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <section className="flex flex-col gap-2">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value as 'all' | Department)} className="h-9 min-w-max rounded-md border border-[#e5dfd2] bg-[#fffdf7] px-3 text-xs font-bold text-[#1b1c19] outline-none transition focus:border-[#4f6540] focus:ring-2 focus:ring-[#4f6540]/20">
             <option value="all">Tất cả phòng ban</option>
@@ -153,13 +153,9 @@ export default function TrainingList() {
             <SlidersHorizontal className="size-4" /> Lọc
           </button>
         </div>
-        <button onClick={() => setIsCreateOpen(true)} className="btn-primary hidden md:inline-flex">
-          <Plus className="size-4" />
-          Tạo khóa học
-        </button>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
+      <section className="grid gap-3">
         {filteredCourses.map((course) => {
           const isCompleted = course.status === 'hoàn thành';
           const statusClass = isCompleted
@@ -177,25 +173,25 @@ export default function TrainingList() {
                       <span className="rounded border border-[#e5dfd2] bg-[#fbf8ef] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#444840]">{course.department}</span>
                       <span className="rounded border border-[#e5dfd2] bg-[#fbf8ef] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#444840]">{course.level}</span>
                     </div>
-                    <h2 className="line-clamp-2 text-[13px] font-black leading-5 text-[#1b1c19] md:text-sm">{course.name}</h2>
+                    <h2 className="line-clamp-2 text-[13px] font-black leading-5 text-[#1b1c19]">{course.name}</h2>
                   </div>
                   <span className={cn('status-pill shrink-0 px-2 py-1 text-[9px]', statusClass)}>{course.status}</span>
                 </div>
 
-                <p className="line-clamp-2 min-h-9 text-xs font-semibold leading-[1.55] text-[#444840] md:min-h-10 md:leading-5">{course.description}</p>
+                <p className="line-clamp-2 min-h-9 text-xs font-semibold leading-[1.55] text-[#444840]">{course.description}</p>
 
-                <div className="mt-3 grid grid-cols-3 gap-1.5 md:gap-2">
-                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2 md:p-2.5">
+                <div className="mt-3 grid grid-cols-3 gap-1.5">
+                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2">
                     <BookOpen className="mb-1.5 size-4 text-[#4f6540]" />
                     <p className="text-xs font-black">{course.lessons}</p>
                     <p className="text-[10px] font-bold text-[#676b62]">Bài học</p>
                   </div>
-                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2 md:p-2.5">
+                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2">
                     <Users className="mb-1.5 size-4 text-[#c9823a]" />
                     <p className="text-xs font-black">{course.members}</p>
                     <p className="text-[10px] font-bold text-[#676b62]">Nhân viên</p>
                   </div>
-                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2 md:p-2.5">
+                  <div className="rounded-md border border-[#e5dfd2] bg-[#fbf8ef] p-2">
                     <FileQuestion className="mb-1.5 size-4 text-[#b99137]" />
                     <p className="text-xs font-black">{course.questionCount}</p>
                     <p className="text-[10px] font-bold text-[#676b62]">Câu hỏi</p>
@@ -217,7 +213,7 @@ export default function TrainingList() {
                     {isCompleted ? <CheckCircle2 className="size-4 text-[#4f6540]" /> : <Bell className="size-4 text-[#c9823a]" />}
                     <span className="truncate">{course.videos} video • {course.documents} tài liệu</span>
                   </div>
-                  {course.kpiLeadEligible && <span className="shrink-0 rounded border border-[#4f6540]/20 bg-[#edf4e4] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-[#4f6540] md:px-2.5 md:text-[10px]">KPI lead</span>}
+                  {course.kpiLeadEligible && <span className="shrink-0 rounded border border-[#4f6540]/20 bg-[#edf4e4] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-[#4f6540]">KPI lead</span>}
                 </div>
               </div>
             </Link>
