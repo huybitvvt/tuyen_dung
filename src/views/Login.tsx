@@ -78,7 +78,7 @@ export default function Login() {
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#4f6540]">Đăng nhập</p>
             <h2 className="mt-2 font-display text-4xl font-bold tracking-tight text-[#1b1c19]">Chào mừng trở lại</h2>
             <p className="mt-3 text-sm font-semibold leading-6 text-[#444840]">
-              Sử dụng email và mật khẩu trong bảng users để truy cập hệ thống.
+              Nhập email và mật khẩu được cấp để truy cập hệ thống.
             </p>
 
             <div className="mt-8 space-y-4">
@@ -91,7 +91,7 @@ export default function Login() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     autoComplete="email"
-                    placeholder="sale@demo.com"
+                    placeholder="email@congty.com"
                     className="h-full min-w-0 flex-1 bg-transparent text-sm font-bold outline-none placeholder:text-[#9a9f94]"
                   />
                 </div>

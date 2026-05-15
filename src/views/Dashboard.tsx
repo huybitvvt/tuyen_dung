@@ -99,7 +99,7 @@ export default function Dashboard() {
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
               <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
-                Theo dõi tiến độ học, pipeline ứng viên và chấm công GPS bằng Supabase trong cùng một giao diện.
+                Quản lý đào tạo, tuyển dụng và chấm công hằng ngày trong một giao diện làm việc thống nhất.
               </p>
             </div>
             <div className="grid grid-cols-3 gap-2 md:flex">
@@ -127,9 +127,9 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="eyebrow">Chấm công hôm nay</p>
-            <h2 className="mt-0.5 text-sm font-black text-on-surface md:text-base">Check-in, check-out và GPS</h2>
+            <h2 className="mt-0.5 text-sm font-black text-on-surface md:text-base">Check-in và check-out</h2>
             <p className="mt-1 text-xs font-semibold text-on-surface-variant">
-              Theo dõi trạng thái vào ca, tan ca và vị trí làm việc theo dữ liệu Supabase.
+              Theo dõi trạng thái vào ca, đang làm và tan ca của nhân viên.
             </p>
           </div>
         </div>

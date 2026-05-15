@@ -410,8 +410,8 @@ export default function Attendance() {
             </div>
           </div>
 
-          <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto] xl:min-w-[860px]">
-            <label className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
+          <div className="grid gap-2 md:grid-cols-[1.35fr_0.9fr_0.9fr_auto] xl:min-w-[900px]">
+            <label className="min-w-0 rounded-md border border-home-outline bg-home-bg px-3 py-2">
               <span className="block text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Ca làm việc</span>
               <select
                 value={selectedShiftId}
@@ -420,9 +420,12 @@ export default function Attendance() {
                 className="mt-1 w-full bg-transparent text-sm font-black text-home-on-surface outline-none disabled:opacity-70"
               >
                 {defaultAttendanceShifts.map((shift) => (
-                  <option key={shift.id} value={shift.id}>{shift.name} • {shift.time}</option>
+                  <option key={shift.id} value={shift.id}>{shift.name}</option>
                 ))}
               </select>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-home-on-surface-variant">
+                {selectedShift.time}
+              </span>
             </label>
             <div className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Giờ vào</p>
@@ -460,7 +463,7 @@ export default function Attendance() {
             {todayRecord?.location_captured_at && (
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="size-3.5 text-primary" />
-                GPS đã ghi lúc {formatTime(todayRecord.location_captured_at)}
+                Vị trí đã ghi lúc {formatTime(todayRecord.location_captured_at)}
                 {todayRecord.location_accuracy_m ? ` • sai số khoảng ${Math.round(todayRecord.location_accuracy_m)}m` : ''}
               </span>
             )}
