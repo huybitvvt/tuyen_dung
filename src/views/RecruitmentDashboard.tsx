@@ -7,14 +7,22 @@ import {
   Plus,
   UserPlus,
   Users,
+  X,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { candidateStages, Department, formatDateTime, useCrm } from '../lib/crmStore';
+import { FormEvent, useState } from 'react';
 
 export default function RecruitmentDashboard() {
   const { recruitmentJobs, candidates, candidateInterviews, createRecruitmentJob } = useCrm();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [jobForm, setJobForm] = useState({
+    title: '',
+    department: 'Kỹ thuật' as Department,
+    quantityNeeded: 1,
+  });
   const activeJobs = recruitmentJobs.filter((job) => job.status === 'Đang mở');
   const newCandidates = candidates.filter((candidate) => candidate.stage === 'new');
   const interviewing = candidates.filter((candidate) => candidate.stage === 'interview_scheduled' || candidate.stage === 'interviewed');
@@ -48,12 +56,26 @@ export default function RecruitmentDashboard() {
     };
   });
 
-  function handleCreateJob() {
-    const title = window.prompt('Tên vị trí tuyển dụng');
+  function resetJobForm() {
+    setJobForm({
+      title: '',
+      department: 'Kỹ thuật',
+      quantityNeeded: 1,
+    });
+  }
+
+  function handleSubmitJob(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = jobForm.title.trim();
     if (!title) return;
-    const department = (window.prompt('Phòng ban: Sale / Kỹ thuật / Marketing', 'Kỹ thuật') || 'Kỹ thuật') as Department;
-    const quantityNeeded = Number(window.prompt('Số lượng cần tuyển', '1') || '1');
-    createRecruitmentJob({ title, department, quantityNeeded, status: 'Đang mở' });
+    createRecruitmentJob({ 
+      title, 
+      department: jobForm.department, 
+      quantityNeeded: jobForm.quantityNeeded, 
+      status: 'Đang mở' 
+    });
+    setIsCreateOpen(false);
+    resetJobForm();
   }
 
   return (
@@ -68,7 +90,7 @@ export default function RecruitmentDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={handleCreateJob} className="btn-primary">
+            <button onClick={() => setIsCreateOpen(true)} className="btn-primary">
               <Plus className="size-4" />
               Tạo tin mới
             </button>
@@ -214,6 +236,89 @@ export default function RecruitmentDashboard() {
           ))}
         </div>
       </section>
+
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-3 py-6 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="w-full max-w-xl overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-outline-variant bg-surface-container-low p-5">
+              <div>
+                <p className="eyebrow">Tin tuyển dụng mới</p>
+                <h2 className="mt-1 text-2xl font-black text-on-surface">Tạo vị trí tuyển dụng</h2>
+                <p className="mt-2 text-sm font-semibold text-on-surface-variant">Điền thông tin vị trí cần tuyển để bắt đầu nhận ứng viên.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(false)}
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitJob} className="grid gap-4 p-5">
+              <label className="block">
+                <span className="eyebrow">Tên vị trí tuyển dụng</span>
+                <input
+                  value={jobForm.title}
+                  onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))}
+                  autoFocus
+                  required
+                  placeholder="VD: Frontend Developer, Sales Executive"
+                  className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-surface px-4 text-sm font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                />
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="eyebrow">Phòng ban</span>
+                  <select
+                    value={jobForm.department}
+                    onChange={(event) => setJobForm((current) => ({ ...current, department: event.target.value as Department }))}
+                    className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-surface px-4 text-sm font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  >
+                    <option value="Sale">Sale</option>
+                    <option value="Kỹ thuật">Kỹ thuật</option>
+                    <option value="Marketing">Marketing</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="eyebrow">Số lượng cần tuyển</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={jobForm.quantityNeeded}
+                    onChange={(event) => setJobForm((current) => ({ ...current, quantityNeeded: Number(event.target.value) }))}
+                    className="mt-2 h-12 w-full rounded-xl border border-outline-variant bg-surface px-4 text-sm font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-outline-variant pt-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(false)}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-outline-variant bg-surface px-5 text-xs font-black uppercase tracking-widest text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-xs font-black uppercase tracking-widest text-on-primary shadow-lg shadow-primary/20 transition hover:bg-primary-container active:scale-[0.98]"
+                >
+                  <Plus className="size-4" />
+                  Tạo tin tuyển dụng
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

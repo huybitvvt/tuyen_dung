@@ -52,6 +52,7 @@ export interface Lesson {
   title: string;
   type: LessonType;
   contentUrl: string;
+  videoUrl?: string;
   duration: number;
   documentPages?: number;
 }
@@ -220,11 +221,11 @@ function createSeedState(): CrmState {
       },
     ],
     lessons: [
-      { id: 'l1', courseId: 'c1', title: 'Tổng quan quy trình bán hàng', type: 'video', contentUrl: 'https://example.com/sales-flow.mp4', duration: 600 },
-      { id: 'l2', courseId: 'c1', title: 'Tâm lý khách hàng và xử lý từ chối', type: 'video', contentUrl: 'https://example.com/objection.mp4', duration: 930 },
+      { id: 'l1', courseId: 'c1', title: 'Tổng quan quy trình bán hàng', type: 'video', contentUrl: 'https://example.com/sales-flow.mp4', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', duration: 600 },
+      { id: 'l2', courseId: 'c1', title: 'Tâm lý khách hàng và xử lý từ chối', type: 'video', contentUrl: 'https://example.com/objection.mp4', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', duration: 930 },
       { id: 'l3', courseId: 'c1', title: 'Tài liệu kịch bản chốt deal', type: 'document', contentUrl: 'https://example.com/sales-script.pdf', duration: 5, documentPages: 5 },
       { id: 'l4', courseId: 'c2', title: 'Checklist triển khai', type: 'document', contentUrl: 'https://example.com/deploy-checklist.pdf', duration: 8, documentPages: 8 },
-      { id: 'l5', courseId: 'c2', title: 'Nghiệm thu kỹ thuật', type: 'video', contentUrl: 'https://example.com/uat.mp4', duration: 720 },
+      { id: 'l5', courseId: 'c2', title: 'Nghiệm thu kỹ thuật', type: 'video', contentUrl: 'https://example.com/uat.mp4', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', duration: 720 },
       { id: 'l6', courseId: 'c3', title: 'Keyword map', type: 'document', contentUrl: 'https://example.com/keyword-map.pdf', duration: 6, documentPages: 6 },
     ],
     enrollments: [

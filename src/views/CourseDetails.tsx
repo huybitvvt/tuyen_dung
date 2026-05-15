@@ -8,15 +8,21 @@ import {
   CheckCircle,
   ClipboardList,
   UserPlus,
+  X,
+  Users,
 } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useCrm } from '../lib/crmStore';
+import { FormEvent, useState } from 'react';
+import { motion } from 'motion/react';
 
 export default function CourseDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { courses, lessons, progress, quizzes, results, currentUser, assignCourse } = useCrm();
+  const { courses, lessons, progress, quizzes, results, currentUser, assignCourse, employees, enrollments } = useCrm();
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const course = courses.find((item) => item.id === id);
   const courseLessons = lessons.filter((lesson) => lesson.courseId === id);
   const quiz = quizzes.find((item) => item.courseId === id);
@@ -34,9 +40,36 @@ export default function CourseDetails() {
   const progressRows = courseLessons.map((lesson) => progress.find((item) => item.userId === currentUser.id && item.lessonId === lesson.id)?.percent ?? 0);
   const coursePercent = progressRows.length ? Math.round(progressRows.reduce((sum, item) => sum + item, 0) / progressRows.length) : 0;
 
-  function handleAssign() {
-    const target = window.prompt('Nhập tên nhân viên cần gán khóa học');
-    if (target) assignCourse(course.id, target);
+  // Get employees not yet enrolled in this course
+  const enrolledUserIds = enrollments.filter((e) => e.courseId === course?.id).map((e) => e.userId);
+  const availableEmployees = employees.filter((emp) => !enrolledUserIds.includes(emp.id));
+
+  function handleOpenAssign() {
+    setSelectedEmployees([]);
+    setIsAssignOpen(true);
+  }
+
+  function handleToggleEmployee(employeeId: string) {
+    setSelectedEmployees((current) =>
+      current.includes(employeeId)
+        ? current.filter((id) => id !== employeeId)
+        : [...current, employeeId]
+    );
+  }
+
+  function handleSubmitAssign(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!course || selectedEmployees.length === 0) return;
+    
+    selectedEmployees.forEach((employeeId) => {
+      const employee = employees.find((emp) => emp.id === employeeId);
+      if (employee) {
+        assignCourse(course.id, employee.name);
+      }
+    });
+    
+    setIsAssignOpen(false);
+    setSelectedEmployees([]);
   }
 
   return (
@@ -161,11 +194,126 @@ export default function CourseDetails() {
       </main>
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-surface/80 backdrop-blur-md border-t border-outline-variant p-4 shadow-xl w-full max-w-4xl z-40 pb-safe md:rounded-t-2xl">
-        <button onClick={handleAssign} className="w-full bg-primary text-on-primary h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary-container hover:scale-[0.99] transition-all shadow-lg active:scale-95">
+        <button onClick={handleOpenAssign} className="w-full bg-primary text-on-primary h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary-container hover:scale-[0.99] transition-all shadow-lg active:scale-95">
           <UserPlus className="size-5" />
           Gán cho nhân viên
         </button>
       </div>
+
+      {isAssignOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-3 py-6 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-2xl max-h-[90vh] flex flex-col"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-outline-variant bg-surface-container-low p-5 shrink-0">
+              <div>
+                <p className="eyebrow">Gán khóa học</p>
+                <h2 className="mt-1 text-2xl font-black text-on-surface">Chọn nhân viên</h2>
+                <p className="mt-2 text-sm font-semibold text-on-surface-variant">
+                  Chọn nhân viên để gán khóa học "{course?.name}"
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAssignOpen(false)}
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitAssign} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto p-5">
+                {availableEmployees.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Users className="size-16 text-on-surface-variant/30 mb-4" />
+                    <p className="text-sm font-bold text-on-surface-variant">
+                      Tất cả nhân viên đã được gán khóa học này
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {availableEmployees.map((employee) => {
+                      const isSelected = selectedEmployees.includes(employee.id);
+                      return (
+                        <label
+                          key={employee.id}
+                          className={cn(
+                            'flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all',
+                            isSelected
+                              ? 'border-primary bg-primary/5'
+                              : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low'
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleEmployee(employee.id)}
+                            className="size-5 accent-primary cursor-pointer"
+                          />
+                          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary-container font-black text-on-primary-container">
+                            {employee.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-black text-on-surface truncate">
+                              {employee.name}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                                {employee.role}
+                              </span>
+                              <span className="text-on-surface-variant">•</span>
+                              <span className={cn(
+                                'text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full',
+                                employee.department === 'Sale' ? 'bg-blue-100 text-blue-700' :
+                                employee.department === 'Kỹ thuật' ? 'bg-teal-100 text-teal-700' :
+                                'bg-green-100 text-green-700'
+                              )}>
+                                {employee.department}
+                              </span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-outline-variant p-5 shrink-0 sm:flex-row sm:justify-between sm:items-center">
+                <p className="text-xs font-bold text-on-surface-variant">
+                  {selectedEmployees.length > 0 ? (
+                    <span className="text-primary">
+                      Đã chọn {selectedEmployees.length} nhân viên
+                    </span>
+                  ) : (
+                    'Chưa chọn nhân viên nào'
+                  )}
+                </p>
+                <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setIsAssignOpen(false)}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-outline-variant bg-surface px-5 text-xs font-black uppercase tracking-widest text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={selectedEmployees.length === 0}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-xs font-black uppercase tracking-widest text-on-primary shadow-lg shadow-primary/20 transition hover:bg-primary-container active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <UserPlus className="size-4" />
+                    Gán khóa học ({selectedEmployees.length})
+                  </button>
+                </div>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

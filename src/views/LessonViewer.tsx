@@ -11,6 +11,26 @@ import {
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useCrm } from '../lib/crmStore';
+import { useState, useEffect } from 'react';
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  
+  // Extract video ID from various YouTube URL formats
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+    }
+  }
+  
+  return null;
+}
 
 export default function LessonViewer() {
   const navigate = useNavigate();
@@ -24,6 +44,8 @@ export default function LessonViewer() {
   const percent = lessonProgress?.percent ?? 0;
   const nextLesson = courseLessons[index + 1];
   const previousLesson = courseLessons[index - 1];
+  const [isPlaying, setIsPlaying] = useState(false);
+  const embedUrl = lesson?.videoUrl ? getYouTubeEmbedUrl(lesson.videoUrl) : null;
 
   if (!course || !lesson) {
     return (
@@ -38,6 +60,29 @@ export default function LessonViewer() {
     const nextPercent = Math.min(100, percent + 25);
     updateLessonProgress(lesson.id, nextPercent, Math.round((lesson.duration * nextPercent) / 100));
   }
+
+  function handlePlayVideo() {
+    setIsPlaying(true);
+    // Auto update progress when video starts
+    if (percent < 25) {
+      updateLessonProgress(lesson.id, 25, Math.round((lesson.duration * 25) / 100));
+    }
+  }
+
+  // Auto-update progress when video is playing
+  useEffect(() => {
+    if (isPlaying && lesson?.type === 'video') {
+      const interval = setInterval(() => {
+        const nextPercent = Math.min(100, percent + 10);
+        updateLessonProgress(lesson.id, nextPercent, Math.round((lesson.duration * nextPercent) / 100));
+        if (nextPercent >= 100) {
+          setIsPlaying(false);
+        }
+      }, 30000); // Update every 30 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [isPlaying, lesson, percent]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -68,38 +113,65 @@ export default function LessonViewer() {
             </nav>
 
             <div className={cn(
-              'w-full rounded-2xl overflow-hidden aspect-video shadow-2xl relative group flex items-center justify-center',
+              'w-full rounded-2xl overflow-hidden aspect-video shadow-2xl relative group',
               lesson.type === 'video' ? 'bg-black' : 'bg-surface'
             )}>
-              <div className={cn(
-                'absolute inset-0 opacity-80',
-                course.department === 'Sale' ? 'bg-gradient-to-br from-blue-900 to-cyan-600' : course.department === 'Kỹ thuật' ? 'bg-gradient-to-br from-slate-950 to-teal-700' : 'bg-gradient-to-br from-emerald-900 to-lime-600'
-              )} />
               {lesson.type === 'video' ? (
-                <button onClick={simulateWatch} className="relative z-10 w-16 h-16 bg-primary/95 text-on-primary rounded-full flex items-center justify-center shadow-2xl hover:scale-105 transition-transform backdrop-blur-sm">
-                  <Play className="size-8 fill-current ml-1" />
-                </button>
+                <>
+                  {embedUrl && isPlaying ? (
+                    <iframe
+                      src={`${embedUrl}&autoplay=1`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={lesson.title}
+                    />
+                  ) : (
+                    <>
+                      <div className={cn(
+                        'absolute inset-0 opacity-80',
+                        course.department === 'Sale' ? 'bg-gradient-to-br from-blue-900 to-cyan-600' : course.department === 'Kỹ thuật' ? 'bg-gradient-to-br from-slate-950 to-teal-700' : 'bg-gradient-to-br from-emerald-900 to-lime-600'
+                      )} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button 
+                          onClick={embedUrl ? handlePlayVideo : simulateWatch} 
+                          className="relative z-10 w-16 h-16 bg-primary/95 text-on-primary rounded-full flex items-center justify-center shadow-2xl hover:scale-105 transition-transform backdrop-blur-sm"
+                        >
+                          <Play className="size-8 fill-current ml-1" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </>
               ) : (
-                <div className="relative z-10 flex flex-col items-center text-white">
-                  <FileText className="size-16 mb-3" />
-                  <button onClick={() => updateLessonProgress(lesson.id, 100)} className="bg-primary text-on-primary px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest">
-                    Xác nhận đã đọc
-                  </button>
-                </div>
+                <>
+                  <div className={cn(
+                    'absolute inset-0 opacity-80',
+                    course.department === 'Sale' ? 'bg-gradient-to-br from-blue-900 to-cyan-600' : course.department === 'Kỹ thuật' ? 'bg-gradient-to-br from-slate-950 to-teal-700' : 'bg-gradient-to-br from-emerald-900 to-lime-600'
+                  )} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+                    <FileText className="size-16 mb-3" />
+                    <button onClick={() => updateLessonProgress(lesson.id, 100)} className="bg-primary text-on-primary px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest">
+                      Xác nhận đã đọc
+                    </button>
+                  </div>
+                </>
               )}
 
-              <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col gap-3">
-                <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${percent}%` }}></div>
-                </div>
-                <div className="flex justify-between items-center text-white text-[10px] font-mono">
-                  <span className="font-bold">{percent}% / 100%</span>
-                  <div className="flex items-center gap-3">
-                    <Download className="size-3" />
-                    <MessageSquare className="size-3" />
+              {(!isPlaying || lesson.type !== 'video') && (
+                <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col gap-3">
+                  <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${percent}%` }}></div>
+                  </div>
+                  <div className="flex justify-between items-center text-white text-[10px] font-mono">
+                    <span className="font-bold">{percent}% / 100%</span>
+                    <div className="flex items-center gap-3">
+                      <Download className="size-3" />
+                      <MessageSquare className="size-3" />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-surface rounded-2xl shadow-sm p-6 md:p-8 flex flex-col gap-6 border border-outline-variant/30">
