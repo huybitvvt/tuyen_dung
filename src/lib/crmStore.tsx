@@ -172,6 +172,11 @@ interface CrmContextValue extends CrmState {
 
 const STORAGE_KEY = 'xoxo-crm-training-recruitment-v1';
 const currentUserId = 'u1';
+const lessonVideoUrls: Record<string, string> = {
+  l1: 'https://www.youtube.com/watch?v=tFs77UWc98o',
+  l2: 'https://www.youtube.com/watch?v=eu1LBADdSFg',
+  l5: 'https://www.youtube.com/watch?v=sGwm4p9sGPI',
+};
 
 function nowIso() {
   return new Date().toISOString();
@@ -221,11 +226,11 @@ function createSeedState(): CrmState {
       },
     ],
     lessons: [
-      { id: 'l1', courseId: 'c1', title: 'Tổng quan quy trình bán hàng', type: 'video', contentUrl: 'https://example.com/sales-flow.mp4', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', duration: 600 },
-      { id: 'l2', courseId: 'c1', title: 'Tâm lý khách hàng và xử lý từ chối', type: 'video', contentUrl: 'https://example.com/objection.mp4', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', duration: 930 },
+      { id: 'l1', courseId: 'c1', title: 'Tổng quan quy trình bán hàng', type: 'video', contentUrl: lessonVideoUrls.l1, videoUrl: lessonVideoUrls.l1, duration: 600 },
+      { id: 'l2', courseId: 'c1', title: 'Tâm lý khách hàng và xử lý từ chối', type: 'video', contentUrl: lessonVideoUrls.l2, videoUrl: lessonVideoUrls.l2, duration: 930 },
       { id: 'l3', courseId: 'c1', title: 'Tài liệu kịch bản chốt deal', type: 'document', contentUrl: 'https://example.com/sales-script.pdf', duration: 5, documentPages: 5 },
       { id: 'l4', courseId: 'c2', title: 'Checklist triển khai', type: 'document', contentUrl: 'https://example.com/deploy-checklist.pdf', duration: 8, documentPages: 8 },
-      { id: 'l5', courseId: 'c2', title: 'Nghiệm thu kỹ thuật', type: 'video', contentUrl: 'https://example.com/uat.mp4', videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', duration: 720 },
+      { id: 'l5', courseId: 'c2', title: 'Nghiệm thu kỹ thuật', type: 'video', contentUrl: lessonVideoUrls.l5, videoUrl: lessonVideoUrls.l5, duration: 720 },
       { id: 'l6', courseId: 'c3', title: 'Keyword map', type: 'document', contentUrl: 'https://example.com/keyword-map.pdf', duration: 6, documentPages: 6 },
     ],
     enrollments: [
@@ -281,10 +286,38 @@ function createSeedState(): CrmState {
   };
 }
 
+function shouldReplaceDemoVideo(lesson: Lesson) {
+  const source = `${lesson.videoUrl || ''} ${lesson.contentUrl || ''}`;
+  return !lesson.videoUrl || source.includes('dQw4w9WgXcQ') || source.includes('example.com');
+}
+
+function hydrateLessonVideos(state: CrmState) {
+  let changed = false;
+  const lessons = state.lessons.map((lesson) => {
+    const videoUrl = lessonVideoUrls[lesson.id];
+    if (!videoUrl || !shouldReplaceDemoVideo(lesson)) return lesson;
+
+    changed = true;
+    return {
+      ...lesson,
+      contentUrl: videoUrl,
+      videoUrl,
+    };
+  });
+
+  return {
+    state: changed ? { ...state, lessons } : state,
+    changed,
+  };
+}
+
 function loadInitialState(): CrmState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) as CrmState : createSeedState();
+    const loadedState = raw ? JSON.parse(raw) as CrmState : createSeedState();
+    const hydrated = hydrateLessonVideos(loadedState);
+    if (hydrated.changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(hydrated.state));
+    return hydrated.state;
   } catch {
     return createSeedState();
   }
