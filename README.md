@@ -110,13 +110,18 @@ npm run build
 
 ## Supabase Attendance Setup
 
-Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor, then set these variables in `.env.local` or in Vercel Environment Variables:
+The app reads login users from the `users` table and attendance data from the attendance Supabase project. Set these variables in `.env.local` or in Vercel Environment Variables:
 
 ```env
+VITE_APP_SUPABASE_URL="https://ljsdoeyiwlrvcqeyfkya.supabase.co"
+VITE_APP_SUPABASE_ANON_KEY="sb_publishable_NDQm7ShVT_U_ZghQBE2RAg_ra8vke9j"
+
 VITE_SUPABASE_URL="https://YOUR_PROJECT_ID.supabase.co"
 VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 VITE_ATTENDANCE_IFRAME_URL="https://jarviz-attendance.vercel.app"
 ```
+
+Run [supabase/schema.sql](supabase/schema.sql) in the attendance Supabase SQL Editor if the `attendance_records` table has not been created yet.
 
 The local `.env.local` file is ignored by Git. The iframe URL should point to the deployed attendance app. Check-in, check-out, GPS, and the monthly attendance history are stored in Supabase table `attendance_records`, so both apps share the same data.
 
