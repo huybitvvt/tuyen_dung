@@ -16,7 +16,7 @@ import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { candidateStages, useCrm } from '../lib/crmStore';
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { appSupabase } from '../lib/supabase';
 import { getTodayKey } from '../lib/attendanceService';
 
 export default function Dashboard() {
@@ -28,26 +28,26 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    if (!supabase) return;
+    if (!appSupabase) return;
 
     let cancelled = false;
 
     async function loadAttendanceStats() {
       try {
         const today = getTodayKey();
-        const { data, error } = await supabase!
-          .from('attendance_records')
-          .select('employee_id,check_in_at,check_out_at,status')
-          .eq('work_date', today);
+        const { data, error } = await appSupabase!
+          .from('timesheets')
+          .select('user_id,check_in,check_out,status')
+          .eq('schedule_date', today);
 
         if (error) throw error;
         if (cancelled) return;
 
         const rows = data || [];
         setAttendanceStats({
-          checkedInToday: new Set(rows.filter((row) => row.check_in_at).map((row) => row.employee_id)).size,
-          workingNow: rows.filter((row) => row.check_in_at && !row.check_out_at).length,
-          checkedOutToday: rows.filter((row) => row.check_out_at).length,
+          checkedInToday: new Set(rows.filter((row) => row.check_in).map((row) => row.user_id)).size,
+          workingNow: rows.filter((row) => row.check_in && !row.check_out).length,
+          checkedOutToday: rows.filter((row) => row.check_out).length,
         });
       } catch {
         setAttendanceStats({ checkedInToday: 0, workingNow: 0, checkedOutToday: 0 });

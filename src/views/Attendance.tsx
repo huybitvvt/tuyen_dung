@@ -154,8 +154,8 @@ function formatTime(value: string | null) {
 }
 
 function attendanceLabel(record: AttendanceDbRecord | null) {
-  if (!record?.check_in_at) return 'Chưa vào ca';
-  if (record.check_out_at) return 'Đã tan ca';
+  if (!record?.check_in) return 'Chưa vào ca';
+  if (record.check_out) return 'Đã tan ca';
   return 'Đang làm việc';
 }
 
@@ -170,12 +170,13 @@ export default function Attendance() {
   const [mode, setMode] = useState<'shift' | 'employee'>('shift');
   const [loading, setLoading] = useState(true);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceReloadKey, setAttendanceReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [attendanceMessage, setAttendanceMessage] = useState<string | null>(null);
 
   const employeeIdentity = useMemo(() => user ? {
-    id: user.employeeCode || user.id,
+    id: user.id,
     name: user.name || user.email,
   } : null, [user]);
 
@@ -271,7 +272,7 @@ export default function Attendance() {
     return () => {
       cancelled = true;
     };
-  }, [selectedMonth]);
+  }, [selectedMonth, attendanceReloadKey]);
 
   const days = useMemo(() => monthDays(selectedMonth), [selectedMonth]);
   const todayKey = getTodayKey();
@@ -318,7 +319,8 @@ export default function Attendance() {
       const location = await getBrowserLocation();
       const record = await checkIn(employeeIdentity, location);
       setTodayRecord(record);
-      setAttendanceMessage(`Đã check-in lúc ${formatTime(record.check_in_at)}.`);
+      setAttendanceReloadKey((value) => value + 1);
+      setAttendanceMessage(`Đã check-in lúc ${formatTime(record.check_in)}.`);
     } catch (err) {
       setAttendanceError(err instanceof Error ? err.message : 'Không check-in được.');
     } finally {
@@ -337,7 +339,8 @@ export default function Attendance() {
       const location = await getBrowserLocation();
       const record = await checkOut(todayRecord, location);
       setTodayRecord(record);
-      setAttendanceMessage(`Đã check-out lúc ${formatTime(record.check_out_at)}.`);
+      setAttendanceReloadKey((value) => value + 1);
+      setAttendanceMessage(`Đã check-out lúc ${formatTime(record.check_out)}.`);
     } catch (err) {
       setAttendanceError(err instanceof Error ? err.message : 'Không check-out được.');
     } finally {
@@ -377,7 +380,7 @@ export default function Attendance() {
           <div className="flex items-start gap-3">
             <div className={cn(
               'flex size-11 shrink-0 items-center justify-center rounded-lg text-white shadow-sm',
-              todayRecord?.check_out_at ? 'bg-primary' : todayRecord?.check_in_at ? 'bg-secondary' : 'bg-home-primary',
+              todayRecord?.check_out ? 'bg-primary' : todayRecord?.check_in ? 'bg-secondary' : 'bg-home-primary',
             )}>
               <Clock3 className="size-5" />
             </div>
@@ -385,7 +388,7 @@ export default function Attendance() {
               <p className="eyebrow">Chấm công của tôi</p>
               <h1 className="mt-1 text-base font-black text-home-on-surface md:text-lg">{attendanceLabel(todayRecord)}</h1>
               <p className="mt-1 text-xs font-semibold leading-5 text-home-on-surface-variant">
-                Nhân viên: <span className="text-home-on-surface">{employeeIdentity?.name}</span> • Mã: <span className="font-mono text-home-on-surface">{employeeIdentity?.id}</span> • Ngày {todayKey}
+                Nhân viên: <span className="text-home-on-surface">{employeeIdentity?.name}</span> • User ID: <span className="font-mono text-home-on-surface">{employeeIdentity?.id}</span> • Ngày {todayKey}
               </p>
             </div>
           </div>
@@ -393,16 +396,16 @@ export default function Attendance() {
           <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto] xl:min-w-[720px]">
             <div className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Giờ vào</p>
-              <p className="mt-1 font-mono text-base font-black text-home-on-surface">{formatTime(todayRecord?.check_in_at || null)}</p>
+              <p className="mt-1 font-mono text-base font-black text-home-on-surface">{formatTime(todayRecord?.check_in || null)}</p>
             </div>
             <div className="rounded-md border border-home-outline bg-home-bg px-3 py-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-home-on-surface-variant">Giờ ra</p>
-              <p className="mt-1 font-mono text-base font-black text-home-on-surface">{formatTime(todayRecord?.check_out_at || null)}</p>
+              <p className="mt-1 font-mono text-base font-black text-home-on-surface">{formatTime(todayRecord?.check_out || null)}</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row md:flex-col xl:flex-row">
               <button
                 onClick={handleCheckIn}
-                disabled={attendanceLoading || Boolean(todayRecord?.check_in_at)}
+                disabled={attendanceLoading || Boolean(todayRecord?.check_in)}
                 className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {attendanceLoading ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
@@ -410,7 +413,7 @@ export default function Attendance() {
               </button>
               <button
                 onClick={handleCheckOut}
-                disabled={attendanceLoading || !todayRecord?.check_in_at || Boolean(todayRecord?.check_out_at)}
+                disabled={attendanceLoading || !todayRecord?.check_in || Boolean(todayRecord?.check_out)}
                 className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {attendanceLoading ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { appSupabase } from './supabase';
 
 const EMPLOYEE_STORAGE_KEY = 'xoxo-attendance-employee';
 
@@ -6,14 +6,12 @@ export type AttendanceStatus = 'not_checked_in' | 'working' | 'checked_out';
 
 export interface AttendanceDbRecord {
   id: string;
-  employee_id: string;
-  employee_name: string;
-  work_date: string;
-  shift_name: string;
-  scheduled_start: string;
-  scheduled_end: string;
-  check_in_at: string | null;
-  check_out_at: string | null;
+  user_id: string;
+  schedule_date: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: string | null;
+  notes: string | null;
   check_in_lat: number | null;
   check_in_lng: number | null;
   check_out_lat: number | null;
@@ -22,7 +20,6 @@ export interface AttendanceDbRecord {
   last_lng: number | null;
   location_accuracy_m: number | null;
   location_captured_at: string | null;
-  status: AttendanceStatus;
   created_at: string;
   updated_at: string;
 }
@@ -39,11 +36,24 @@ export interface GeoPoint {
   capturedAt: string;
 }
 
-const DEFAULT_SHIFT = {
-  shift_name: 'Ca hành chính',
-  scheduled_start: '08:00',
-  scheduled_end: '17:30',
-};
+interface TimesheetRow {
+  id: string;
+  user_id: string;
+  shift_id: string | null;
+  schedule_date: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AttendanceNotes {
+  checkInLocation?: GeoPoint;
+  checkOutLocation?: GeoPoint;
+  lastLocation?: GeoPoint;
+}
 
 export function getStoredEmployee(): EmployeeIdentity | null {
   try {
@@ -137,131 +147,182 @@ export function getBrowserLocation(): Promise<GeoPoint> {
 }
 
 function assertSupabase() {
-  if (!supabase) {
+  if (!appSupabase) {
     throw new Error('Chưa cấu hình Supabase.');
   }
 
-  return supabase;
+  return appSupabase;
+}
+
+function parseNotes(notes: string | null): AttendanceNotes {
+  if (!notes) return {};
+
+  try {
+    const parsed = JSON.parse(notes);
+    return parsed && typeof parsed === 'object' ? parsed as AttendanceNotes : {};
+  } catch {
+    return {};
+  }
+}
+
+function stringifyNotes(notes: AttendanceNotes) {
+  return JSON.stringify(notes);
+}
+
+function mapTimesheet(row: TimesheetRow): AttendanceDbRecord {
+  const notes = parseNotes(row.notes);
+  const checkInLocation = notes.checkInLocation || null;
+  const checkOutLocation = notes.checkOutLocation || null;
+  const lastLocation = notes.lastLocation || checkOutLocation || checkInLocation;
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    schedule_date: row.schedule_date,
+    check_in: row.check_in,
+    check_out: row.check_out,
+    status: row.status,
+    notes: row.notes,
+    check_in_lat: checkInLocation?.lat ?? null,
+    check_in_lng: checkInLocation?.lng ?? null,
+    check_out_lat: checkOutLocation?.lat ?? null,
+    check_out_lng: checkOutLocation?.lng ?? null,
+    last_lat: lastLocation?.lat ?? null,
+    last_lng: lastLocation?.lng ?? null,
+    location_accuracy_m: lastLocation?.accuracy ?? null,
+    location_captured_at: lastLocation?.capturedAt ?? null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
 }
 
 export async function getTodayAttendance(employee: EmployeeIdentity) {
   const client = assertSupabase();
 
   const { data, error } = await client
-    .from('attendance_records')
+    .from('timesheets')
     .select('*')
-    .eq('employee_id', employee.id)
-    .eq('work_date', getTodayKey())
+    .eq('user_id', employee.id)
+    .eq('schedule_date', getTodayKey())
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) throw error;
-  return data as AttendanceDbRecord | null;
+  return data ? mapTimesheet(data as TimesheetRow) : null;
 }
 
 export async function getAttendanceRecordsInRange(startDate: string, endDate: string) {
   const client = assertSupabase();
 
   const { data, error } = await client
-    .from('attendance_records')
+    .from('timesheets')
     .select('*')
-    .gte('work_date', startDate)
-    .lte('work_date', endDate)
-    .order('work_date', { ascending: false })
-    .order('employee_name', { ascending: true });
+    .gte('schedule_date', startDate)
+    .lte('schedule_date', endDate)
+    .order('schedule_date', { ascending: false });
 
   if (error) throw error;
-  return data as AttendanceDbRecord[];
+  return ((data || []) as TimesheetRow[]).map(mapTimesheet);
 }
 
 export async function checkIn(employee: EmployeeIdentity, location: GeoPoint) {
   const client = assertSupabase();
-
-  const { data, error } = await client
-    .from('attendance_records')
-    .upsert(
-      {
-        employee_id: employee.id,
-        employee_name: employee.name,
-        work_date: getTodayKey(),
-        ...DEFAULT_SHIFT,
-        check_in_at: new Date().toISOString(),
-        check_in_lat: location.lat,
-        check_in_lng: location.lng,
-        last_lat: location.lat,
-        last_lng: location.lng,
-        location_accuracy_m: location.accuracy,
-        location_captured_at: location.capturedAt,
-        status: 'working',
-      },
-      { onConflict: 'employee_id,work_date' },
-    )
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as AttendanceDbRecord;
-}
-
-export async function checkOut(record: AttendanceDbRecord, location: GeoPoint) {
-  const client = assertSupabase();
-
-  const { data, error } = await client
-    .from('attendance_records')
-    .update({
-      check_out_at: new Date().toISOString(),
-      check_out_lat: location.lat,
-      check_out_lng: location.lng,
-      last_lat: location.lat,
-      last_lng: location.lng,
-      location_accuracy_m: location.accuracy,
-      location_captured_at: location.capturedAt,
-      status: 'checked_out',
-    })
-    .eq('id', record.id)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as AttendanceDbRecord;
-}
-
-export async function saveTodayLocation(employee: EmployeeIdentity, location: GeoPoint) {
-  const client = assertSupabase();
   const existing = await getTodayAttendance(employee);
+  const notes = stringifyNotes({
+    ...parseNotes(existing?.notes || null),
+    checkInLocation: location,
+    lastLocation: location,
+  });
 
   if (existing) {
     const { data, error } = await client
-      .from('attendance_records')
+      .from('timesheets')
       .update({
-        last_lat: location.lat,
-        last_lng: location.lng,
-        location_accuracy_m: location.accuracy,
-        location_captured_at: location.capturedAt,
+        check_in: existing.check_in || new Date().toISOString(),
+        status: existing.check_out ? 'on_time' : 'incomplete',
+        notes,
       })
       .eq('id', existing.id)
       .select('*')
       .single();
 
     if (error) throw error;
-    return data as AttendanceDbRecord;
+    return mapTimesheet(data as TimesheetRow);
   }
 
   const { data, error } = await client
-    .from('attendance_records')
+    .from('timesheets')
     .insert({
-      employee_id: employee.id,
-      employee_name: employee.name,
-      work_date: getTodayKey(),
-      ...DEFAULT_SHIFT,
-      last_lat: location.lat,
-      last_lng: location.lng,
-      location_accuracy_m: location.accuracy,
-      location_captured_at: location.capturedAt,
-      status: 'not_checked_in',
+      user_id: employee.id,
+      schedule_date: getTodayKey(),
+      check_in: new Date().toISOString(),
+      status: 'incomplete',
+      notes,
     })
     .select('*')
     .single();
 
   if (error) throw error;
-  return data as AttendanceDbRecord;
+  return mapTimesheet(data as TimesheetRow);
+}
+
+export async function checkOut(record: AttendanceDbRecord, location: GeoPoint) {
+  const client = assertSupabase();
+  const notes = stringifyNotes({
+    ...parseNotes(record.notes),
+    checkOutLocation: location,
+    lastLocation: location,
+  });
+
+  const { data, error } = await client
+    .from('timesheets')
+    .update({
+      check_out: new Date().toISOString(),
+      status: 'on_time',
+      notes,
+    })
+    .eq('id', record.id)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapTimesheet(data as TimesheetRow);
+}
+
+export async function saveTodayLocation(employee: EmployeeIdentity, location: GeoPoint) {
+  const client = assertSupabase();
+  const existing = await getTodayAttendance(employee);
+  const notes = stringifyNotes({
+    ...parseNotes(existing?.notes || null),
+    lastLocation: location,
+  });
+
+  if (existing) {
+    const { data, error } = await client
+      .from('timesheets')
+      .update({
+        notes,
+      })
+      .eq('id', existing.id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return mapTimesheet(data as TimesheetRow);
+  }
+
+  const { data, error } = await client
+    .from('timesheets')
+    .insert({
+      user_id: employee.id,
+      schedule_date: getTodayKey(),
+      status: 'incomplete',
+      notes,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapTimesheet(data as TimesheetRow);
 }
