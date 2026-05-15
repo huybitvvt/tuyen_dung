@@ -1,4 +1,4 @@
-import { ExternalLink, Fingerprint, RefreshCw } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 const DEFAULT_ATTENDANCE_URL = 'https://jarviz-attendance.vercel.app';
@@ -10,21 +10,7 @@ export default function Attendance() {
   return (
     <div className="page-shell max-w-7xl">
       <section className="section-card overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-outline-variant p-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-sm shadow-primary/20">
-              <Fingerprint className="size-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="eyebrow">Quản lý ca làm</p>
-              <h1 className="truncate text-lg font-black text-on-surface md:text-xl">Chấm công</h1>
-              <p className="mt-1 text-xs font-semibold text-on-surface-variant">
-                Check-in, check-out và ghi nhận GPS theo dữ liệu Supabase.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
+        <div className="flex justify-end gap-2 border-b border-outline-variant p-3">
             <button
               type="button"
               onClick={() => setFrameKey((value) => value + 1)}
@@ -42,7 +28,6 @@ export default function Attendance() {
               <ExternalLink className="size-4" />
               Mở riêng
             </a>
-          </div>
         </div>
 
         <div className="bg-surface-container-low p-2 md:p-3">
