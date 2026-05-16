@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Quick Check Supabase</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+    .result { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Quick Check Supabase Data</h1>
+  <button onclick="checkAll()">Check All Tables</button>
+  <div id="result"></div>
+
+  <script>
+    const URL = 'https://ljsdoeyiwlrvcqeyfkya.supabase.co/rest/v1';
+    const KEY = 'sb_publishable_NDQm7ShVT_U_ZghQBE2RAg_ra8vke9j';
+
+    async function checkAll() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>⏳ Checking...</p>';
+      
+      const tables = ['users', 'timesheets', 'shifts', 'courses', 'lessons', 'employees'];
+      let html = '';
+      
+      for (const table of tables) {
+        try {
+          const response = await fetch(`${URL}/${table}?limit=5`, {
+            headers: {
+              'apikey': KEY,
+              'Authorization': `Bearer ${KEY}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            html += `<div class="result">
+              <h3>✅ ${table}: ${data.length} records</h3>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </div>`;
+          } else {
+            const error = await response.text();
+            html += `<div class="result">
+              <h3>❌ ${table}: Error ${response.status}</h3>
+              <pre>${error}</pre>
+            </div>`;
+          }
+        } catch (error) {
+          html += `<div class="result">
+            <h3>❌ ${table}: ${error.message}</h3>
+          </div>`;
+        }
+      }
+      
+      resultDiv.innerHTML = html;
+    }
+    
+    // Auto run on load
+    checkAll();
+  </script>
+</body>
+</html>

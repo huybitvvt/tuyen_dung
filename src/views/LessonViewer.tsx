@@ -10,6 +10,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
+import type React from 'react';
 import { cn } from '../lib/utils';
 import { useCrm, type Lesson } from '../lib/crmStore';
 import { useState, useEffect, useMemo } from 'react';

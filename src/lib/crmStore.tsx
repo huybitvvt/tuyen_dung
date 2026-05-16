@@ -140,7 +140,21 @@ export interface CandidateFile {
   candidateId: string;
   name: string;
   url: string;
+  driveFileId?: string;
+  mimeType?: string;
 }
+
+export type CreateCandidateInput = Omit<Candidate, 'id' | 'stage' | 'createdAt'> & {
+  cvUrl?: string;
+  cvDriveFileId?: string;
+  cvMimeType?: string;
+  cvFiles?: Array<{
+    name: string;
+    url: string;
+    driveFileId?: string;
+    mimeType?: string;
+  }>;
+};
 
 interface CrmState {
   employees: Employee[];
@@ -165,7 +179,7 @@ interface CrmContextValue extends CrmState {
   updateLessonProgress: (lessonId: string, percent: number, secondsWatched?: number) => void;
   submitQuiz: (quizId: string, answers: Record<string, number>) => Result;
   createRecruitmentJob: (job: Omit<RecruitmentJob, 'id' | 'quantityHired'>) => void;
-  createCandidate: (candidate: Omit<Candidate, 'id' | 'stage' | 'createdAt'>) => void;
+  createCandidate: (candidate: CreateCandidateInput) => void;
   moveCandidateStage: (candidateId: string, toStage: CandidateStage) => void;
   scheduleInterview: (candidateId: string, scheduledAt: string, interviewer: string) => void;
   recordInterviewResult: (interviewId: string, result: CandidateInterview['result'], notes: string) => void;
@@ -1057,16 +1071,38 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
       },
       createCandidate(candidate) {
         const candidateId = id('candidate');
+        const { cvUrl, cvDriveFileId, cvMimeType, cvFiles, ...candidateData } = candidate;
+        const normalizedCvUrl = cvUrl?.trim();
+        const uploadedFiles = cvFiles?.filter((file) => file.url) ?? [];
+        const nextFiles = uploadedFiles.length > 0
+          ? uploadedFiles.map((file) => ({
+              id: id('file'),
+              candidateId,
+              name: file.name,
+              url: file.url,
+              driveFileId: file.driveFileId,
+              mimeType: file.mimeType,
+            }))
+          : candidateData.cvFileName || normalizedCvUrl
+            ? [
+                {
+                  id: id('file'),
+                  candidateId,
+                  name: candidateData.cvFileName || 'CV ứng viên',
+                  url: normalizedCvUrl || '#',
+                  driveFileId: cvDriveFileId,
+                  mimeType: cvMimeType,
+                },
+              ]
+            : [];
         persist((draft) => ({
           ...draft,
-          candidates: [...draft.candidates, { ...candidate, id: candidateId, stage: 'new', createdAt: nowIso() }],
+          candidates: [...draft.candidates, { ...candidateData, id: candidateId, stage: 'new', createdAt: nowIso() }],
           candidateActivities: [
             ...draft.candidateActivities,
             { id: id('activity'), candidateId, text: 'Ứng tuyển thành công', createdAt: nowIso() },
           ],
-          candidateFiles: candidate.cvFileName
-            ? [...draft.candidateFiles, { id: id('file'), candidateId, name: candidate.cvFileName, url: '#' }]
-            : draft.candidateFiles,
+          candidateFiles: nextFiles.length ? [...draft.candidateFiles, ...nextFiles] : draft.candidateFiles,
         }));
       },
       moveCandidateStage(candidateId, toStage) {

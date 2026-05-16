@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -270,15 +271,27 @@ export default function CandidateProfile() {
                   </div>
                   <p className="px-4 text-center text-[13.5px] font-black text-on-surface">{file.name}</p>
                   <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-on-surface-variant/70">
-                    Lưu trong candidate_files
+                    {file.url && file.url !== '#' ? 'Liên kết Google Drive' : 'Chưa có link Google Drive'}
                   </p>
-                  <button
-                    type="button"
-                    className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/25 bg-primary-fixed px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition active:scale-95 hover:bg-primary hover:text-on-primary"
-                  >
-                    <Eye className="size-3.5" strokeWidth={2.5} />
-                    Xem trước
-                  </button>
+                  {file.url && file.url !== '#' ? (
+                    <a
+                      href={file.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/25 bg-primary-fixed px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition active:scale-95 hover:bg-primary hover:text-on-primary"
+                    >
+                      <Eye className="size-3.5" strokeWidth={2.5} />
+                      Mở file
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-full border border-outline-variant bg-surface px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-on-surface-variant"
+                    >
+                      <Eye className="size-3.5" strokeWidth={2.5} />
+                      Chưa có link
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Supabase Connection</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .input-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+    input:focus {
+      outline: none;
+      border-color: #3ecf8e;
+    }
+    button {
+      background: #3ecf8e;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #2fb574;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    .info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .steps {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .steps ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .steps li {
+      margin: 8px 0;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔌 Test Supabase Connection</h1>
+    
+    <div class="warning">
+      <strong>⚠️ Lưu ý:</strong> Bạn đang dùng <code>publishable key</code> nhưng cần <code>anon key</code> (JWT token) để kết nối Supabase.
+    </div>
+
+    <div class="steps">
+      <strong>📋 Cách lấy Anon Key:</strong>
+      <ol>
+        <li>Vào <a href="https://supabase.com/dashboard/project/ljsdoeyiwlrvcqeyfkya/settings/api" target="_blank">Supabase Dashboard → Settings → API</a></li>
+        <li>Tìm phần <strong>"Project API keys"</strong></li>
+        <li>Copy <strong>"anon/public"</strong> key (bắt đầu bằng <code>eyJ...</code>)</li>
+        <li>Paste vào ô bên dưới</li>
+      </ol>
+    </div>
+
+    <div class="input-group">
+      <label>Supabase URL:</label>
+      <input 
+        type="text" 
+        id="supabaseUrl" 
+        value="https://ljsdoeyiwlrvcqeyfkya.supabase.co"
+        placeholder="https://your-project.supabase.co"
+      />
+    </div>
+
+    <div class="input-group">
+      <label>Anon Key (JWT Token):</label>
+      <input 
+        type="text" 
+        id="anonKey" 
+        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      />
+    </div>
+
+    <button onclick="testConnection()">🧪 Test Connection</button>
+    <button onclick="testTables()" style="background: #667eea; margin-top: 10px;">📊 Check Tables</button>
+    <button onclick="createSampleData()" style="background: #f093fb; margin-top: 10px;">➕ Create Sample Course</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function testConnection() {
+      const url = document.getElementById('supabaseUrl').value.trim();
+      const key = document.getElementById('anonKey').value.trim();
+      const resultDiv = document.getElementById('result');
+
+      if (!url || !key) {
+        resultDiv.innerHTML = '<div class="result error">❌ Vui lòng điền đầy đủ URL và Anon Key</div>';
+        return;
+      }
+
+      if (!key.startsWith('eyJ')) {
+        resultDiv.innerHTML = '<div class="result error">❌ Anon Key phải bắt đầu bằng "eyJ..." (JWT token)\n\nBạn đang dùng publishable key. Vui lòng lấy anon key từ Supabase Dashboard.</div>';
+        return;
+      }
+
+      resultDiv.innerHTML = '<div class="result info">⏳ Đang kết nối...</div>';
+
+      try {
+        const response = await fetch(`${url}/rest/v1/`, {
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`
+          }
+        });
+
+        if (response.ok) {
+          resultDiv.innerHTML = '<div class="result success">✅ Kết nối thành công!\n\nSupabase đã sẵn sàng sử dụng.</div>';
+        } else {
+          const error = await response.text();
+          resultDiv.innerHTML = `<div class="result error">❌ Lỗi kết nối:\n\nStatus: ${response.status}\nError: ${error}</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ Lỗi:\n\n${error.message}</div>`;
+      }
+    }
+
+    async function testTables() {
+      const url = document.getElementById('supabaseUrl').value.trim();
+      const key = document.getElementById('anonKey').value.trim();
+      const resultDiv = document.getElementById('result');
+
+      if (!url || !key) {
+        resultDiv.innerHTML = '<div class="result error">❌ Vui lòng điền đầy đủ URL và Anon Key</div>';
+        return;
+      }
+
+      resultDiv.innerHTML = '<div class="result info">⏳ Đang kiểm tra bảng...</div>';
+
+      try {
+        const tables = ['courses', 'lessons', 'employees', 'recruitment_jobs'];
+        const results = [];
+
+        for (const table of tables) {
+          try {
+            const response = await fetch(`${url}/rest/v1/${table}?limit=1`, {
+              headers: {
+                'apikey': key,
+                'Authorization': `Bearer ${key}`
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              results.push(`✅ ${table}: OK (${data.length} records)`);
+            } else {
+              results.push(`❌ ${table}: ${response.status} - ${response.statusText}`);
+            }
+          } catch (error) {
+            results.push(`❌ ${table}: ${error.message}`);
+          }
+        }
+
+        resultDiv.innerHTML = `<div class="result info">📊 Kết quả kiểm tra bảng:\n\n${results.join('\n')}\n\nNếu có bảng bị lỗi, vui lòng chạy schema.sql trong Supabase SQL Editor.</div>`;
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ Lỗi:\n\n${error.message}</div>`;
+      }
+    }
+
+    async function createSampleData() {
+      const url = document.getElementById('supabaseUrl').value.trim();
+      const key = document.getElementById('anonKey').value.trim();
+      const resultDiv = document.getElementById('result');
+
+      if (!url || !key) {
+        resultDiv.innerHTML = '<div class="result error">❌ Vui lòng điền đầy đủ URL và Anon Key</div>';
+        return;
+      }
+
+      resultDiv.innerHTML = '<div class="result info">⏳ Đang tạo dữ liệu mẫu...</div>';
+
+      try {
+        // Create a sample course
+        const courseData = {
+          name: 'Test Course - ' + new Date().toLocaleTimeString(),
+          department: 'Kỹ thuật',
+          level: 'Cơ bản',
+          description: 'Khóa học test từ HTML tool',
+          assigned_roles: ['Kỹ thuật'],
+          assigned_users: [],
+          kpi_lead_eligible: false
+        };
+
+        const response = await fetch(`${url}/rest/v1/courses`, {
+          method: 'POST',
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(courseData)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          resultDiv.innerHTML = `<div class="result success">✅ Tạo khóa học thành công!\n\nID: ${data[0].id}\nTên: ${data[0].name}\n\nVào Supabase Dashboard → Table Editor → courses để xem.</div>`;
+        } else {
+          const error = await response.text();
+          resultDiv.innerHTML = `<div class="result error">❌ Lỗi tạo khóa học:\n\nStatus: ${response.status}\nError: ${error}\n\nVui lòng chạy schema.sql trước.</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ Lỗi:\n\n${error.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
