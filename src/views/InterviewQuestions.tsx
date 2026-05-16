@@ -469,11 +469,11 @@ export default function InterviewQuestions() {
     <div className="page-shell !max-w-3xl">
       {/* PRINT HEADER (flows in document flow on print) */}
       <div className="print-header hidden print:block">
-        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#c9823a]">XOXO Luxury · Báo cáo phỏng vấn</p>
-        <h1 className="mt-1.5 font-display text-[22px] font-bold leading-tight text-[#1b1c19]">
+        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#f59e0b]">XOXO Luxury · Báo cáo phỏng vấn</p>
+        <h1 className="mt-1.5 font-display text-[22px] font-bold leading-tight text-[#0f172a]">
           {session.candidateName || 'Ứng viên'}
         </h1>
-        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-semibold text-[#444840]">
+        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-semibold text-[#475569]">
           <p><span className="font-black">Vị trí:</span> {session.position}</p>
           <p><span className="font-black">Ngày PV:</span> {formatDateVN(session.date)}</p>
           <p><span className="font-black">Người PV:</span> {session.interviewer || '________________'}</p>

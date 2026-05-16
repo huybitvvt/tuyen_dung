@@ -33,6 +33,34 @@ import CandidateList from './views/CandidateList';
 import CandidateProfile from './views/CandidateProfile';
 import InterviewQuestions from './views/InterviewQuestions';
 
+/* ─────────── Embed detection ───────────
+ * App ẩn sidebar/topbar/bottomnav khi:
+ *   1. URL có ?embed=1 hoặc ?embedded=1
+ *   2. Hoặc app đang chạy trong iframe (window !== top)
+ * Khi nhúng, app dùng đúng giao diện nội dung phẳng để gắn vào host CRM.
+ */
+function detectEmbedMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const flag = params.get('embed') ?? params.get('embedded');
+    if (flag === '1' || flag === 'true' || flag === 'yes') return true;
+    return window.self !== window.top;
+  } catch {
+    return true; // cross-origin iframe throws → safe default = embed
+  }
+}
+
+function useEmbedMode(): boolean {
+  const [embed] = useState<boolean>(() => detectEmbedMode());
+  useEffect(() => {
+    if (embed) {
+      document.documentElement.setAttribute('data-embed', '1');
+    }
+  }, [embed]);
+  return embed;
+}
+
 type NavItem = {
   path: string;
   label: string;
@@ -419,15 +447,80 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
   );
 }
 
-/* ─────────── MAIN LAYOUT (responsive) ─────────── */
+/* ─────────── EMBED SUB-MENU (rendered inside content when embedded) ─────────── */
+function EmbedSubMenu() {
+  const location = useLocation();
+
+  // Find the parent nav group of the current route
+  const activeGroup = navItems.find((item) => {
+    if (!item.children?.length) return false;
+    if (item.path === '/') return location.pathname === '/';
+    return location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+  });
+
+  if (!activeGroup?.children?.length) return null;
+
+  return (
+    <div className="border-b border-outline-variant bg-surface px-3 pt-2.5 pb-2 md:px-5 md:pt-3 md:pb-2.5">
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-hide snap-x">
+        {activeGroup.children.map((child) => {
+          const ChildIcon = child.icon;
+          const isActive =
+            location.pathname === child.path ||
+            (child.path !== activeGroup.path && location.pathname.startsWith(child.path + '/'));
+          return (
+            <Link
+              key={child.path}
+              to={child.path}
+              className={cn(
+                'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold transition active:scale-95',
+                isActive
+                  ? 'border-primary bg-primary text-on-primary shadow-sm shadow-primary/25'
+                  : 'border-outline-variant bg-surface text-on-surface-variant hover:border-primary/30 hover:text-primary'
+              )}
+            >
+              <ChildIcon className="size-3.5" strokeWidth={isActive ? 2.4 : 2} />
+              <span>{child.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── MAIN LAYOUT (responsive + embed-aware) ─────────── */
 function MainLayout({ children, hideNav = false }: { children: React.ReactNode; hideNav?: boolean }) {
   const location = useLocation();
+  const embed = useEmbedMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
   }, [location.pathname]);
+
+  // EMBED MODE — no sidebar/topbar/bottomnav, only content with sub-menu
+  if (embed) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-home-bg text-home-on-surface">
+        <EmbedSubMenu />
+        <main className="flex-1">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+    );
+  }
 
   if (hideNav) {
     // Standalone full-screen layout for course details / candidate profile / lessons

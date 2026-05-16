@@ -167,11 +167,11 @@ function SparklineChart({ values, delay = 0 }: { values: number[]; delay?: numbe
     <svg viewBox={`0 0 ${width} ${height}`} className="h-24 w-full overflow-visible" role="img" aria-label="Biểu đồ xu hướng vận hành">
       <defs>
         <linearGradient id="dashboardLineFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#4f6540" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#4f6540" stopOpacity="0" />
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
         </linearGradient>
         <filter id="dashboardLineGlow" x="-20%" y="-35%" width="140%" height="170%">
-          <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="#4f6540" floodOpacity="0.16" />
+          <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="#3b82f6" floodOpacity="0.16" />
         </filter>
       </defs>
       <motion.polygon
@@ -185,7 +185,7 @@ function SparklineChart({ values, delay = 0 }: { values: number[]; delay?: numbe
       <motion.polyline
         points={points.join(' ')}
         fill="none"
-        stroke="#4f6540"
+        stroke="#3b82f6"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="4"
@@ -203,8 +203,8 @@ function SparklineChart({ values, delay = 0 }: { values: number[]; delay?: numbe
             cx={x}
             cy={y}
             r="4"
-            fill="#fffdf7"
-            stroke="#4f6540"
+            fill="#ffffff"
+            stroke="#3b82f6"
             strokeWidth="3"
             initial={{ opacity: 0, scale: 0 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -225,13 +225,13 @@ function DonutChart({ value }: { value: number }) {
   return (
     <div className="relative flex size-32 items-center justify-center">
       <svg viewBox="0 0 112 112" className="-rotate-90">
-        <circle cx="56" cy="56" r={radius} fill="none" stroke="#f2ead9" strokeWidth="12" />
+        <circle cx="56" cy="56" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="12" />
         <circle
           cx="56"
           cy="56"
           r={radius}
           fill="none"
-          stroke="#c9823a"
+          stroke="#f59e0b"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
@@ -496,7 +496,7 @@ export default function Dashboard() {
             </div>
           </div>
           </div>
-          <div className="border-t border-home-outline bg-[#fbf8ef] p-3.5 md:p-5 lg:border-l lg:border-t-0">
+          <div className="border-t border-home-outline bg-surface-container-low/60 p-3.5 md:p-5 lg:border-l lg:border-t-0">
             <div className="rounded-lg border border-home-outline bg-home-surface p-3 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <div>

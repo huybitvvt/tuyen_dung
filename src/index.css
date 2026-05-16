@@ -2,77 +2,84 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
+  /* ─── Brand: Modern Blue (5F-inspired) ─── */
   --color-surface: #ffffff;
-  --color-surface-dim: #d8dde8;
+  --color-surface-dim: #e2e8f0;
   --color-surface-bright: #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #fbf8ef;
-  --color-surface-container: #f2ead9;
-  --color-surface-container-high: #ede4d2;
-  --color-surface-container-highest: #e5dfd2;
-  
-  --color-on-surface: #1b1c19;
-  --color-on-surface-variant: #444840;
-  
-  --color-inverse-surface: #14213d;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container: #f1f5f9;
+  --color-surface-container-high: #e8eef5;
+  --color-surface-container-highest: #dbe4ee;
+
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+
+  --color-inverse-surface: #0f172a;
   --color-inverse-on-surface: #f8fafc;
-  
-  --color-outline: #8c8f82;
-  --color-outline-variant: #e5dfd2;
-  
-  --color-primary: #4f6540;
+
+  --color-outline: #94a3b8;
+  --color-outline-variant: #e2e8f0;
+
+  /* Primary — vibrant blue (matches 5F sidebar) */
+  --color-primary: #3b82f6;
   --color-on-primary: #ffffff;
-  --color-primary-container: #6b7f4e;
+  --color-primary-container: #2563eb;
   --color-on-primary-container: #ffffff;
-  --color-inverse-primary: #edf4e4;
-  
-  --color-secondary: #c9823a;
+  --color-inverse-primary: #dbeafe;
+
+  /* Secondary — bright orange (icon Hành chính) */
+  --color-secondary: #f59e0b;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #fff0e2;
-  --color-on-secondary-container: #8a4f13;
-  
-  --color-tertiary: #b99137;
+  --color-secondary-container: #fef3c7;
+  --color-on-secondary-container: #92400e;
+
+  /* Tertiary — emerald accent */
+  --color-tertiary: #10b981;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #e0ad24;
-  --color-on-tertiary-container: #451a03;
-  
-  --color-error: #ba1a1a;
+  --color-tertiary-container: #d1fae5;
+  --color-on-tertiary-container: #065f46;
+
+  /* Error */
+  --color-error: #ef4444;
   --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
-  
-  --color-primary-fixed: #edf4e4;
-  --color-primary-fixed-dim: #dce8ce;
-  --color-on-primary-fixed: #2f4327;
-  --color-on-primary-fixed-variant: #4f6540;
-  
-  --color-secondary-fixed: #d3e4fe;
-  --color-secondary-fixed-dim: #b7c8e1;
-  --color-on-secondary-fixed: #0b1c30;
-  --color-on-secondary-fixed-variant: #38485d;
-  
-  --color-tertiary-fixed: #ffdbd0;
-  --color-tertiary-fixed-dim: #ffb59d;
-  --color-on-tertiary-fixed: #390c00;
-  --color-on-tertiary-fixed-variant: #832600;
-  
-  --color-background: #fbf8ef;
-  --color-on-background: #1b1c19;
-  --color-surface-variant: #e5dfd2;
-  --color-home-primary: #4f6540;
-  --color-home-primary-light: #6b7f4e;
-  --color-home-secondary: #c9823a;
-  --color-home-bg: #fbf8ef;
-  --color-home-surface: #fffdf7;
-  --color-home-outline: #e5dfd2;
-  --color-home-on-surface: #1b1c19;
-  --color-home-on-surface-variant: #444840;
-  
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #991b1b;
+
+  /* Fixed tones */
+  --color-primary-fixed: #dbeafe;
+  --color-primary-fixed-dim: #bfdbfe;
+  --color-on-primary-fixed: #1e3a8a;
+  --color-on-primary-fixed-variant: #2563eb;
+
+  --color-secondary-fixed: #fef3c7;
+  --color-secondary-fixed-dim: #fde68a;
+  --color-on-secondary-fixed: #78350f;
+  --color-on-secondary-fixed-variant: #b45309;
+
+  --color-tertiary-fixed: #d1fae5;
+  --color-tertiary-fixed-dim: #a7f3d0;
+  --color-on-tertiary-fixed: #064e3b;
+  --color-on-tertiary-fixed-variant: #047857;
+
+  --color-background: #f1f5f9;
+  --color-on-background: #0f172a;
+  --color-surface-variant: #e2e8f0;
+
+  /* Aliases used across legacy components */
+  --color-home-primary: #3b82f6;
+  --color-home-primary-light: #60a5fa;
+  --color-home-secondary: #f59e0b;
+  --color-home-bg: #f1f5f9;
+  --color-home-surface: #ffffff;
+  --color-home-outline: #e2e8f0;
+  --color-home-on-surface: #0f172a;
+  --color-home-on-surface-variant: #475569;
+
   /* Fonts */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-display: "Playfair Display", serif;
+  --font-display: "Inter", "Playfair Display", serif;
 }
 
 @layer base {
@@ -96,8 +103,8 @@
   body {
     @apply bg-home-bg text-home-on-surface font-sans;
     background:
-      linear-gradient(180deg, rgba(79, 101, 64, 0.08), rgba(201, 130, 58, 0.06) 42%, rgba(251, 248, 239, 1) 100%),
-      #fbf8ef;
+      linear-gradient(180deg, rgba(59, 130, 246, 0.04), rgba(241, 245, 249, 1) 30%, rgba(241, 245, 249, 1) 100%),
+      #f1f5f9;
     text-rendering: geometricPrecision;
     overflow-x: hidden;
   }
@@ -110,7 +117,8 @@
   }
 
   ::selection {
-    background: rgba(79, 101, 64, 0.2);
+    background: rgba(59, 130, 246, 0.22);
+    color: #0f172a;
   }
 }
 
@@ -250,7 +258,7 @@
   .iq-hero {
     background: #ffffff !important;
     border: none !important;
-    border-bottom: 1.5px solid #4f6540 !important;
+    border-bottom: 1.5px solid #3b82f6 !important;
     padding: 0 0 8mm 0 !important;
     margin-bottom: 6mm !important;
   }
@@ -288,7 +296,7 @@
   .print-header {
     position: static !important;
     border: none !important;
-    border-bottom: 2px solid #4f6540 !important;
+    border-bottom: 2px solid #3b82f6 !important;
     padding: 0 0 5mm 0 !important;
     margin: 0 0 6mm 0 !important;
     background: transparent !important;
