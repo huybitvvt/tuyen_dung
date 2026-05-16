@@ -34,20 +34,20 @@ import CandidateProfile from './views/CandidateProfile';
 import InterviewQuestions from './views/InterviewQuestions';
 
 /* ─────────── Embed detection ───────────
- * App ẩn sidebar/topbar/bottomnav khi:
- *   1. URL có ?embed=1 hoặc ?embedded=1
- *   2. Hoặc app đang chạy trong iframe (window !== top)
- * Khi nhúng, app dùng đúng giao diện nội dung phẳng để gắn vào host CRM.
+ * Mặc định app CHẠY Ở DẠNG NHÚNG: ẩn sidebar/topbar/bottomnav, chỉ giữ menu con compact.
+ * Đây là app dùng để nhúng vào host CRM khác.
+ *
+ * Để xem layout đầy đủ (có sidebar) cho mục đích phát triển, thêm ?standalone=1 vào URL.
  */
 function detectEmbedMode(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return true;
   try {
     const params = new URLSearchParams(window.location.search);
-    const flag = params.get('embed') ?? params.get('embedded');
-    if (flag === '1' || flag === 'true' || flag === 'yes') return true;
-    return window.self !== window.top;
+    const standalone = params.get('standalone') ?? params.get('full');
+    if (standalone === '1' || standalone === 'true' || standalone === 'yes') return false;
+    return true;
   } catch {
-    return true; // cross-origin iframe throws → safe default = embed
+    return true;
   }
 }
 
@@ -56,6 +56,8 @@ function useEmbedMode(): boolean {
   useEffect(() => {
     if (embed) {
       document.documentElement.setAttribute('data-embed', '1');
+    } else {
+      document.documentElement.removeAttribute('data-embed');
     }
   }, [embed]);
   return embed;
