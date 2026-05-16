@@ -17,7 +17,6 @@ import {
   FileText,
   HeartHandshake,
   ListChecks,
-  Minus,
   Pencil,
   Printer,
   RotateCcw,
@@ -171,18 +170,22 @@ const sections: Section[] = [
 
 const totalQuestions = sections.reduce((sum, section) => sum + section.questions.length, 0);
 
-type Score = 'pass' | 'neutral' | 'fail' | null;
+const MAX_SCORE_PER_QUESTION = 10;
+const PASS_THRESHOLD = 7; // điểm >= 7 → đạt
+const NEUTRAL_THRESHOLD = 5; // 5-6 → trung bình; <5 → chưa đạt
+
+type ScoreValue = number; // 0-10
 
 interface SessionState {
   candidateName: string;
   position: string;
   date: string;
   interviewer: string;
-  scores: Record<string, Score>;
+  scores: Record<string, ScoreValue>;
   notes: Record<string, string>;
 }
 
-const STORAGE_KEY = 'xoxo-interview-session-v1';
+const STORAGE_KEY = 'xoxo-interview-session-v2';
 
 const todayIso = () => {
   const d = new Date();
@@ -198,27 +201,34 @@ const emptySession: SessionState = {
   notes: {},
 };
 
-const scoreWeight: Record<NonNullable<Score>, number> = {
-  pass: 1,
-  neutral: 0.5,
-  fail: 0,
-};
+function classifyScore(score: ScoreValue): 'pass' | 'neutral' | 'fail' {
+  if (score >= PASS_THRESHOLD) return 'pass';
+  if (score >= NEUTRAL_THRESHOLD) return 'neutral';
+  return 'fail';
+}
 
-const scoreLabel: Record<NonNullable<Score>, string> = {
-  pass: 'Đạt',
-  neutral: 'Trung bình',
-  fail: 'Chưa đạt',
-};
+function scoreLabelText(score: ScoreValue): string {
+  const cls = classifyScore(score);
+  return cls === 'pass' ? 'Đạt' : cls === 'neutral' ? 'Trung bình' : 'Chưa đạt';
+}
 
 function loadSession(): SessionState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptySession;
     const parsed = JSON.parse(raw) as Partial<SessionState>;
+    // Cleanup any non-numeric scores (legacy data)
+    const cleanScores: Record<string, ScoreValue> = {};
+    Object.entries(parsed.scores || {}).forEach(([k, v]) => {
+      const num = typeof v === 'number' ? v : NaN;
+      if (Number.isFinite(num) && num >= 0 && num <= MAX_SCORE_PER_QUESTION) {
+        cleanScores[k] = num;
+      }
+    });
     return {
       ...emptySession,
       ...parsed,
-      scores: parsed.scores || {},
+      scores: cleanScores,
       notes: parsed.notes || {},
     };
   } catch {
@@ -304,21 +314,33 @@ export default function InterviewQuestions() {
   }, [query]);
 
   const stats = useMemo(() => {
-    const entries = Object.entries(session.scores).filter(([, value]) => value) as Array<[string, NonNullable<Score>]>;
+    const entries = Object.entries(session.scores) as Array<[string, ScoreValue]>;
     const answered = entries.length;
-    const passCount = entries.filter(([, v]) => v === 'pass').length;
-    const neutralCount = entries.filter(([, v]) => v === 'neutral').length;
-    const failCount = entries.filter(([, v]) => v === 'fail').length;
-    const totalScore = entries.reduce((sum, [, v]) => sum + scoreWeight[v], 0);
-    const overallPercent = Math.round((totalScore / totalQuestions) * 100);
-    return { answered, passCount, neutralCount, failCount, overallPercent };
+    let totalScore = 0;
+    let passCount = 0;
+    let neutralCount = 0;
+    let failCount = 0;
+    entries.forEach(([, v]) => {
+      totalScore += v;
+      const cls = classifyScore(v);
+      if (cls === 'pass') passCount++;
+      else if (cls === 'neutral') neutralCount++;
+      else failCount++;
+    });
+    const maxPossible = totalQuestions * MAX_SCORE_PER_QUESTION;
+    const overallPercent = maxPossible ? Math.round((totalScore / maxPossible) * 100) : 0;
+    const averageScore = answered ? totalScore / answered : 0;
+    return { answered, passCount, neutralCount, failCount, totalScore, overallPercent, averageScore };
   }, [session.scores]);
 
   const sectionStats = useMemo(() => {
     return sections.map((section) => {
       const keys = section.questions.map((q) => `${section.id}::${q}`);
-      const filled = keys.filter((k) => session.scores[k]).length;
-      const pass = keys.filter((k) => session.scores[k] === 'pass').length;
+      const scoredKeys = keys.filter((k) => k in session.scores);
+      const filled = scoredKeys.length;
+      const pass = scoredKeys.filter((k) => classifyScore(session.scores[k]) === 'pass').length;
+      const totalScore = scoredKeys.reduce((sum, k) => sum + (session.scores[k] || 0), 0);
+      const maxScore = section.questions.length * MAX_SCORE_PER_QUESTION;
       return {
         id: section.id,
         title: section.title,
@@ -326,7 +348,10 @@ export default function InterviewQuestions() {
         total: section.questions.length,
         filled,
         pass,
-        percent: section.questions.length ? Math.round((filled / section.questions.length) * 100) : 0,
+        totalScore,
+        maxScore,
+        percent: maxScore ? Math.round((totalScore / maxScore) * 100) : 0,
+        fillPercent: section.questions.length ? Math.round((filled / section.questions.length) * 100) : 0,
       };
     });
   }, [session.scores]);
@@ -364,15 +389,14 @@ export default function InterviewQuestions() {
     setSession((prev) => ({ ...prev, [key]: value }));
   }
 
-  function setScore(key: string, value: Score) {
+  function setScore(key: string, value: ScoreValue | null) {
     setSession((prev) => {
       const next = { ...prev.scores };
-      if (next[key] === value) {
-        delete next[key];
-      } else if (value === null) {
+      if (value === null || value === undefined) {
         delete next[key];
       } else {
-        next[key] = value;
+        const clamped = Math.max(0, Math.min(MAX_SCORE_PER_QUESTION, Math.round(value)));
+        next[key] = clamped;
       }
       return { ...prev, scores: next };
     });
@@ -424,8 +448,8 @@ export default function InterviewQuestions() {
     lines.push(`Ngày PV    : ${formatDateVN(session.date)}`);
     lines.push(`Người PV   : ${session.interviewer || '(chưa nhập)'}`);
     lines.push('');
-    lines.push(`Tổng điểm  : ${stats.overallPercent}/100`);
-    lines.push(`Đã đánh giá: ${stats.answered}/${totalQuestions} câu`);
+    lines.push(`Tổng điểm  : ${stats.totalScore}/${totalQuestions * MAX_SCORE_PER_QUESTION} (${stats.overallPercent}%)`);
+    lines.push(`Đã chấm   : ${stats.answered}/${totalQuestions} câu`);
     lines.push(`Đạt: ${stats.passCount} | Trung bình: ${stats.neutralCount} | Chưa đạt: ${stats.failCount}`);
     lines.push('');
     lines.push(`KẾT LUẬN: ${recommendation.title.toUpperCase()}`);
@@ -441,7 +465,8 @@ export default function InterviewQuestions() {
         const key = `${section.id}::${q}`;
         const score = session.scores[key];
         const note = session.notes[key];
-        const scoreText = score ? `[${scoreLabel[score]}]` : '[Chưa đánh giá]';
+        const hasScore = key in session.scores;
+        const scoreText = hasScore ? `[${score}/10 — ${scoreLabelText(score)}]` : '[Chưa chấm điểm]';
         lines.push(`${idx + 1}. ${q}`);
         lines.push(`   ${scoreText}`);
         if (note) lines.push(`   Ghi chú: ${note}`);
@@ -683,52 +708,95 @@ export default function InterviewQuestions() {
                 {section.questions.map((question, questionIndex) => {
                   const key = `${section.id}::${question}`;
                   const score = session.scores[key];
+                  const hasScore = key in session.scores;
                   const note = session.notes[key] || '';
                   const isOpen = openNote === key;
+                  const cls = hasScore ? classifyScore(score) : null;
                   return (
-                    <li key={key} className={cn('px-3 py-3.5 transition-colors md:px-4', score && 'bg-surface-container-low/40')}>
+                    <li
+                      key={key}
+                      className={cn(
+                        'px-3 py-3.5 transition-colors md:px-4',
+                        hasScore && 'bg-surface-container-low/40'
+                      )}
+                    >
                       <div className="flex items-start gap-2.5">
                         <div
                           className={cn(
                             'mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-black ring-1 ring-inset transition-colors',
-                            score === 'pass' && 'bg-primary text-on-primary ring-primary',
-                            score === 'neutral' && 'bg-tertiary-container text-on-tertiary-container ring-tertiary/30',
-                            score === 'fail' && 'bg-error-container text-on-error-container ring-error/30',
-                            !score && 'bg-surface ring-outline-variant text-on-surface-variant'
+                            cls === 'pass' && 'bg-primary text-on-primary ring-primary',
+                            cls === 'neutral' && 'bg-tertiary-container text-on-tertiary-container ring-tertiary/30',
+                            cls === 'fail' && 'bg-error-container text-on-error-container ring-error/30',
+                            !hasScore && 'bg-surface ring-outline-variant text-on-surface-variant'
                           )}
                         >
-                          {score === 'pass' ? <Check className="size-4" strokeWidth={3} /> : questionIndex + 1}
+                          {questionIndex + 1}
                         </div>
-                        <p className="flex-1 text-[14px] font-semibold leading-[1.55] text-on-surface md:text-[14.5px]">{question}</p>
+                        <p className="flex-1 text-[14px] font-semibold leading-[1.55] text-on-surface md:text-[14.5px]">
+                          {question}
+                        </p>
+                        {hasScore && (
+                          <div
+                            className={cn(
+                              'shrink-0 rounded-lg border px-2 py-0.5 text-center font-mono text-[12px] font-black tabular-nums',
+                              cls === 'pass' && 'border-primary/30 bg-primary-fixed text-primary',
+                              cls === 'neutral' && 'border-tertiary/30 bg-tertiary-container text-on-tertiary-container',
+                              cls === 'fail' && 'border-error/30 bg-error-container text-on-error-container'
+                            )}
+                          >
+                            {score}/10
+                          </div>
+                        )}
                       </div>
 
-                      {/* Score buttons - mobile optimized */}
-                      <div className="mt-3 grid grid-cols-3 gap-1.5 print:hidden">
-                        <ScoreButton
-                          active={score === 'fail'}
-                          tone="fail"
-                          icon={ThumbsDown}
-                          label="Chưa đạt"
-                          onClick={() => setScore(key, 'fail')}
-                        />
-                        <ScoreButton
-                          active={score === 'neutral'}
-                          tone="neutral"
-                          icon={Minus}
-                          label="Trung bình"
-                          onClick={() => setScore(key, 'neutral')}
-                        />
-                        <ScoreButton
-                          active={score === 'pass'}
-                          tone="pass"
-                          icon={ThumbsUp}
-                          label="Đạt"
-                          onClick={() => setScore(key, 'pass')}
-                        />
+                      {/* Score selector — chấm điểm 0-10 */}
+                      <div className="mt-3 print:hidden">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">
+                            Chấm điểm
+                          </span>
+                          {hasScore && (
+                            <button
+                              type="button"
+                              onClick={() => setScore(key, null)}
+                              className="text-[10px] font-bold text-on-surface-variant transition hover:text-error"
+                            >
+                              Xoá điểm
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-11 gap-1">
+                          {Array.from({ length: 11 }, (_, i) => i).map((point) => {
+                            const isActive = score === point;
+                            const pointCls = classifyScore(point);
+                            return (
+                              <button
+                                key={point}
+                                type="button"
+                                onClick={() => setScore(key, point)}
+                                aria-label={`Chấm ${point} điểm`}
+                                className={cn(
+                                  'flex h-9 items-center justify-center rounded-lg border font-mono text-[11px] font-black tabular-nums transition active:scale-90',
+                                  !isActive && 'border-outline-variant bg-surface text-on-surface-variant hover:border-primary/40 hover:text-primary',
+                                  isActive && pointCls === 'pass' && 'border-primary bg-primary text-on-primary shadow-sm shadow-primary/25',
+                                  isActive && pointCls === 'neutral' && 'border-tertiary bg-tertiary-container text-on-tertiary-container shadow-sm',
+                                  isActive && pointCls === 'fail' && 'border-error bg-error-container text-on-error-container shadow-sm'
+                                )}
+                              >
+                                {point}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-1.5 flex items-center justify-between text-[9.5px] font-bold text-on-surface-variant/80">
+                          <span>0 — chưa đạt</span>
+                          <span className="hidden sm:inline">5-6 — trung bình</span>
+                          <span>10 — xuất sắc</span>
+                        </div>
                       </div>
 
                       {/* Note toggle */}
-                      <div className="mt-2 print:hidden">
+                      <div className="mt-2.5 print:hidden">
                         <button
                           type="button"
                           onClick={() => setOpenNote(isOpen ? null : key)}
@@ -776,7 +844,7 @@ export default function InterviewQuestions() {
                       {/* Print-only score */}
                       <div className="mt-2 hidden print:block">
                         <p className="text-[11px] font-semibold text-on-surface-variant">
-                          Đánh giá: {score ? scoreLabel[score] : '__________'}
+                          Điểm: {hasScore ? `${score}/10 (${scoreLabelText(score)})` : '__________'}
                         </p>
                         {note && <p className="mt-1 text-[11px] font-medium text-on-surface">Ghi chú: {note}</p>}
                       </div>
@@ -1018,37 +1086,6 @@ export default function InterviewQuestions() {
 
 /* ───────────── COMPONENTS ───────────── */
 
-function ScoreButton({
-  active,
-  tone,
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  tone: NonNullable<Score>;
-  icon: typeof ThumbsUp;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'inline-flex h-10 items-center justify-center gap-1 rounded-xl border text-[11px] font-black uppercase tracking-[0.06em] transition active:scale-95',
-        !active && 'border-outline-variant bg-surface text-on-surface-variant hover:border-primary/30',
-        active && tone === 'pass' && 'border-primary bg-primary text-on-primary shadow-sm shadow-primary/25',
-        active && tone === 'neutral' && 'border-tertiary/50 bg-tertiary-container text-on-tertiary-container shadow-sm',
-        active && tone === 'fail' && 'border-error/40 bg-error-container text-on-error-container shadow-sm'
-      )}
-    >
-      <Icon className="size-3.5" strokeWidth={2.5} />
-      <span className="truncate">{label}</span>
-    </button>
-  );
-}
-
 function ScoreRing({ percent, tone }: { percent: number; tone: 'pass' | 'neutral' | 'fail' }) {
   const radius = 32;
   const circumference = 2 * Math.PI * radius;
@@ -1099,7 +1136,7 @@ function ScoreRing({ percent, tone }: { percent: number; tone: 'pass' | 'neutral
   );
 }
 
-function ScoreCount({ label, value, tone }: { label: string; value: number; tone: NonNullable<Score> }) {
+function ScoreCount({ label, value, tone }: { label: string; value: number; tone: 'pass' | 'neutral' | 'fail' }) {
   return (
     <div
       className={cn(
