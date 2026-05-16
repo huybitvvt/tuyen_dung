@@ -73,18 +73,39 @@ export default function CourseDetails() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface">
-      <header className="sticky top-0 z-50 bg-surface border-b border-outline-variant shadow-sm h-14 flex items-center justify-between px-4 w-full md:hidden">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container-high rounded-full">
-          <ArrowLeft className="size-6" />
+    <div className="flex min-h-screen flex-col bg-surface">
+      <header className="sticky top-0 z-50 flex h-14 w-full items-center justify-between gap-2 border-b border-outline-variant bg-surface px-3 shadow-sm md:h-16 md:px-5">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition active:scale-90 hover:bg-surface-container-high hover:text-primary"
+          aria-label="Quay lại"
+        >
+          <ArrowLeft className="size-5" strokeWidth={2.2} />
         </button>
-        <h1 className="text-lg font-bold text-primary truncate px-4">{course.name}</h1>
-        <button className="p-2 -mr-2 text-on-surface-variant hover:bg-surface-container-high rounded-full">
-          <MoreVertical className="size-6" />
+        <div className="min-w-0 flex-1 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-on-surface-variant">Khóa học</p>
+          <h1 className="truncate text-[14px] font-black leading-tight text-on-surface md:text-[15px]">
+            {course.name}
+          </h1>
+        </div>
+        <button
+          type="button"
+          onClick={handleOpenAssign}
+          className="hidden h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-[10.5px] font-black uppercase tracking-[0.10em] text-on-primary shadow-sm shadow-primary/25 transition active:scale-95 hover:bg-primary-container md:inline-flex"
+        >
+          <UserPlus className="size-4" strokeWidth={2.5} />
+          Gán cho NV
+        </button>
+        <button
+          type="button"
+          aria-label="Thêm tùy chọn"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition active:scale-90 hover:bg-surface-container-high hover:text-primary md:hidden"
+        >
+          <MoreVertical className="size-5" />
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-24 max-w-4xl mx-auto w-full">
+      <main className="mx-auto w-full max-w-4xl flex-1 overflow-y-auto pb-24 md:pb-12">
         <div className="w-full aspect-video bg-surface-container-highest relative flex items-center justify-center group overflow-hidden">
           <div className={cn(
             'absolute inset-0',
@@ -193,9 +214,12 @@ export default function CourseDetails() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 bg-surface/80 backdrop-blur-md border-t border-outline-variant p-4 shadow-xl w-full max-w-4xl z-40 pb-safe md:rounded-t-2xl">
-        <button onClick={handleOpenAssign} className="w-full bg-primary text-on-primary h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary-container hover:scale-[0.99] transition-all shadow-lg active:scale-95">
-          <UserPlus className="size-5" />
+      <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-4xl -translate-x-1/2 border-t border-outline-variant bg-surface/85 p-4 pb-safe shadow-xl backdrop-blur-md md:hidden md:rounded-t-2xl">
+        <button
+          onClick={handleOpenAssign}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-[13px] font-black uppercase tracking-[0.12em] text-on-primary shadow-md shadow-primary/25 transition active:scale-[0.98] hover:bg-primary-container"
+        >
+          <UserPlus className="size-5" strokeWidth={2.5} />
           Gán cho nhân viên
         </button>
       </div>
