@@ -449,44 +449,75 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
   );
 }
 
-/* ─────────── EMBED SUB-MENU (rendered inside content when embedded) ─────────── */
-function EmbedSubMenu() {
+/* ─────────── EMBED NAV (top-level + sub-items) ─────────── */
+function EmbedNav() {
   const location = useLocation();
 
   // Find the parent nav group of the current route
   const activeGroup = navItems.find((item) => {
-    if (!item.children?.length) return false;
     if (item.path === '/') return location.pathname === '/';
     return location.pathname === item.path || location.pathname.startsWith(item.path + '/');
   });
 
-  if (!activeGroup?.children?.length) return null;
-
   return (
-    <div className="border-b border-outline-variant bg-surface px-3 pt-2.5 pb-2 md:px-5 md:pt-3 md:pb-2.5">
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-hide snap-x">
-        {activeGroup.children.map((child) => {
-          const ChildIcon = child.icon;
-          const isActive =
-            location.pathname === child.path ||
-            (child.path !== activeGroup.path && location.pathname.startsWith(child.path + '/'));
-          return (
-            <Link
-              key={child.path}
-              to={child.path}
-              className={cn(
-                'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold transition active:scale-95',
-                isActive
-                  ? 'border-primary bg-primary text-on-primary shadow-sm shadow-primary/25'
-                  : 'border-outline-variant bg-surface text-on-surface-variant hover:border-primary/30 hover:text-primary'
-              )}
-            >
-              <ChildIcon className="size-3.5" strokeWidth={isActive ? 2.4 : 2} />
-              <span>{child.label}</span>
-            </Link>
-          );
-        })}
+    <div className="sticky top-0 z-30 border-b border-outline-variant bg-surface/95 backdrop-blur-md">
+      {/* Hàng 1 — module chính */}
+      <div className="px-3 pt-2.5 pb-2 md:px-5 md:pt-3 md:pb-2.5">
+        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 scrollbar-hide snap-x">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeGroup?.path === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-bold transition active:scale-95',
+                  isActive
+                    ? 'border-primary bg-primary text-on-primary shadow-sm shadow-primary/25'
+                    : 'border-outline-variant bg-surface text-on-surface-variant hover:border-primary/30 hover:text-primary'
+                )}
+              >
+                <Icon className="size-3.5" strokeWidth={isActive ? 2.4 : 2} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Hàng 2 — sub-items của module hiện tại */}
+      {activeGroup?.children?.length ? (
+        <div className="border-t border-outline-variant/60 bg-surface-container-low/40 px-3 pt-2 pb-2 md:px-5 md:pb-2.5">
+          <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 scrollbar-hide snap-x">
+            <span className="shrink-0 text-[9.5px] font-black uppercase tracking-[0.16em] text-on-surface-variant">
+              {activeGroup.label}
+            </span>
+            <span className="size-1 shrink-0 rounded-full bg-outline-variant" />
+            {activeGroup.children.map((child) => {
+              const ChildIcon = child.icon;
+              const isActive =
+                location.pathname === child.path ||
+                (child.path !== activeGroup.path && location.pathname.startsWith(child.path + '/'));
+              return (
+                <Link
+                  key={child.path}
+                  to={child.path}
+                  className={cn(
+                    'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold transition active:scale-95',
+                    isActive
+                      ? 'border-primary/40 bg-primary-fixed text-primary shadow-sm'
+                      : 'border-outline-variant bg-surface text-on-surface-variant hover:border-primary/30 hover:text-primary'
+                  )}
+                >
+                  <ChildIcon className="size-3" strokeWidth={isActive ? 2.4 : 2} />
+                  <span>{child.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -502,11 +533,11 @@ function MainLayout({ children, hideNav = false }: { children: React.ReactNode; 
     setDrawerOpen(false);
   }, [location.pathname]);
 
-  // EMBED MODE — no sidebar/topbar/bottomnav, only content with sub-menu
+  // EMBED MODE — no sidebar/topbar/bottomnav, only content with full-width nav
   if (embed) {
     return (
       <div className="flex min-h-dvh flex-col bg-home-bg text-home-on-surface">
-        <EmbedSubMenu />
+        <EmbedNav />
         <main className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div
