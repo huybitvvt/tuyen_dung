@@ -11,7 +11,6 @@ import {
   MessageCircleQuestion,
   RotateCcw,
   Search,
-  Settings,
   UsersRound,
   UserSquare2,
   X,
@@ -88,7 +87,6 @@ const navItems: NavItem[] = [
       { path: '/recruitment/interview-questions', label: 'Bộ câu hỏi phỏng vấn', icon: MessageCircleQuestion },
     ],
   },
-  { path: '/settings', label: 'Cài đặt', icon: Settings },
 ];
 
 function isItemActive(itemPath: string, currentPath: string) {
@@ -384,7 +382,6 @@ function BottomNav() {
     { path: '/', label: 'Tổng quan', icon: LayoutDashboard },
     { path: '/training', label: 'Đào tạo', icon: GraduationCap },
     { path: '/recruitment', label: 'Tuyển dụng', icon: UsersRound },
-    { path: '/settings', label: 'Cài đặt', icon: Settings },
   ];
 
   return (
@@ -638,7 +635,6 @@ function AuthenticatedRoutes() {
       <Route path="/recruitment/candidates" element={<MainLayout><CandidateList /></MainLayout>} />
       <Route path="/recruitment/candidate/:id" element={<MainLayout hideNav><CandidateProfile /></MainLayout>} />
       <Route path="/recruitment/interview-questions" element={<MainLayout><InterviewQuestions /></MainLayout>} />
-      <Route path="/settings" element={<MainLayout><div className="p-6 text-on-surface-variant">Cài đặt (Coming soon)</div></MainLayout>} />
     </Routes>
   );
 }
