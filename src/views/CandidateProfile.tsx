@@ -7,18 +7,15 @@ import {
   Check,
   CheckCircle,
   ChevronDown,
-  Download,
   Eye,
   FileEdit,
   FileText,
   Globe,
   Mail,
-  MoreVertical,
   Phone,
   RefreshCw,
   ThumbsDown,
   ThumbsUp,
-  User,
   UserRound,
   X,
 } from 'lucide-react';
@@ -164,274 +161,250 @@ export default function CandidateProfile() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-home-bg pb-28">
-      <header className="sticky top-0 z-50 flex h-14 w-full items-center justify-between gap-2 border-b border-outline-variant bg-surface/95 px-3 shadow-sm backdrop-blur-md md:h-16 md:px-5">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition active:scale-90 hover:bg-surface-container-high hover:text-primary"
-          aria-label="Quay lại"
-        >
-          <ArrowLeft className="size-5" strokeWidth={2.2} />
-        </button>
-        <div className="min-w-0 flex-1 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-on-surface-variant">Hồ sơ ứng viên</p>
-          <h1 className="truncate text-[13.5px] font-black leading-tight text-on-surface md:text-[15px]">
-            {candidate.name}
-          </h1>
+    <div className="min-h-screen bg-[#f5f7fb] text-on-surface">
+      <header className="sticky top-0 z-50 border-b border-[#dbe2ea] bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.03)] backdrop-blur">
+        <div className="mx-auto flex min-h-16 w-full max-w-6xl flex-wrap items-center gap-3 px-4 py-3 lg:flex-nowrap lg:px-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#dbe2ea] bg-white text-[#475569] transition hover:border-primary/35 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+            aria-label="Quay lại"
+          >
+            <ArrowLeft className="size-5" strokeWidth={2.2} />
+          </button>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#64748b]">Tuyển dụng / Hồ sơ ứng viên</p>
+            <h1 className="truncate text-[17px] font-black leading-tight text-[#0f172a] md:text-[20px]">{candidate.name}</h1>
+          </div>
+
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <button
+              type="button"
+              onClick={openResultModal}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[#dbe2ea] bg-white px-3 text-[11px] font-black uppercase tracking-[0.10em] text-[#475569] transition hover:border-primary/35 hover:bg-primary-fixed/35 hover:text-primary active:scale-[0.98] sm:flex-none"
+            >
+              <FileEdit className="size-4" strokeWidth={2.2} />
+              Kết quả
+            </button>
+            <button
+              type="button"
+              onClick={openInterviewModal}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[#dbe2ea] bg-white px-3 text-[11px] font-black uppercase tracking-[0.10em] text-[#475569] transition hover:border-primary/35 hover:bg-primary-fixed/35 hover:text-primary active:scale-[0.98] sm:flex-none"
+            >
+              <Calendar className="size-4" strokeWidth={2.2} />
+              Hẹn phỏng vấn
+            </button>
+            <button
+              type="button"
+              onClick={openStageModal}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-[11px] font-black uppercase tracking-[0.10em] text-on-primary shadow-sm shadow-primary/20 transition hover:bg-primary-container active:scale-[0.98] sm:flex-none"
+            >
+              <RefreshCw className="size-4" strokeWidth={2.5} />
+              Cập nhật stage
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          aria-label="Thêm tùy chọn"
-          className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition active:scale-90 hover:bg-surface-container-high hover:text-primary"
-        >
-          <MoreVertical className="size-5" />
-        </button>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-3 py-4 md:px-6 md:py-6">
-        <div className="flex flex-col gap-3 md:gap-4">
-          {/* PROFILE HEADER */}
-          <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
-            <div className="relative h-20 bg-gradient-to-br from-primary-fixed via-secondary-container/50 to-tertiary-container/30 md:h-24">
-              <div className="absolute -right-6 -top-6 size-32 rounded-full bg-white/30 blur-3xl" />
-            </div>
-            <div className="relative -mt-10 flex flex-col items-center gap-3 px-4 pb-4 md:flex-row md:items-end md:px-6 md:pb-5">
-              <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl border-4 border-surface bg-gradient-to-br from-primary to-primary-container text-[20px] font-black text-on-primary shadow-md md:size-24 md:text-[24px]">
+      <main className="mx-auto w-full max-w-6xl px-4 py-4 lg:px-6 lg:py-5">
+        <section className="rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
+          <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex size-16 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary-fixed text-[18px] font-black text-primary shadow-sm">
                 {candidate.name.slice(0, 2).toUpperCase()}
               </div>
-              <div className="flex-1 text-center md:pb-1 md:text-left">
-                <h2 className="font-display text-[20px] font-bold leading-tight text-on-surface md:text-[24px]">
-                  {candidate.name}
-                </h2>
-                <p className="mt-0.5 text-[11.5px] font-bold uppercase tracking-[0.14em] text-on-surface-variant">
-                  {job?.title || 'Chưa gán vị trí'}
-                </p>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary-fixed px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-primary">
-                  <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-                  {stageLabel(candidate.stage)}
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate text-[22px] font-black leading-tight text-[#0f172a] md:text-[26px]">{candidate.name}</h2>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary-fixed px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-primary">
+                    <span className="size-1.5 rounded-full bg-primary" />
+                    {stageLabel(candidate.stage)}
+                  </span>
                 </div>
+                <p className="mt-1 text-[13px] font-bold uppercase tracking-[0.12em] text-[#64748b]">{job?.title || 'Chưa gán vị trí'}</p>
               </div>
             </div>
-          </section>
 
-          {/* INFO */}
-          <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
-            <header className="border-b border-outline-variant px-4 py-3 md:px-5">
-              <p className="eyebrow">Thông tin liên hệ</p>
-            </header>
-            <ul className="divide-y divide-outline-variant/40">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:min-w-[360px]">
               {[
-                { icon: Phone, label: 'Số điện thoại', value: candidate.phone, mono: true },
-                { icon: Mail, label: 'Email', value: candidate.email },
-                { icon: Globe, label: 'Nguồn ứng tuyển', value: candidate.source },
-                { icon: User, label: 'Vị trí ứng tuyển', value: `${job?.title ?? '-'} · ${job?.department ?? '-'}` },
+                { label: 'Phòng ban', value: job?.department ?? '-' },
+                { label: 'Nguồn', value: candidate.source || '-' },
+                { label: 'Ngày tạo', value: formatDateTime(candidate.createdAt) },
               ].map((item) => (
-                <li key={item.label} className="flex items-center gap-3 px-4 py-3 transition hover:bg-surface-container-low/40 md:px-5">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-container-low text-primary ring-1 ring-outline-variant/60">
-                    <item.icon className="size-4" strokeWidth={2.2} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">
-                      {item.label}
-                    </p>
-                    <p
-                      className={cn(
-                        'truncate text-[13.5px] font-bold text-on-surface',
-                        item.mono && 'font-mono'
-                      )}
-                    >
-                      {item.value}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* CV */}
-          <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
-            <header className="flex items-center justify-between gap-2 border-b border-outline-variant px-4 py-3 md:px-5">
-              <p className="eyebrow">CV / File đính kèm</p>
-              <button
-                type="button"
-                className="flex size-8 items-center justify-center rounded-full text-on-surface-variant transition active:scale-90 hover:bg-surface-container-high hover:text-primary"
-                aria-label="Tải xuống"
-              >
-                <Download className="size-4" strokeWidth={2.2} />
-              </button>
-            </header>
-            <div className="p-4 md:p-5">
-              {(files.length ? files : [{ id: 'fallback', name: candidate.cvFileName, url: '#' }]).map((file) => (
-                <div
-                  key={file.id}
-                  className="group relative flex flex-col items-center justify-center gap-2.5 overflow-hidden rounded-2xl border border-dashed border-outline-variant bg-surface-container-low/40 px-4 py-8 transition hover:border-primary/40 hover:bg-primary-fixed/30"
-                >
-                  <div className="flex size-14 items-center justify-center rounded-2xl bg-error-container/40 text-error shadow-sm transition group-hover:scale-105">
-                    <FileText className="size-6" strokeWidth={2.2} />
-                  </div>
-                  <p className="px-4 text-center text-[13.5px] font-black text-on-surface">{file.name}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-on-surface-variant/70">
-                    {file.url && file.url !== '#' ? 'Liên kết Google Drive' : 'Chưa có link Google Drive'}
-                  </p>
-                  {file.url && file.url !== '#' ? (
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/25 bg-primary-fixed px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition active:scale-95 hover:bg-primary hover:text-on-primary"
-                    >
-                      <Eye className="size-3.5" strokeWidth={2.5} />
-                      Mở file
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      className="mt-1 inline-flex h-9 items-center gap-1.5 rounded-full border border-outline-variant bg-surface px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-on-surface-variant"
-                    >
-                      <Eye className="size-3.5" strokeWidth={2.5} />
-                      Chưa có link
-                    </button>
-                  )}
+                <div key={item.label} className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2">
+                  <p className="text-[9.5px] font-black uppercase tracking-[0.14em] text-[#64748b]">{item.label}</p>
+                  <p className="mt-1 truncate text-[12.5px] font-black text-[#0f172a]">{item.value}</p>
                 </div>
               ))}
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* INTERVIEWS */}
-          <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
-            <header className="flex items-center justify-between gap-2 border-b border-outline-variant px-4 py-3 md:px-5">
-              <p className="eyebrow">Lịch phỏng vấn</p>
-              <button
-                type="button"
-                onClick={openResultModal}
-                className="text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition hover:underline"
-              >
-                Ghi kết quả
-              </button>
-            </header>
-            {interviews.length > 0 ? (
-              <ul className="divide-y divide-outline-variant/40">
-                {interviews.map((interview) => (
-                  <li key={interview.id} className="flex items-start gap-3 px-4 py-3 md:px-5">
-                    <div
-                      className={cn(
-                        'flex size-9 shrink-0 items-center justify-center rounded-xl',
-                        interview.result === 'Đạt' && 'bg-primary text-on-primary',
-                        interview.result === 'Không đạt' && 'bg-error-container text-on-error-container',
-                        interview.result === 'Cần cân nhắc' && 'bg-tertiary-container text-on-tertiary-container',
-                        !interview.result && 'bg-secondary-container text-on-secondary-container'
-                      )}
-                    >
-                      <CalendarClock className="size-4" strokeWidth={2.2} />
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-4">
+            <section className="overflow-hidden rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
+              <header className="border-b border-[#e2e8f0] px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#475569]">Thông tin ứng viên</p>
+              </header>
+              <div className="grid divide-y divide-[#e2e8f0] md:grid-cols-2 md:divide-x md:divide-y-0">
+                {[
+                  { icon: Phone, label: 'Số điện thoại', value: candidate.phone, mono: true },
+                  { icon: Mail, label: 'Email', value: candidate.email },
+                  { icon: Globe, label: 'Nguồn ứng tuyển', value: candidate.source },
+                  { icon: Briefcase, label: 'Vị trí ứng tuyển', value: `${job?.title ?? '-'} · ${job?.department ?? '-'}` },
+                ].map((item) => (
+                  <div key={item.label} className="flex min-w-0 gap-3 px-4 py-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#e2e8f0] bg-[#f8fafc] text-primary">
+                      <item.icon className="size-4" strokeWidth={2.2} />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-black text-on-surface">{formatDateTime(interview.scheduledAt)}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">
-                        Người phỏng vấn: {interview.interviewer}
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#64748b]">{item.label}</p>
+                      <p className={cn('mt-0.5 truncate text-[13px] font-bold text-[#0f172a]', item.mono && 'font-mono')}>
+                        {item.value}
                       </p>
-                      {interview.result ? (
-                        <div className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-outline-variant bg-surface-container-low px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant">
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="overflow-hidden rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
+              <header className="border-b border-[#e2e8f0] px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#475569]">CV / File đính kèm</p>
+              </header>
+              <div className="divide-y divide-[#e2e8f0]">
+                {(files.length ? files : [{ id: 'fallback', name: candidate.cvFileName, url: '#' }]).map((file) => (
+                  <div key={file.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#e2e8f0] bg-[#f8fafc] text-primary">
+                        <FileText className="size-5" strokeWidth={2.2} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-black text-[#0f172a]">{file.name}</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-[#64748b]">
+                          {file.url && file.url !== '#' ? 'Đã lưu liên kết Google Drive' : 'Chưa có link Google Drive'}
+                        </p>
+                      </div>
+                    </div>
+                    {file.url && file.url !== '#' ? (
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-primary/25 bg-primary-fixed px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition hover:bg-primary hover:text-on-primary"
+                      >
+                        <Eye className="size-4" strokeWidth={2.4} />
+                        Mở file
+                      </a>
+                    ) : (
+                      <span className="inline-flex h-9 items-center justify-center rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-[#64748b]">
+                        Chưa có link
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-[#dbe2ea] bg-white p-4 shadow-sm">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#475569]">Ghi chú đánh giá</p>
+              <p className="mt-2 min-h-14 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2 text-[13px] font-semibold leading-6 text-[#334155]">
+                {candidate.notes || 'Chưa có ghi chú đánh giá.'}
+              </p>
+            </section>
+          </div>
+
+          <div className="space-y-4">
+            <section className="overflow-hidden rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
+              <header className="flex items-center justify-between gap-3 border-b border-[#e2e8f0] px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#475569]">Lịch phỏng vấn</p>
+                <button
+                  type="button"
+                  onClick={openResultModal}
+                  className="text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition hover:underline"
+                >
+                  Ghi kết quả
+                </button>
+              </header>
+              {interviews.length > 0 ? (
+                <ul className="divide-y divide-[#e2e8f0]">
+                  {interviews.map((interview) => (
+                    <li key={interview.id} className="flex items-start gap-3 px-4 py-3">
+                      <div
+                        className={cn(
+                          'flex size-10 shrink-0 items-center justify-center rounded-lg border',
+                          interview.result === 'Đạt' && 'border-primary/20 bg-primary-fixed text-primary',
+                          interview.result === 'Không đạt' && 'border-error/20 bg-error-container text-on-error-container',
+                          interview.result === 'Cần cân nhắc' && 'border-tertiary/20 bg-tertiary-container text-on-tertiary-container',
+                          !interview.result && 'border-[#e2e8f0] bg-[#f8fafc] text-[#64748b]'
+                        )}
+                      >
+                        <CalendarClock className="size-4" strokeWidth={2.2} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-black text-[#0f172a]">{formatDateTime(interview.scheduledAt)}</p>
+                        <p className="mt-0.5 text-[11.5px] font-semibold text-[#64748b]">Người phỏng vấn: {interview.interviewer}</p>
+                        <span className="mt-2 inline-flex items-center gap-1 rounded-md border border-[#e2e8f0] bg-[#f8fafc] px-2 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-[#475569]">
                           {interview.result === 'Đạt' && <ThumbsUp className="size-3 text-primary" strokeWidth={2.5} />}
                           {interview.result === 'Không đạt' && <ThumbsDown className="size-3 text-error" strokeWidth={2.5} />}
                           {interview.result === 'Cần cân nhắc' && <RefreshCw className="size-3 text-tertiary" strokeWidth={2.5} />}
-                          {interview.result}
-                        </div>
-                      ) : (
-                        <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-outline-variant bg-surface-container-low px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant">
-                          Chưa có kết quả
+                          {interview.result || 'Chưa có kết quả'}
                         </span>
-                      )}
-                      {interview.notes && (
-                        <p className="mt-2 rounded-lg border border-outline-variant/60 bg-surface-container-low/40 px-2.5 py-1.5 text-[11.5px] font-medium leading-[1.45] text-on-surface-variant">
-                          {interview.notes}
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-2 px-4 py-8">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-surface-container-low/60 text-on-surface-variant">
-                  <CalendarClock className="size-5" strokeWidth={2} />
-                </div>
-                <p className="text-[12.5px] font-bold text-on-surface">Chưa có lịch phỏng vấn</p>
-                <p className="max-w-xs text-center text-[11px] font-medium text-on-surface-variant">
-                  Sử dụng nút "Hẹn phỏng vấn" phía dưới để tạo lịch.
-                </p>
-              </div>
-            )}
-          </section>
-
-          {/* ACTIVITIES TIMELINE */}
-          <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
-            <header className="border-b border-outline-variant px-4 py-3 md:px-5">
-              <p className="eyebrow">Lịch sử hoạt động</p>
-            </header>
-            <div className="px-4 py-4 md:px-6 md:py-5">
-              {activities.length > 0 ? (
-                <ol className="relative ml-2 space-y-5 border-l-2 border-outline-variant/60 pl-5">
-                  {activities.map((item, index) => (
-                    <li key={item.id} className="relative">
-                      <div
-                        className={cn(
-                          'absolute -left-[27px] flex size-3.5 items-center justify-center rounded-full border-4 border-surface shadow-sm',
-                          index === 0 ? 'bg-primary ring-2 ring-primary/20' : 'bg-outline-variant'
+                        {interview.notes && (
+                          <p className="mt-2 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2 text-[12px] font-medium leading-5 text-[#475569]">
+                            {interview.notes}
+                          </p>
                         )}
-                      />
-                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">
-                        {formatDateTime(item.createdAt)}
-                      </p>
-                      <p className="mt-0.5 text-[13px] font-semibold leading-5 text-on-surface">
-                        {item.text}
-                        {item.toStage && (
-                          <span className="ml-1 font-black text-primary">
-                            ({stageLabel(item.toStage)})
-                          </span>
-                        )}
-                      </p>
+                      </div>
                     </li>
                   ))}
-                </ol>
+                </ul>
               ) : (
-                <p className="py-4 text-center text-[12px] font-medium text-on-surface-variant">
-                  Chưa có hoạt động nào.
-                </p>
+                <div className="px-4 py-8 text-center">
+                  <div className="mx-auto flex size-11 items-center justify-center rounded-lg border border-[#e2e8f0] bg-[#f8fafc] text-[#64748b]">
+                    <CalendarClock className="size-5" strokeWidth={2} />
+                  </div>
+                  <p className="mt-3 text-[13px] font-black text-[#0f172a]">Chưa có lịch phỏng vấn</p>
+                  <p className="mt-1 text-[12px] font-medium text-[#64748b]">Tạo lịch phỏng vấn để theo dõi vòng tuyển dụng.</p>
+                </div>
               )}
-            </div>
-          </section>
+            </section>
+
+            <section className="overflow-hidden rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
+              <header className="border-b border-[#e2e8f0] px-4 py-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#475569]">Lịch sử hoạt động</p>
+              </header>
+              <div className="px-4 py-4">
+                {activities.length > 0 ? (
+                  <ol className="space-y-3">
+                    {activities.map((item, index) => (
+                      <li key={item.id} className="grid grid-cols-[88px_1fr] gap-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5">
+                        <div>
+                          <span
+                            className={cn(
+                              'inline-flex size-2 rounded-full',
+                              index === 0 ? 'bg-primary' : 'bg-[#94a3b8]'
+                            )}
+                          />
+                          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.10em] text-[#64748b]">
+                            {formatDateTime(item.createdAt)}
+                          </p>
+                        </div>
+                        <p className="min-w-0 text-[12.5px] font-semibold leading-5 text-[#334155]">
+                          {item.text}
+                          {item.toStage && <span className="ml-1 font-black text-primary">({stageLabel(item.toStage)})</span>}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="py-4 text-center text-[12px] font-medium text-[#64748b]">Chưa có hoạt động nào.</p>
+                )}
+              </div>
+            </section>
+          </div>
         </div>
       </main>
-
-      {/* BOTTOM ACTION BAR */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-outline-variant bg-surface/95 px-3 pt-2.5 shadow-[0_-8px_32px_rgba(79,101,64,0.10)] backdrop-blur-xl md:px-6" style={{ paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-2">
-          <button
-            type="button"
-            onClick={openResultModal}
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-outline-variant bg-surface text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
-            aria-label="Ghi kết quả phỏng vấn"
-          >
-            <FileEdit className="size-4" strokeWidth={2.2} />
-          </button>
-          <button
-            type="button"
-            onClick={openInterviewModal}
-            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl border border-outline-variant bg-surface px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
-          >
-            <Calendar className="size-4 text-primary" strokeWidth={2.2} />
-            <span>Hẹn phỏng vấn</span>
-          </button>
-          <button
-            type="button"
-            onClick={openStageModal}
-            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-primary px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-on-primary shadow-md shadow-primary/25 transition active:scale-95 hover:bg-primary-container md:flex-[1.4]"
-          >
-            <RefreshCw className="size-4" strokeWidth={2.5} />
-            <span>Cập nhật stage</span>
-          </button>
-        </div>
-      </div>
 
       {/* MODALS */}
       <AnimatePresence>

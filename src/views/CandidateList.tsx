@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { candidateStages, stageLabel, useCrm, type CandidateStage } from '../lib/crmStore';
 import { isGoogleDrivePickerConfigured, uploadGoogleDriveFiles } from '../lib/googleDrivePicker';
@@ -75,6 +76,7 @@ export default function CandidateList() {
   const [formError, setFormError] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploadingDrive, setIsUploadingDrive] = useState(false);
+  const [activeNote, setActiveNote] = useState<{ name: string; note: string } | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const filesByCandidate = useMemo(() => {
@@ -287,19 +289,19 @@ export default function CandidateList() {
 
       <section className="hidden overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm md:block">
         <div className="overflow-x-auto">
-          <table className="min-w-[1080px] w-full border-collapse text-left">
+          <table className="w-full min-w-[1340px] border-collapse text-left">
             <thead className="bg-surface-container-low">
               <tr className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">
-                <th className="px-4 py-3">Họ tên</th>
-                <th className="px-4 py-3">SĐT</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Vị trí ứng tuyển</th>
-                <th className="px-4 py-3">Nguồn</th>
-                <th className="px-4 py-3">Trạng thái</th>
-                <th className="px-4 py-3">CV/file</th>
-                <th className="px-4 py-3">Ghi chú đánh giá</th>
-                <th className="px-4 py-3">Lịch sử</th>
-                <th className="px-4 py-3 text-right">Hành động</th>
+                <th className="w-[230px] px-4 py-3">Họ tên</th>
+                <th className="w-[140px] px-4 py-3">SĐT</th>
+                <th className="w-[210px] px-4 py-3">Email</th>
+                <th className="w-[210px] px-4 py-3">Vị trí ứng tuyển</th>
+                <th className="w-[130px] px-4 py-3">Nguồn</th>
+                <th className="w-[190px] px-4 py-3">Trạng thái</th>
+                <th className="w-[180px] px-4 py-3">CV/file</th>
+                <th className="w-[230px] px-4 py-3">Ghi chú đánh giá</th>
+                <th className="w-[110px] px-4 py-3">Lịch sử</th>
+                <th className="w-[132px] px-4 py-3 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/50">
@@ -334,8 +336,8 @@ export default function CandidateList() {
                         {candidate.source}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex rounded-full border border-primary/20 bg-primary-fixed px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-primary">
+                    <td className="w-[190px] min-w-[190px] px-4 py-3">
+                      <span className="inline-flex h-8 min-w-[118px] items-center justify-center whitespace-nowrap rounded-lg border border-primary/20 bg-primary-fixed px-3 text-[10px] font-black uppercase tracking-[0.07em] text-primary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)]">
                         {stageLabel(candidate.stage)}
                       </span>
                     </td>
@@ -352,15 +354,31 @@ export default function CandidateList() {
                         </span>
                       )}
                     </td>
-                    <td className="max-w-[230px] px-4 py-3 text-[12px] font-medium leading-5 text-on-surface-variant">
-                      <span className="line-clamp-2">{candidate.notes || '-'}</span>
+                    <td className="w-[230px] min-w-[230px] px-4 py-3 text-[12px] font-medium leading-5 text-on-surface-variant">
+                      {candidate.notes ? (
+                        <button
+                          type="button"
+                          onClick={() => setActiveNote({ name: candidate.name, note: candidate.notes })}
+                          className="group block w-full rounded-lg border border-transparent px-2 py-1.5 text-left transition hover:border-primary/20 hover:bg-primary-fixed/35 focus:outline-none focus:ring-4 focus:ring-primary/10"
+                          title="Bấm để xem đầy đủ ghi chú"
+                        >
+                          <span className="line-clamp-2 text-[12px] font-semibold leading-5 text-on-surface-variant group-hover:text-primary">
+                            {candidate.notes}
+                          </span>
+                          <span className="mt-1 inline-flex text-[9.5px] font-black uppercase tracking-[0.10em] text-primary opacity-0 transition group-hover:opacity-100">
+                            Xem đầy đủ
+                          </span>
+                        </button>
+                      ) : (
+                        <span className="block px-2 py-1.5 text-[12px] font-semibold text-on-surface-variant">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-[12px] font-bold text-on-surface-variant">
                       {new Date(candidate.createdAt).toLocaleDateString('vi-VN')}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link to={`/recruitment/candidate/${candidate.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-outline-variant bg-surface px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition hover:border-primary/30 hover:text-primary">
-                        Mở hồ sơ
+                      <Link to={`/recruitment/candidate/${candidate.id}`} className="inline-flex h-9 w-[108px] items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-outline-variant bg-surface px-3 text-[10px] font-black uppercase tracking-[0.08em] text-on-surface-variant transition hover:border-primary/30 hover:bg-primary-fixed/30 hover:text-primary">
+                        <span>Mở hồ sơ</span>
                         <ArrowRight className="size-3.5" strokeWidth={2.5} />
                       </Link>
                     </td>
@@ -453,6 +471,63 @@ export default function CandidateList() {
       </section>
 
       {filteredCandidates.length === 0 && <div className="hidden md:block"><EmptyState query={query} setQuery={setQuery} setStageFilter={setStageFilter} /></div>}
+
+      <AnimatePresence>
+        {activeNote && (
+          <motion.div
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/20 px-4 py-6 backdrop-blur-[2px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            onClick={() => setActiveNote(null)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Ghi chú đánh giá"
+              onClick={(event) => event.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.9, y: 18 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 10 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+              className="w-full max-w-md overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-[0_24px_80px_rgba(15,23,42,0.22)]"
+            >
+              <header className="flex items-start gap-3 border-b border-outline-variant bg-surface-container-low/50 px-4 py-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+                  <FileText className="size-4" strokeWidth={2.4} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-on-surface-variant">Ghi chú đánh giá</p>
+                  <h3 className="mt-0.5 truncate text-[15px] font-black text-on-surface">{activeNote.name}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveNote(null)}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface active:scale-95"
+                  aria-label="Đóng ghi chú"
+                >
+                  <X className="size-4" strokeWidth={2.5} />
+                </button>
+              </header>
+              <div className="max-h-[48vh] overflow-y-auto px-4 py-4">
+                <p className="whitespace-pre-wrap text-[14px] font-semibold leading-7 text-on-surface">
+                  {activeNote.note}
+                </p>
+              </div>
+              <footer className="border-t border-outline-variant bg-surface-container-low/35 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveNote(null)}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-primary text-[11px] font-black uppercase tracking-[0.10em] text-on-primary shadow-sm shadow-primary/20 transition hover:bg-primary-container active:scale-[0.98]"
+                >
+                  Đóng
+                </button>
+              </footer>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {isFormOpen && (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 backdrop-blur-sm md:items-center md:p-6" onClick={() => setIsFormOpen(false)}>
