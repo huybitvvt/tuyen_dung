@@ -467,15 +467,15 @@ export default function Dashboard() {
   return (
     <div className="page-shell">
       <section className="section-card overflow-hidden hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
-        <div className="grid gap-0">
-          <div className="p-3.5">
+        <div className="grid gap-0 lg:grid-cols-[1.4fr_1fr]">
+          <div className="p-3.5 md:p-5">
           <p className="eyebrow mb-2">Bảng điều hành nhân sự</p>
           <div className="flex flex-col gap-3">
             <div>
-              <h1 className="max-w-2xl text-xl font-black leading-tight text-on-surface">
+              <h1 className="max-w-2xl text-xl font-black leading-tight text-on-surface md:text-[26px]">
                 Đào tạo nội bộ và tuyển dụng trong một luồng quản trị
               </h1>
-              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant">
+              <p className="mt-2 max-w-2xl text-xs font-semibold leading-5 text-on-surface-variant md:text-[13px]">
                 Quản lý đào tạo và tuyển dụng trong một giao diện làm việc thống nhất.
               </p>
               {supabaseDashboard.loaded && (
@@ -484,7 +484,7 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 md:max-w-md">
               <Link to="/training" className="btn-primary">
                 <BookOpenCheck className="size-4" />
                 LMS
@@ -496,7 +496,7 @@ export default function Dashboard() {
             </div>
           </div>
           </div>
-          <div className="border-t border-home-outline bg-[#fbf8ef] p-3.5">
+          <div className="border-t border-home-outline bg-[#fbf8ef] p-3.5 md:p-5 lg:border-l lg:border-t-0">
             <div className="rounded-lg border border-home-outline bg-home-surface p-3 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <div>
@@ -525,7 +525,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-2">
+      <section className="grid grid-cols-2 gap-2 md:gap-3 lg:grid-cols-4">
         {metricCards.map((metric) => (
           <div key={metric.label} className="metric-card">
             <div className="flex items-start justify-between gap-2.5">
@@ -542,7 +542,7 @@ export default function Dashboard() {
         ))}
       </section>
 
-      <section className="grid gap-3">
+      <section className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_1fr]">
         <div className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
           <div className="mb-3 flex items-center justify-between">
             <div>
@@ -601,7 +601,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         <section className="section-card p-3.5 hover:border-home-primary/20 hover:shadow-md hover:shadow-home-primary/10">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -649,7 +649,7 @@ export default function Dashboard() {
         </section>
       </div>
 
-      <section className="grid gap-3">
+      <section className="grid gap-3 md:grid-cols-2">
         {courseProgress.slice(0, 2).map(({ course, percent }) => (
           <Link key={course.id} to={`/training/${course.id}`} className="section-card flex items-center gap-3 p-3.5 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
             <div className={cn('flex size-10 items-center justify-center rounded-lg', course.department === 'Sale' ? 'bg-primary/10 text-primary' : 'bg-secondary-container text-on-secondary-container')}>

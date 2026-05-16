@@ -155,7 +155,7 @@ export default function TrainingList() {
         </div>
       </section>
 
-      <section className="grid gap-3">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {filteredCourses.map((course) => {
           const isCompleted = course.status === 'hoàn thành';
           const statusClass = isCompleted

@@ -466,7 +466,7 @@ export default function InterviewQuestions() {
   }
 
   return (
-    <div className="iq-page relative">
+    <div className="page-shell !max-w-3xl">
       {/* PRINT HEADER (flows in document flow on print) */}
       <div className="print-header hidden print:block">
         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#c9823a]">XOXO Luxury · Báo cáo phỏng vấn</p>
@@ -543,7 +543,7 @@ export default function InterviewQuestions() {
       </section>
 
       {/* STICKY NAV */}
-      <div className="iq-sticky-nav sticky top-12 z-30 print:hidden">
+      <div className="iq-sticky-nav sticky top-12 z-20 print:hidden md:top-16">
         <div className="border-b border-outline-variant/60 bg-home-bg/92 px-3 backdrop-blur-md md:rounded-2xl md:border md:bg-surface/95 md:px-3.5 md:shadow-sm">
           <div className="flex items-center gap-2 py-2">
             <div className="relative flex-1 min-w-0">
@@ -898,14 +898,14 @@ export default function InterviewQuestions() {
             {/* Recommendation hero with score ring */}
             <div
               className={cn(
-                'relative overflow-hidden border-b border-outline-variant px-4 py-4',
+                'relative shrink-0 overflow-hidden border-b border-outline-variant px-4 py-3.5',
                 recommendation.tone === 'pass' && 'bg-gradient-to-br from-primary-fixed via-primary-fixed to-secondary-container',
                 recommendation.tone === 'neutral' && 'bg-gradient-to-br from-tertiary-container/50 to-secondary-container',
                 recommendation.tone === 'fail' && 'bg-gradient-to-br from-error-container/40 to-surface-container'
               )}
             >
               <div className="absolute -right-10 -top-10 size-32 rounded-full bg-white/40 blur-3xl" />
-              <div className="relative flex items-center gap-3.5">
+              <div className="relative flex items-center gap-3">
                 <ScoreRing percent={stats.overallPercent} tone={recommendation.tone} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
@@ -914,14 +914,14 @@ export default function InterviewQuestions() {
                     {recommendation.tone === 'fail' && <ThumbsDown className="size-3.5 text-on-error-container" strokeWidth={2.5} />}
                     <p className="eyebrow">Đề xuất</p>
                   </div>
-                  <h3 className="mt-0.5 font-display text-[20px] font-bold leading-tight text-on-surface">{recommendation.title}</h3>
+                  <h3 className="mt-0.5 font-display text-[19px] font-bold leading-tight text-on-surface">{recommendation.title}</h3>
                   <p className="mt-1 text-[12px] font-semibold leading-[1.45] text-on-surface-variant">{recommendation.text}</p>
                 </div>
               </div>
             </div>
 
             {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto px-4 py-3.5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
               {/* Score counts */}
               <p className="eyebrow mb-2">Phân bố đánh giá</p>
               <div className="grid grid-cols-3 gap-2">
@@ -978,7 +978,7 @@ export default function InterviewQuestions() {
             </div>
 
             {/* Action buttons */}
-            <div className="grid grid-cols-3 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3">
+            <div className="grid shrink-0 grid-cols-3 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3">
               <button
                 type="button"
                 onClick={() => copyText(buildReportText(), 'report')}
@@ -1074,7 +1074,7 @@ function ScoreRing({ percent, tone }: { percent: number; tone: 'pass' | 'neutral
       : 'text-on-error-container';
 
   return (
-    <div className="relative flex size-[76px] shrink-0 items-center justify-center rounded-full bg-surface shadow-sm ring-1 ring-outline-variant/40">
+    <div className="relative flex size-[70px] shrink-0 items-center justify-center rounded-full bg-surface shadow-sm ring-1 ring-outline-variant/40">
       <svg viewBox="0 0 80 80" className="absolute inset-0 size-full -rotate-90">
         <circle cx="40" cy="40" r={radius} fill="none" strokeWidth="6" className={trackClass} strokeLinecap="round" />
         <motion.circle
@@ -1092,7 +1092,7 @@ function ScoreRing({ percent, tone }: { percent: number; tone: 'pass' | 'neutral
         />
       </svg>
       <div className="relative flex flex-col items-center leading-none">
-        <span className={cn('font-mono text-[18px] font-black tabular-nums', textClass)}>{safePercent}</span>
+        <span className={cn('font-mono text-[17px] font-black tabular-nums', textClass)}>{safePercent}</span>
         <span className="mt-0.5 text-[8px] font-black uppercase tracking-[0.16em] text-on-surface-variant">điểm</span>
       </div>
     </div>
@@ -1113,9 +1113,9 @@ function ScoreCount({ label, value, tone }: { label: string; value: number; tone
         {tone === 'pass' && <ThumbsUp className="size-3.5" strokeWidth={2.5} />}
         {tone === 'neutral' && <Circle className="size-3.5" strokeWidth={2.5} />}
         {tone === 'fail' && <ThumbsDown className="size-3.5" strokeWidth={2.5} />}
-        <p className="text-[9.5px] font-black uppercase tracking-[0.14em]">{label}</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.08em]">{label}</p>
       </div>
-      <p className="mt-1 font-mono text-[20px] font-black tabular-nums">{value}</p>
+      <p className="mt-1 font-mono text-[20px] font-black leading-none tabular-nums">{value}</p>
     </div>
   );
 }

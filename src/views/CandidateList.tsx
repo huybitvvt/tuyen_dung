@@ -102,12 +102,12 @@ export default function CandidateList() {
   ];
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3">
+    <div className="page-shell">
       {/* HERO */}
-      <section className="rounded-2xl border border-outline-variant bg-surface p-4 shadow-sm">
+      <section className="rounded-2xl border border-outline-variant bg-surface p-4 shadow-sm md:p-6">
         <p className="eyebrow">Recruitment pipeline</p>
-        <h1 className="mt-1 font-display text-[22px] font-bold leading-tight text-on-surface">Ứng viên</h1>
-        <p className="mt-1.5 text-[12px] font-semibold leading-5 text-on-surface-variant">
+        <h1 className="mt-1 font-display text-[22px] font-bold leading-tight text-on-surface md:text-[28px]">Ứng viên</h1>
+        <p className="mt-1.5 max-w-2xl text-[12px] font-semibold leading-5 text-on-surface-variant md:text-[13px]">
           Lọc theo trạng thái, mở hồ sơ để xem chi tiết hoặc cập nhật stage.
         </p>
 
@@ -117,7 +117,7 @@ export default function CandidateList() {
             <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-on-surface-variant" />
             <input
               type="text"
-              placeholder="Tìm ứng viên..."
+              placeholder="Tìm tên, email, SĐT, vị trí..."
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="h-10 w-full rounded-xl border border-outline-variant bg-surface pl-9 pr-9 text-[13px] font-semibold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
@@ -136,16 +136,16 @@ export default function CandidateList() {
           <button
             type="button"
             onClick={handleCreateCandidate}
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-sm shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
-            aria-label="Thêm ứng viên"
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 text-[11px] font-black uppercase tracking-[0.10em] text-on-primary shadow-sm shadow-primary/25 transition active:scale-95 hover:bg-primary-container md:px-4"
           >
-            <Plus className="size-5" strokeWidth={2.5} />
+            <Plus className="size-4" strokeWidth={2.5} />
+            <span className="hidden sm:inline">Thêm ứng viên</span>
           </button>
         </div>
       </section>
 
       {/* STAGE TABS - horizontal scroll */}
-      <div ref={tabsRef} className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 scrollbar-hide snap-x">
+      <div ref={tabsRef} className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 scrollbar-hide snap-x md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
         {tabs.map((tab) => {
           const count = stageCounts.get(tab.id) ?? 0;
           const isActive = stageFilter === tab.id;
@@ -177,8 +177,8 @@ export default function CandidateList() {
         })}
       </div>
 
-      {/* CANDIDATE CARDS */}
-      <section className="flex flex-col gap-2.5">
+      {/* CANDIDATE CARDS - responsive grid */}
+      <section className="grid gap-2.5 md:grid-cols-2 md:gap-3 xl:grid-cols-3">
         {filteredCandidates.map((candidate) => {
           const job = recruitmentJobs.find((item) => item.id === candidate.jobId);
           const stageIndex = candidateStages.findIndex((s) => s.id === candidate.stage);
