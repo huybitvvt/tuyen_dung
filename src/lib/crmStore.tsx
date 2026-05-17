@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { appSupabase } from './supabase';
 
 export type Department = 'Sale' | 'Kỹ thuật' | 'Marketing';
 export type LessonType = 'video' | 'document';
@@ -156,6 +157,10 @@ export type CreateCandidateInput = Omit<Candidate, 'id' | 'stage' | 'createdAt'>
   }>;
 };
 
+export type UpdateCandidateInput = Partial<Omit<Candidate, 'id' | 'createdAt' | 'stage'>> & {
+  cvUrl?: string;
+};
+
 interface CrmState {
   employees: Employee[];
   courses: Course[];
@@ -180,6 +185,7 @@ interface CrmContextValue extends CrmState {
   submitQuiz: (quizId: string, answers: Record<string, number>) => Result;
   createRecruitmentJob: (job: Omit<RecruitmentJob, 'id' | 'quantityHired'>) => void;
   createCandidate: (candidate: CreateCandidateInput) => void;
+  updateCandidate: (candidateId: string, candidate: UpdateCandidateInput) => void;
   moveCandidateStage: (candidateId: string, toStage: CandidateStage) => void;
   scheduleInterview: (candidateId: string, scheduledAt: string, interviewer: string) => void;
   recordInterviewResult: (interviewId: string, result: CandidateInterview['result'], notes: string) => void;
@@ -187,6 +193,8 @@ interface CrmContextValue extends CrmState {
 }
 
 const STORAGE_KEY = 'xoxo-crm-training-recruitment-v2';
+const REMOTE_STATE_TABLE = 'crm_app_state';
+const REMOTE_STATE_ID = 'training-recruitment';
 const currentUserId = 'u1';
 const lessonVideoUrls: Record<string, string> = {
   l1: 'https://www.youtube.com/watch?v=tFs77UWc98o',
@@ -974,15 +982,67 @@ function loadInitialState(): CrmState {
   }
 }
 
+async function loadRemoteState(): Promise<CrmState | null> {
+  if (!appSupabase) return null;
+
+  const { data, error } = await appSupabase
+    .from(REMOTE_STATE_TABLE)
+    .select('state')
+    .eq('id', REMOTE_STATE_ID)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code !== 'PGRST116' && error.code !== 'PGRST205' && error.code !== '42P01') {
+      console.warn('Không đọc được CRM state từ Supabase:', error.message);
+    }
+    return null;
+  }
+
+  const state = data?.state as CrmState | undefined;
+  if (!state?.candidates || !state?.recruitmentJobs) return null;
+  const hydrated = hydrateLessonVideos(state);
+  return hydrated.state;
+}
+
+async function saveRemoteState(state: CrmState) {
+  if (!appSupabase) return;
+
+  const { error } = await appSupabase
+    .from(REMOTE_STATE_TABLE)
+    .upsert({ id: REMOTE_STATE_ID, state }, { onConflict: 'id' });
+
+  if (error && error.code !== 'PGRST205' && error.code !== '42P01') {
+    console.warn('Không lưu được CRM state lên Supabase:', error.message);
+  }
+}
+
 const CrmContext = createContext<CrmContextValue | null>(null);
 
 export function CrmProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<CrmState>(loadInitialState);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateRemoteState() {
+      const remoteState = await loadRemoteState();
+      if (!remoteState || cancelled) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteState));
+      setState(remoteState);
+    }
+
+    void hydrateRemoteState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function persist(updater: (draft: CrmState) => CrmState) {
     setState((current) => {
       const next = updater(current);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      void saveRemoteState(next);
       return next;
     });
   }
@@ -1105,6 +1165,57 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
           candidateFiles: nextFiles.length ? [...draft.candidateFiles, ...nextFiles] : draft.candidateFiles,
         }));
       },
+      updateCandidate(candidateId, candidate) {
+        persist((draft) => {
+          const currentCandidate = draft.candidates.find((item) => item.id === candidateId);
+          if (!currentCandidate) return draft;
+
+          const { cvUrl, ...candidatePatch } = candidate;
+          const nextCandidate = {
+            ...currentCandidate,
+            ...candidatePatch,
+          };
+
+          const shouldTouchFile = candidate.cvFileName !== undefined || cvUrl !== undefined;
+          const currentFiles = draft.candidateFiles.filter((item) => item.candidateId === candidateId);
+          let nextFiles = draft.candidateFiles;
+
+          if (shouldTouchFile) {
+            if (currentFiles.length > 0) {
+              const firstFileId = currentFiles[0].id;
+              nextFiles = draft.candidateFiles.map((file) =>
+                file.id === firstFileId
+                  ? {
+                      ...file,
+                      name: candidate.cvFileName ?? file.name,
+                      url: cvUrl !== undefined ? cvUrl.trim() || '#' : file.url,
+                    }
+                  : file
+              );
+            } else if (nextCandidate.cvFileName || cvUrl?.trim()) {
+              nextFiles = [
+                ...draft.candidateFiles,
+                {
+                  id: id('file'),
+                  candidateId,
+                  name: nextCandidate.cvFileName || 'CV ứng viên',
+                  url: cvUrl?.trim() || '#',
+                },
+              ];
+            }
+          }
+
+          return {
+            ...draft,
+            candidates: draft.candidates.map((item) => (item.id === candidateId ? nextCandidate : item)),
+            candidateFiles: nextFiles,
+            candidateActivities: [
+              ...draft.candidateActivities,
+              { id: id('activity'), candidateId, text: 'Cập nhật thông tin ứng viên', createdAt: nowIso() },
+            ],
+          };
+        });
+      },
       moveCandidateStage(candidateId, toStage) {
         persist((draft) => {
           const candidate = draft.candidates.find((item) => item.id === candidateId);
@@ -1151,6 +1262,7 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
       resetDemoData() {
         const seed = createSeedState();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+        void saveRemoteState(seed);
         setState(seed);
       },
     };

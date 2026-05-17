@@ -13,6 +13,7 @@ import {
   Globe,
   Mail,
   Phone,
+  Plus,
   RefreshCw,
   ThumbsDown,
   ThumbsUp,
@@ -26,7 +27,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { CandidateStage, candidateStages, formatDateTime, stageLabel, useCrm, type CandidateInterview } from '../lib/crmStore';
 
-type ModalKind = 'stage' | 'interview' | 'result' | null;
+type ModalKind = 'stage' | 'interview' | 'result' | 'edit' | null;
 
 function toLocalInputValue(date: Date) {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -44,6 +45,7 @@ export default function CandidateProfile() {
     candidateActivities,
     candidateInterviews,
     candidateFiles,
+    updateCandidate,
     moveCandidateStage,
     scheduleInterview,
     recordInterviewResult,
@@ -68,6 +70,16 @@ export default function CandidateProfile() {
     interviewId: '',
     result: 'Đạt',
     notes: '',
+  });
+  const [editDraft, setEditDraft] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    jobId: '',
+    source: '',
+    notes: '',
+    cvFileName: '',
+    cvUrl: '',
   });
 
   useEffect(() => {
@@ -103,6 +115,21 @@ export default function CandidateProfile() {
   const interviews = candidateInterviews.filter((item) => item.candidateId === candidate.id);
   const lastInterview = interviews.at(-1);
   const files = candidateFiles.filter((item) => item.candidateId === candidate.id);
+  const firstFile = files[0];
+
+  function openEditModal() {
+    setEditDraft({
+      name: candidate!.name,
+      phone: candidate!.phone,
+      email: candidate!.email,
+      jobId: candidate!.jobId,
+      source: candidate!.source,
+      notes: candidate!.notes,
+      cvFileName: candidate!.cvFileName,
+      cvUrl: firstFile?.url && firstFile.url !== '#' ? firstFile.url : '',
+    });
+    setOpenModal('edit');
+  }
 
   function openStageModal() {
     setStageDraft(candidate!.stage);
@@ -160,6 +187,26 @@ export default function CandidateProfile() {
     setOpenModal(null);
   }
 
+  function handleSubmitEdit() {
+    if (!candidate) return;
+    const normalizedName = editDraft.name.trim();
+    const normalizedPhone = editDraft.phone.trim();
+    const normalizedEmail = editDraft.email.trim();
+    if (!normalizedName || !normalizedPhone || !normalizedEmail || !editDraft.jobId) return;
+
+    updateCandidate(candidate.id, {
+      name: normalizedName,
+      phone: normalizedPhone,
+      email: normalizedEmail,
+      jobId: editDraft.jobId,
+      source: editDraft.source.trim() || 'Khác',
+      notes: editDraft.notes.trim(),
+      cvFileName: editDraft.cvFileName.trim(),
+      cvUrl: editDraft.cvUrl.trim(),
+    });
+    setOpenModal(null);
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-on-surface">
       <header className="sticky top-0 z-50 border-b border-[#dbe2ea] bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.03)] backdrop-blur">
@@ -185,6 +232,14 @@ export default function CandidateProfile() {
             >
               <FileEdit className="size-4" strokeWidth={2.2} />
               Kết quả
+            </button>
+            <button
+              type="button"
+              onClick={openEditModal}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[#dbe2ea] bg-white px-3 text-[11px] font-black uppercase tracking-[0.10em] text-[#475569] transition hover:border-primary/35 hover:bg-primary-fixed/35 hover:text-primary active:scale-[0.98] sm:flex-none"
+            >
+              <FileEdit className="size-4" strokeWidth={2.2} />
+              Sửa thông tin
             </button>
             <button
               type="button"
@@ -243,8 +298,16 @@ export default function CandidateProfile() {
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-4">
             <section className="overflow-hidden rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
-              <header className="border-b border-[#e2e8f0] px-4 py-3">
+              <header className="flex items-center justify-between gap-3 border-b border-[#e2e8f0] px-4 py-3">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#475569]">Thông tin ứng viên</p>
+                <button
+                  type="button"
+                  onClick={openEditModal}
+                  className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#dbe2ea] bg-white px-2.5 text-[10px] font-black uppercase tracking-[0.08em] text-[#475569] transition hover:border-primary/35 hover:bg-primary-fixed/35 hover:text-primary active:scale-[0.98]"
+                >
+                  <FileEdit className="size-3.5" strokeWidth={2.3} />
+                  Sửa
+                </button>
               </header>
               <div className="grid divide-y divide-[#e2e8f0] md:grid-cols-2 md:divide-x md:divide-y-0">
                 {[
@@ -318,13 +381,23 @@ export default function CandidateProfile() {
             <section className="overflow-hidden rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
               <header className="flex items-center justify-between gap-3 border-b border-[#e2e8f0] px-4 py-3">
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#475569]">Lịch phỏng vấn</p>
-                <button
-                  type="button"
-                  onClick={openResultModal}
-                  className="text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition hover:underline"
-                >
-                  Ghi kết quả
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openInterviewModal}
+                    className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-primary/25 bg-primary-fixed px-2.5 text-[10px] font-black uppercase tracking-[0.08em] text-primary transition hover:bg-primary hover:text-on-primary active:scale-[0.98]"
+                  >
+                    <Plus className="size-3.5" strokeWidth={2.6} />
+                    Thêm lịch
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openResultModal}
+                    className="hidden text-[10.5px] font-black uppercase tracking-[0.10em] text-primary transition hover:underline sm:inline-flex"
+                  >
+                    Ghi kết quả
+                  </button>
+                </div>
               </header>
               {interviews.length > 0 ? (
                 <ul className="divide-y divide-[#e2e8f0]">
@@ -366,6 +439,14 @@ export default function CandidateProfile() {
                   </div>
                   <p className="mt-3 text-[13px] font-black text-[#0f172a]">Chưa có lịch phỏng vấn</p>
                   <p className="mt-1 text-[12px] font-medium text-[#64748b]">Tạo lịch phỏng vấn để theo dõi vòng tuyển dụng.</p>
+                  <button
+                    type="button"
+                    onClick={openInterviewModal}
+                    className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-[11px] font-black uppercase tracking-[0.10em] text-on-primary shadow-sm shadow-primary/20 transition hover:bg-primary-container active:scale-[0.98]"
+                  >
+                    <Plus className="size-4" strokeWidth={2.5} />
+                    Thêm lịch phỏng vấn
+                  </button>
                 </div>
               )}
             </section>
@@ -408,6 +489,101 @@ export default function CandidateProfile() {
 
       {/* MODALS */}
       <AnimatePresence>
+        {openModal === 'edit' && (
+          <Modal title="Sửa thông tin ứng viên" subtitle={`Hồ sơ: ${candidate.name}`} icon={FileEdit} onClose={() => setOpenModal(null)}>
+            <div className="px-4 py-4 md:px-5">
+              <div className="grid gap-3 md:grid-cols-2">
+                <ProfileField label="Họ tên">
+                  <input
+                    value={editDraft.name}
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, name: event.target.value }))}
+                    className="h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="Tên ứng viên"
+                  />
+                </ProfileField>
+                <ProfileField label="Vị trí ứng tuyển">
+                  <div className="relative">
+                    <select
+                      value={editDraft.jobId}
+                      onChange={(event) => setEditDraft((draft) => ({ ...draft, jobId: event.target.value }))}
+                      className="h-12 w-full appearance-none rounded-2xl border border-outline-variant bg-surface px-4 pr-9 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    >
+                      {recruitmentJobs.map((job) => (
+                        <option key={job.id} value={job.id}>
+                          {job.title} - {job.department}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant" />
+                  </div>
+                </ProfileField>
+                <ProfileField label="Số điện thoại">
+                  <input
+                    value={editDraft.phone}
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, phone: event.target.value }))}
+                    className="h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="0901 234 567"
+                  />
+                </ProfileField>
+                <ProfileField label="Email">
+                  <input
+                    type="email"
+                    value={editDraft.email}
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, email: event.target.value }))}
+                    className="h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="candidate@email.com"
+                  />
+                </ProfileField>
+                <ProfileField label="Nguồn ứng tuyển">
+                  <input
+                    value={editDraft.source}
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, source: event.target.value }))}
+                    className="h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="Facebook, LinkedIn, Referral..."
+                  />
+                </ProfileField>
+                <ProfileField label="Tên CV/file">
+                  <input
+                    value={editDraft.cvFileName}
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, cvFileName: event.target.value }))}
+                    className="h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="Nguyen_Van_A_CV.pdf"
+                  />
+                </ProfileField>
+                <ProfileField label="Link Google Drive" className="md:col-span-2">
+                  <input
+                    value={editDraft.cvUrl}
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, cvUrl: event.target.value }))}
+                    className="h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="Dán link CV/file nếu có"
+                  />
+                </ProfileField>
+                <ProfileField label="Ghi chú đánh giá" className="md:col-span-2">
+                  <textarea
+                    rows={4}
+                    value={editDraft.notes}
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, notes: event.target.value }))}
+                    className="w-full resize-y rounded-2xl border border-outline-variant bg-surface px-4 py-3 text-[13px] font-medium leading-6 text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="Điểm mạnh, điểm cần đánh giá thêm, ghi chú HR..."
+                  />
+                </ProfileField>
+              </div>
+              <div className="mt-3 rounded-xl border border-primary/20 bg-primary-fixed/40 px-3 py-2.5">
+                <p className="text-[11.5px] font-semibold leading-5 text-primary">
+                  Sau khi lưu, dữ liệu được ghi vào bộ nhớ bền của app và đồng bộ Supabase nếu bảng `crm_app_state` đã được tạo.
+                </p>
+              </div>
+            </div>
+            <ModalActions
+              onCancel={() => setOpenModal(null)}
+              onConfirm={handleSubmitEdit}
+              confirmLabel="Lưu thông tin"
+              confirmIcon={Check}
+              confirmDisabled={!editDraft.name.trim() || !editDraft.phone.trim() || !editDraft.email.trim() || !editDraft.jobId}
+            />
+          </Modal>
+        )}
+
         {openModal === 'stage' && (
           <Modal title="Cập nhật stage" subtitle={`Ứng viên: ${candidate.name}`} icon={RefreshCw} onClose={() => setOpenModal(null)}>
             <div className="px-4 py-4 md:px-5">
@@ -693,6 +869,23 @@ function Modal({
         <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function ProfileField({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={cn('block', className)}>
+      <span className="eyebrow">{label}</span>
+      <div className="mt-1.5">{children}</div>
+    </label>
   );
 }
 

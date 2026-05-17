@@ -417,3 +417,33 @@ on public.candidates for all
 to anon, authenticated
 using (true)
 with check (true);
+
+-- App state snapshot for CRM screens that use local ids and nested UI state.
+-- This keeps add/edit/interview data durable after refresh and across devices.
+create table if not exists public.crm_app_state (
+  id text primary key,
+  state jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists set_crm_app_state_updated_at on public.crm_app_state;
+create trigger set_crm_app_state_updated_at
+before update on public.crm_app_state
+for each row
+execute function public.set_updated_at();
+
+alter table public.crm_app_state enable row level security;
+
+drop policy if exists "crm_app_state read" on public.crm_app_state;
+create policy "crm_app_state read"
+on public.crm_app_state for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "crm_app_state write" on public.crm_app_state;
+create policy "crm_app_state write"
+on public.crm_app_state for all
+to anon, authenticated
+using (true)
+with check (true);
