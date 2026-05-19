@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -31,7 +31,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useCrm, type Department } from '../lib/crmStore';
+import { useCrm, type CustomInterviewQuestionSet, type Department, type InterviewQuestionAddition } from '../lib/crmStore';
 
 type Section = {
   id: string;
@@ -334,6 +334,7 @@ const questionSetMap: Record<Department, Section[]> = {
 };
 
 const questionSetOptions: Department[] = ['Sale', 'Kỹ thuật', 'Marketing'];
+const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 
 const MAX_SCORE_PER_QUESTION = 10;
 const PASS_THRESHOLD = 7; // điểm >= 7 → đạt
@@ -345,7 +346,7 @@ interface SessionState {
   candidateId: string;
   candidateName: string;
   position: string;
-  questionSet: Department;
+  questionSet: string;
   date: string;
   interviewer: string;
   scores: Record<string, ScoreValue>;
@@ -412,9 +413,66 @@ function formatDateVN(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
+function customQuestionSetToSections(set: CustomInterviewQuestionSet): Section[] {
+  return set.sections.map((section, index) => ({
+    id: section.id,
+    roman: romanNumerals[index] ?? String(index + 1),
+    title: section.title,
+    subtitle: `${set.title} · ${set.department}`,
+    hint: 'Nhóm câu hỏi do khách tự tạo và có thể bổ sung thêm khi cần.',
+    icon: ListChecks,
+    iconColorClass: 'text-primary',
+    barClass: 'bg-primary',
+    bgClass: 'bg-primary-fixed',
+    ringClass: 'ring-primary/15',
+    questions: section.questions,
+  }));
+}
+
+function mergeQuestionAdditions(baseSections: Section[], additions: InterviewQuestionAddition[]): Section[] {
+  if (!additions.length) return baseSections;
+
+  const nextSections = baseSections.map((section) => ({ ...section, questions: [...section.questions] }));
+  additions.forEach((addition) => {
+    const matchedSection = nextSections.find(
+      (section) => section.title.toLowerCase() === addition.sectionTitle.toLowerCase()
+    );
+
+    if (matchedSection) {
+      matchedSection.questions.push(addition.question);
+      return;
+    }
+
+    const index = nextSections.length;
+    nextSections.push({
+      id: `custom-${addition.setId}-${addition.id}`,
+      roman: romanNumerals[index] ?? String(index + 1),
+      title: addition.sectionTitle,
+      subtitle: 'Câu hỏi bổ sung',
+      hint: 'Nhóm câu hỏi được bổ sung trực tiếp vào bộ hiện tại.',
+      icon: FileText,
+      iconColorClass: 'text-primary',
+      barClass: 'bg-primary',
+      bgClass: 'bg-primary-fixed',
+      ringClass: 'ring-primary/15',
+      questions: [addition.question],
+    });
+  });
+
+  return nextSections;
+}
+
 export default function InterviewQuestions() {
   const [searchParams] = useSearchParams();
-  const { candidates, recruitmentJobs, saveInterviewAssessment } = useCrm();
+  const {
+    candidates,
+    recruitmentJobs,
+    customInterviewQuestionSets,
+    interviewQuestionAdditions,
+    saveInterviewAssessment,
+    createInterviewQuestionSet,
+    addInterviewQuestion,
+  } = useCrm();
   const [session, setSession] = useState<SessionState>(() => loadSession());
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState<string>(sections[0].id);
@@ -422,15 +480,38 @@ export default function InterviewQuestions() {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'report'>('idle');
   const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
   const [showSetup, setShowSetup] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showCreateSet, setShowCreateSet] = useState(false);
+  const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [setForm, setSetForm] = useState({
+    title: '',
+    department: 'Sale' as Department,
+    sectionTitle: 'Thông tin cơ bản',
+    questions: [''],
+  });
+  const [questionForm, setQuestionForm] = useState({
+    setId: '',
+    sectionTitle: 'Câu hỏi thêm',
+    question: '',
+  });
+  const [formError, setFormError] = useState('');
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const navRef = useRef<HTMLDivElement>(null);
-  const activeSections = questionSetMap[session.questionSet] ?? sections;
+  const activeCustomSet = customInterviewQuestionSets.find((set) => set.id === session.questionSet);
+  const activeSections = useMemo(() => {
+    const baseSections = activeCustomSet
+      ? customQuestionSetToSections(activeCustomSet)
+      : questionSetMap[session.questionSet as Department] ?? sections;
+    const additions = (interviewQuestionAdditions ?? []).filter((addition) => addition.setId === session.questionSet);
+    return mergeQuestionAdditions(baseSections, additions);
+  }, [activeCustomSet, interviewQuestionAdditions, session.questionSet]);
   const totalQuestions = useMemo(
     () => activeSections.reduce((sum, section) => sum + section.questions.length, 0),
     [activeSections]
   );
+  const activeQuestionSetLabel = activeCustomSet?.title ?? session.questionSet;
 
   const selectedCandidate = candidates.find((candidate) => candidate.id === session.candidateId);
 
@@ -503,7 +584,7 @@ export default function InterviewQuestions() {
 
   // Lock body scroll when modal open
   useEffect(() => {
-    if (showSummary || showSetup) {
+    if (showSummary || showSetup || showResetConfirm || showCreateSet || showAddQuestion) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -511,7 +592,7 @@ export default function InterviewQuestions() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showSummary, showSetup]);
+  }, [showSummary, showSetup, showResetConfirm, showCreateSet, showAddQuestion]);
 
   const filteredSections = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -614,13 +695,68 @@ export default function InterviewQuestions() {
     }));
   }
 
-  function selectQuestionSet(questionSet: Department) {
+  function selectAnyQuestionSet(questionSet: string) {
     setSession((prev) => ({
       ...prev,
       questionSet,
       scores: prev.questionSet !== questionSet ? {} : prev.scores,
       notes: prev.questionSet !== questionSet ? {} : prev.notes,
     }));
+  }
+
+  function openAddQuestionSheet() {
+    const defaultSetId = session.questionSet || 'Sale';
+    setQuestionForm((current) => ({
+      ...current,
+      setId: defaultSetId,
+      sectionTitle: activeSections[0]?.title ?? current.sectionTitle,
+    }));
+    setFormError('');
+    setShowAddQuestion(true);
+  }
+
+  function submitQuestionSet(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const questions = setForm.questions
+      .map((question) => question.trim())
+      .filter(Boolean);
+
+    if (!setForm.title.trim()) {
+      setFormError('Vui lòng nhập tên bộ câu hỏi.');
+      return;
+    }
+    if (!questions.length) {
+      setFormError('Vui lòng nhập ít nhất 1 câu hỏi, mỗi dòng là 1 câu.');
+      return;
+    }
+
+    const created = createInterviewQuestionSet({
+      title: setForm.title,
+      department: setForm.department,
+      sectionTitle: setForm.sectionTitle,
+      questions,
+    });
+    selectAnyQuestionSet(created.id);
+    setSetForm({ title: '', department: 'Sale', sectionTitle: 'Thông tin cơ bản', questions: [''] });
+    setFormError('');
+    setShowCreateSet(false);
+  }
+
+  function submitQuestion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!questionForm.setId) {
+      setFormError('Vui lòng chọn bộ câu hỏi cần thêm.');
+      return;
+    }
+    if (!questionForm.question.trim()) {
+      setFormError('Vui lòng nhập nội dung câu hỏi.');
+      return;
+    }
+    addInterviewQuestion(questionForm.setId, questionForm.sectionTitle, questionForm.question);
+    selectAnyQuestionSet(questionForm.setId);
+    setQuestionForm((current) => ({ ...current, question: '' }));
+    setFormError('');
+    setShowAddQuestion(false);
   }
 
   function setScore(key: string, value: ScoreValue | null) {
@@ -654,10 +790,14 @@ export default function InterviewQuestions() {
   }
 
   function handleResetSession() {
-    if (!window.confirm('Bắt đầu buổi phỏng vấn mới? Toàn bộ đánh giá hiện tại sẽ bị xoá.')) return;
+    setShowResetConfirm(true);
+  }
+
+  function confirmResetSession() {
     setSession({ ...emptySession, date: todayIso(), candidateId: session.candidateId, candidateName: session.candidateName, position: session.position, questionSet: session.questionSet });
     setOpenNote(null);
     setShowSummary(false);
+    setShowResetConfirm(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -783,20 +923,34 @@ export default function InterviewQuestions() {
           <h1 className="mt-1 font-display text-[28px] font-bold leading-[1.05] tracking-tight text-on-surface md:text-[34px]">
             Bộ câu hỏi phỏng vấn
             <br className="md:hidden" />
-            <span className="text-primary"> {session.questionSet}</span>
+            <span className="text-primary"> {activeQuestionSetLabel}</span>
           </h1>
 
           <p className="mt-2 max-w-md text-[12.5px] font-semibold leading-5 text-on-surface-variant md:text-[13px]">
             {totalQuestions} câu · {activeSections.length} nhóm đánh giá · Lưu kết quả theo hồ sơ ứng viên.
           </p>
-          <button
-            type="button"
-            onClick={() => setShowSetup(true)}
-            className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/20 bg-surface/90 px-3 text-[10.5px] font-black uppercase tracking-[0.12em] text-primary shadow-sm transition hover:bg-primary hover:text-on-primary active:scale-95"
-          >
-            <Plus className="size-3.5" strokeWidth={2.5} />
-            Tạo bộ câu hỏi
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setFormError('');
+                setShowCreateSet(true);
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-3 text-[10.5px] font-black uppercase tracking-[0.12em] text-on-primary shadow-sm shadow-primary/25 transition hover:bg-primary-container active:scale-95"
+            >
+              <Plus className="size-3.5" strokeWidth={2.5} />
+              Tạo bộ mới
+            </button>
+            <button
+              type="button"
+              onClick={openAddQuestionSheet}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-outline-variant bg-surface/90 px-3 text-[10.5px] font-black uppercase tracking-[0.12em] text-on-surface-variant shadow-sm transition hover:border-primary/30 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+              title="Thêm câu hỏi vào bộ câu hỏi tự tạo"
+            >
+              <FileText className="size-3.5" strokeWidth={2.5} />
+              Thêm vào bộ
+            </button>
+          </div>
         </div>
 
         {/* Compact session bar */}
@@ -1206,13 +1360,29 @@ export default function InterviewQuestions() {
                   'Content Marketing',
                 ]}
               />
-              <FloatingSelect
-                label="Bộ câu hỏi"
-                icon={ListChecks}
-                value={session.questionSet}
-                onChange={(v) => selectQuestionSet(v as Department)}
-                options={questionSetOptions}
-              />
+              <label className="block">
+                <span className="eyebrow">Bộ câu hỏi</span>
+                <div className="relative mt-1.5">
+                  <ListChecks className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant" strokeWidth={2} />
+                  <select
+                    value={session.questionSet}
+                    onChange={(event) => selectAnyQuestionSet(event.target.value)}
+                    className="h-12 w-full appearance-none rounded-2xl border border-outline-variant bg-surface pl-10 pr-9 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  >
+                    {questionSetOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                    {customInterviewQuestionSets.map((set) => (
+                      <option key={set.id} value={set.id}>
+                        {set.title} · {set.department}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant" />
+                </div>
+              </label>
               <FloatingField
                 label="Ngày phỏng vấn"
                 icon={Calendar}
@@ -1238,6 +1408,244 @@ export default function InterviewQuestions() {
                 <span className="text-[12px]">Lưu & Tiếp tục</span>
               </button>
             </div>
+          </BottomSheet>
+        )}
+      </AnimatePresence>
+
+      {/* RESET CONFIRM */}
+      <AnimatePresence>
+        {showResetConfirm && (
+          <BottomSheet onClose={() => setShowResetConfirm(false)} title="Làm mới buổi phỏng vấn" icon={RotateCcw}>
+            <div className="border-t border-outline-variant bg-tertiary-container/45 px-4 py-4">
+              <p className="text-[13px] font-bold leading-6 text-on-surface">
+                Bắt đầu lại buổi phỏng vấn hiện tại?
+              </p>
+              <p className="mt-1 text-[12px] font-semibold leading-5 text-on-surface-variant">
+                Toàn bộ điểm và ghi chú đang chấm sẽ được xóa. Thông tin ứng viên, vị trí và bộ câu hỏi vẫn được giữ lại.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="h-12 rounded-2xl border border-outline-variant bg-surface text-[11px] font-black uppercase tracking-[0.12em] text-on-surface-variant transition hover:bg-surface-container-high active:scale-95"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={confirmResetSession}
+                className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary text-[11px] font-black uppercase tracking-[0.12em] text-on-primary shadow-md shadow-primary/25 transition hover:bg-primary-container active:scale-95"
+              >
+                <RotateCcw className="size-4" strokeWidth={2.5} />
+                Làm mới
+              </button>
+            </div>
+          </BottomSheet>
+        )}
+      </AnimatePresence>
+
+      {/* CREATE QUESTION SET */}
+      <AnimatePresence>
+        {showCreateSet && (
+          <BottomSheet onClose={() => setShowCreateSet(false)} title="Tạo bộ câu hỏi" icon={ListChecks}>
+            <form onSubmit={submitQuestionSet}>
+              <div className="border-t border-outline-variant bg-primary-fixed/45 px-4 py-3">
+                <p className="text-[12px] font-semibold leading-5 text-on-primary-fixed">
+                  Dùng khi khách muốn tạo một bộ câu hỏi riêng cho bộ phận hoặc vòng phỏng vấn mới.
+                </p>
+              </div>
+              <div className="grid gap-3 p-4 sm:grid-cols-2">
+                <FloatingField
+                  label="Tên bộ câu hỏi"
+                  icon={ListChecks}
+                  value={setForm.title}
+                  onChange={(value) => {
+                    setSetForm((current) => ({ ...current, title: value }));
+                    setFormError('');
+                  }}
+                  placeholder="VD: Bộ câu hỏi Kỹ thuật vòng 2"
+                />
+                <FloatingSelect
+                  label="Bộ phận"
+                  icon={Briefcase}
+                  value={setForm.department}
+                  onChange={(value) => setSetForm((current) => ({ ...current, department: value as Department }))}
+                  options={questionSetOptions}
+                />
+                <FloatingField
+                  label="Tên nhóm đầu tiên"
+                  icon={FileText}
+                  value={setForm.sectionTitle}
+                  onChange={(value) => setSetForm((current) => ({ ...current, sectionTitle: value }))}
+                  placeholder="VD: Kiến thức chuyên môn"
+                />
+                <div className="sm:col-span-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="eyebrow">Danh sách câu hỏi</span>
+                    <button
+                      type="button"
+                      onClick={() => setSetForm((current) => ({ ...current, questions: [...current.questions, ''] }))}
+                      className="inline-flex h-8 items-center gap-1 rounded-lg border border-outline-variant bg-surface px-2.5 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition hover:border-primary/30 hover:text-primary active:scale-95"
+                    >
+                      <Plus className="size-3.5" strokeWidth={2.5} />
+                      Thêm ô
+                    </button>
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {setForm.questions.map((question, index) => (
+                      <div key={index} className="rounded-2xl border border-outline-variant bg-surface-container-low/35 p-2">
+                        <div className="mb-1.5 flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10px] font-black uppercase tracking-[0.12em] text-on-surface-variant">
+                            Câu {index + 1}
+                          </span>
+                          {setForm.questions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSetForm((current) => ({
+                                  ...current,
+                                  questions: current.questions.filter((_, itemIndex) => itemIndex !== index),
+                                }))
+                              }
+                              className="text-[10px] font-black uppercase tracking-[0.10em] text-error transition hover:opacity-75"
+                            >
+                              Xóa
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          value={question}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setSetForm((current) => ({
+                              ...current,
+                              questions: current.questions.map((item, itemIndex) => (itemIndex === index ? value : item)),
+                            }));
+                            setFormError('');
+                          }}
+                          rows={3}
+                          placeholder="Nhập nội dung câu hỏi. Câu dài có thể xuống nhiều dòng trong cùng ô này."
+                          className="w-full resize-y rounded-xl border border-outline-variant bg-surface p-3 text-[13.5px] font-semibold leading-6 text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {formError && (
+                  <div className="rounded-2xl border border-error/25 bg-error-container px-3 py-2 text-[12px] font-bold text-on-error-container sm:col-span-2">
+                    {formError}
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateSet(false)}
+                  className="h-12 rounded-2xl border border-outline-variant bg-surface text-[11px] font-black uppercase tracking-[0.12em] text-on-surface-variant transition hover:bg-surface-container-high active:scale-95"
+                >
+                  Hủy
+                </button>
+                <button type="submit" className="btn-primary flex h-12 items-center justify-center gap-2">
+                  <Check className="size-4" strokeWidth={2.5} />
+                  <span className="text-[12px]">Tạo bộ</span>
+                </button>
+              </div>
+            </form>
+          </BottomSheet>
+        )}
+      </AnimatePresence>
+
+      {/* ADD QUESTION */}
+      <AnimatePresence>
+        {showAddQuestion && (
+          <BottomSheet onClose={() => setShowAddQuestion(false)} title="Thêm câu hỏi" icon={FileText}>
+            <form onSubmit={submitQuestion}>
+              <div className="border-t border-outline-variant bg-surface-container-low/60 px-4 py-3">
+                <p className="text-[12px] font-semibold leading-5 text-on-surface-variant">
+                  Dùng để bổ sung câu hỏi vào bộ đang mở hoặc bất kỳ bộ câu hỏi nào đã có.
+                </p>
+              </div>
+              <div className="grid gap-3 p-4">
+                <label className="block">
+                  <span className="eyebrow">Bộ câu hỏi nhận thêm</span>
+                  <div className="relative mt-1.5">
+                    <ListChecks className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant" strokeWidth={2} />
+                    <select
+                      value={questionForm.setId}
+                      onChange={(event) => {
+                        const nextSetId = event.target.value;
+                        const customSet = customInterviewQuestionSets.find((set) => set.id === nextSetId);
+                        const baseSections = customSet
+                          ? customQuestionSetToSections(customSet)
+                          : questionSetMap[nextSetId as Department] ?? sections;
+                        setQuestionForm((current) => ({
+                          ...current,
+                          setId: nextSetId,
+                          sectionTitle: baseSections[0]?.title ?? current.sectionTitle,
+                        }));
+                        setFormError('');
+                      }}
+                      className="h-12 w-full appearance-none rounded-2xl border border-outline-variant bg-surface pl-10 pr-9 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    >
+                      {questionSetOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option} · bộ mặc định
+                        </option>
+                      ))}
+                      {customInterviewQuestionSets.map((set) => (
+                        <option key={set.id} value={set.id}>
+                          {set.title} · {set.department}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant" />
+                  </div>
+                </label>
+                <FloatingField
+                  label="Nhóm câu hỏi"
+                  icon={FileText}
+                  value={questionForm.sectionTitle}
+                  onChange={(value) => setQuestionForm((current) => ({ ...current, sectionTitle: value }))}
+                  placeholder="VD: Tình huống chuyên môn"
+                />
+                <div className="rounded-2xl border border-outline-variant bg-surface-container-low/35 p-2">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="font-mono text-[10px] font-black uppercase tracking-[0.12em] text-on-surface-variant">
+                      Câu hỏi mới
+                    </span>
+                  </div>
+                  <textarea
+                    value={questionForm.question}
+                    onChange={(event) => {
+                      setQuestionForm((current) => ({ ...current, question: event.target.value }));
+                      setFormError('');
+                    }}
+                    rows={3}
+                    placeholder="Nhập nội dung câu hỏi. Câu dài có thể xuống nhiều dòng trong cùng ô này."
+                    className="w-full resize-y rounded-xl border border-outline-variant bg-surface p-3 text-[13.5px] font-semibold leading-6 text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  />
+                </div>
+                {formError && (
+                  <div className="rounded-2xl border border-error/25 bg-error-container px-3 py-2 text-[12px] font-bold text-on-error-container">
+                    {formError}
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddQuestion(false)}
+                  className="h-12 rounded-2xl border border-outline-variant bg-surface text-[11px] font-black uppercase tracking-[0.12em] text-on-surface-variant transition hover:bg-surface-container-high active:scale-95"
+                >
+                  Hủy
+                </button>
+                <button type="submit" className="btn-primary flex h-12 items-center justify-center gap-2">
+                  <Plus className="size-4" strokeWidth={2.5} />
+                  <span className="text-[12px]">Thêm câu hỏi</span>
+                </button>
+              </div>
+            </form>
           </BottomSheet>
         )}
       </AnimatePresence>

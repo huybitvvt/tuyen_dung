@@ -138,7 +138,7 @@ export interface CandidateInterview {
 
 export interface InterviewAssessmentInput {
   candidateId: string;
-  questionSet: Department;
+  questionSet: string;
   interviewer: string;
   scorePercent: number;
   answered: number;
@@ -146,6 +146,28 @@ export interface InterviewAssessmentInput {
   recommendationTitle: string;
   recommendationText: string;
   reportText: string;
+}
+
+export interface CustomInterviewQuestionSection {
+  id: string;
+  title: string;
+  questions: string[];
+}
+
+export interface CustomInterviewQuestionSet {
+  id: string;
+  title: string;
+  department: Department;
+  sections: CustomInterviewQuestionSection[];
+  createdAt: string;
+}
+
+export interface InterviewQuestionAddition {
+  id: string;
+  setId: string;
+  sectionTitle: string;
+  question: string;
+  createdAt: string;
 }
 
 export interface CandidateFile {
@@ -187,6 +209,8 @@ interface CrmState {
   candidateActivities: CandidateActivity[];
   candidateInterviews: CandidateInterview[];
   candidateFiles: CandidateFile[];
+  customInterviewQuestionSets: CustomInterviewQuestionSet[];
+  interviewQuestionAdditions: InterviewQuestionAddition[];
 }
 
 interface CrmContextValue extends CrmState {
@@ -202,6 +226,13 @@ interface CrmContextValue extends CrmState {
   scheduleInterview: (candidateId: string, scheduledAt: string, interviewer: string) => void;
   recordInterviewResult: (interviewId: string, result: CandidateInterview['result'], notes: string) => void;
   saveInterviewAssessment: (assessment: InterviewAssessmentInput) => void;
+  createInterviewQuestionSet: (input: {
+    title: string;
+    department: Department;
+    sectionTitle: string;
+    questions: string[];
+  }) => CustomInterviewQuestionSet;
+  addInterviewQuestion: (setId: string, sectionTitle: string, question: string) => void;
   resetDemoData: () => void;
 }
 
@@ -955,6 +986,8 @@ function createSeedState(): CrmState {
     candidateFiles: [
       { id: 'f1', candidateId: 'can4', name: 'Tuan_Nguyen_CV_UXUI.pdf', url: '#' },
     ],
+    customInterviewQuestionSets: [],
+    interviewQuestionAdditions: [],
   };
 }
 
@@ -978,7 +1011,11 @@ function hydrateLessonVideos(state: CrmState) {
   });
 
   return {
-    state: changed ? { ...state, lessons } : state,
+    state: {
+      ...(changed ? { ...state, lessons } : state),
+      customInterviewQuestionSets: state.customInterviewQuestionSets ?? [],
+      interviewQuestionAdditions: state.interviewQuestionAdditions ?? [],
+    },
     changed,
   };
 }
@@ -1331,6 +1368,45 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
             ],
           };
         });
+      },
+      createInterviewQuestionSet(input) {
+        const set: CustomInterviewQuestionSet = {
+          id: id('interview_set'),
+          title: input.title.trim(),
+          department: input.department,
+          sections: [
+            {
+              id: id('interview_section'),
+              title: input.sectionTitle.trim() || 'Nhóm câu hỏi',
+              questions: input.questions.map((question) => question.trim()).filter(Boolean),
+            },
+          ],
+          createdAt: nowIso(),
+        };
+        persist((draft) => ({
+          ...draft,
+          customInterviewQuestionSets: [...(draft.customInterviewQuestionSets ?? []), set],
+        }));
+        return set;
+      },
+      addInterviewQuestion(setId, sectionTitle, question) {
+        const normalizedQuestion = question.trim();
+        const normalizedSectionTitle = sectionTitle.trim() || 'Câu hỏi thêm';
+        if (!normalizedQuestion) return;
+
+        persist((draft) => ({
+          ...draft,
+          interviewQuestionAdditions: [
+            ...(draft.interviewQuestionAdditions ?? []),
+            {
+              id: id('interview_question'),
+              setId,
+              sectionTitle: normalizedSectionTitle,
+              question: normalizedQuestion,
+              createdAt: nowIso(),
+            },
+          ],
+        }));
       },
       resetDemoData() {
         const seed = createSeedState();
