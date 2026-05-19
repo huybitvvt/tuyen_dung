@@ -6,14 +6,16 @@ import {
   Clock,
   ExternalLink,
   FileText,
+  GripVertical,
   Mail,
+  MessageCircleQuestion,
   Phone,
   Plus,
   Search,
   UploadCloud,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type React from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
@@ -33,8 +35,6 @@ const stageTone = [
   'bg-primary',
   'bg-error',
 ];
-
-type StageFilter = CandidateStage | 'all';
 
 type CandidateForm = {
   name: string;
@@ -68,16 +68,15 @@ const inputClass =
   'h-11 w-full rounded-xl border border-outline-variant bg-surface px-3 text-[13px] font-semibold text-on-surface outline-none transition placeholder:text-on-surface-variant/60 focus:border-primary focus:ring-4 focus:ring-primary/10';
 
 export default function CandidateList() {
-  const { candidates, recruitmentJobs, candidateFiles, createCandidate } = useCrm();
+  const { candidates, recruitmentJobs, candidateFiles, createCandidate, moveCandidateStage } = useCrm();
   const [query, setQuery] = useState('');
-  const [stageFilter, setStageFilter] = useState<StageFilter>('all');
+  const [dragOverStage, setDragOverStage] = useState<CandidateStage | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState<CandidateForm>(() => emptyForm(recruitmentJobs[0]?.id));
   const [formError, setFormError] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploadingDrive, setIsUploadingDrive] = useState(false);
   const [activeNote, setActiveNote] = useState<{ name: string; note: string } | null>(null);
-  const tabsRef = useRef<HTMLDivElement>(null);
 
   const filesByCandidate = useMemo(() => {
     return candidateFiles.reduce<Record<string, typeof candidateFiles>>((map, file) => {
@@ -89,7 +88,6 @@ export default function CandidateList() {
   const filteredCandidates = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return candidates.filter((candidate) => {
-      if (stageFilter !== 'all' && candidate.stage !== stageFilter) return false;
       if (!normalized) return true;
       return [
         candidate.name,
@@ -104,23 +102,15 @@ export default function CandidateList() {
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(normalized));
     });
-  }, [candidates, query, stageFilter, recruitmentJobs, filesByCandidate]);
+  }, [candidates, query, recruitmentJobs, filesByCandidate]);
 
-  const stageCounts = useMemo(() => {
-    const map = new Map<CandidateStage | 'all', number>();
-    map.set('all', candidates.length);
+  const candidatesByStage = useMemo(() => {
+    const map = new Map<CandidateStage, typeof candidates>();
     candidateStages.forEach((stage) => {
-      map.set(stage.id, candidates.filter((c) => c.stage === stage.id).length);
+      map.set(stage.id, filteredCandidates.filter((candidate) => candidate.stage === stage.id));
     });
     return map;
-  }, [candidates]);
-
-  useEffect(() => {
-    const tabs = tabsRef.current;
-    if (!tabs) return;
-    const target = tabs.querySelector<HTMLElement>(`[data-stage="${stageFilter}"]`);
-    if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [stageFilter]);
+  }, [filteredCandidates]);
 
   useEffect(() => {
     if (!isFormOpen) return;
@@ -199,14 +189,17 @@ export default function CandidateList() {
     setIsFormOpen(false);
   }
 
-  const tabs: Array<{ id: StageFilter; label: string; tone?: string }> = [
-    { id: 'all', label: 'Tất cả' },
-    ...candidateStages.map((stage, index) => ({
-      id: stage.id,
-      label: stage.label,
-      tone: stageTone[index],
-    })),
-  ];
+  function startDrag(event: React.DragEvent, candidateId: string) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', candidateId);
+  }
+
+  function dropOnStage(event: React.DragEvent, stage: CandidateStage) {
+    event.preventDefault();
+    const candidateId = event.dataTransfer.getData('text/plain');
+    if (candidateId) moveCandidateStage(candidateId, stage);
+    setDragOverStage(null);
+  }
 
   return (
     <div className="page-shell">
@@ -255,37 +248,116 @@ export default function CandidateList() {
         </div>
       </section>
 
-      <div ref={tabsRef} className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 scrollbar-hide snap-x md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
-        {tabs.map((tab) => {
-          const count = stageCounts.get(tab.id) ?? 0;
-          const isActive = stageFilter === tab.id;
+      <section className="overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm">
+        <header className="flex flex-col gap-1 border-b border-outline-variant bg-surface-container-low/45 px-4 py-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="eyebrow">Kanban ứng viên</p>
+            <h2 className="text-[15px] font-black text-on-surface">Kéo thả để cập nhật pipeline</h2>
+          </div>
+          <p className="text-[11px] font-semibold text-on-surface-variant">
+            {filteredCandidates.length}/{candidates.length} ứng viên đang hiển thị
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 gap-3 bg-surface-container-low/30 p-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+          {candidateStages.map((stage, index) => {
+            const stageCandidates = candidatesByStage.get(stage.id) ?? [];
+            const isDropTarget = dragOverStage === stage.id;
           return (
-            <button
-              key={tab.id}
-              type="button"
-              data-stage={tab.id}
-              onClick={() => setStageFilter(tab.id)}
+            <div
+              key={stage.id}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                setDragOverStage(stage.id);
+              }}
+              onDragLeave={() => setDragOverStage((current) => (current === stage.id ? null : current))}
+              onDrop={(event) => dropOnStage(event, stage.id)}
               className={cn(
-                'shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.10em] transition active:scale-95',
-                isActive
-                  ? 'border-primary bg-primary text-on-primary shadow-sm shadow-primary/20'
-                  : 'border-outline-variant bg-surface text-on-surface-variant hover:border-primary/30 hover:text-primary'
+                'flex min-h-[300px] flex-col rounded-2xl border bg-surface shadow-sm transition',
+                isDropTarget ? 'border-primary ring-4 ring-primary/10' : 'border-outline-variant'
               )}
             >
-              {tab.tone && !isActive && <span className={cn('size-1.5 rounded-full', tab.tone)} />}
-              <span>{tab.label}</span>
-              <span
-                className={cn(
-                  'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[9px]',
-                  isActive ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-low text-on-surface-variant'
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-outline-variant px-3 py-2.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className={cn('size-2 rounded-full', stageTone[index] ?? 'bg-primary')} />
+                  <p className="truncate text-[11px] font-black uppercase tracking-[0.12em] text-on-surface">
+                    {stage.label}
+                  </p>
+                </div>
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-surface-container-low px-1.5 font-mono text-[10px] font-black text-on-surface-variant">
+                  {stageCandidates.length}
+                </span>
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2.5">
+                {stageCandidates.map((candidate) => {
+                  const job = recruitmentJobs.find((item) => item.id === candidate.jobId);
+                  return (
+                    <div
+                      key={candidate.id}
+                      draggable
+                      onDragStart={(event) => startDrag(event, candidate.id)}
+                      className="group rounded-xl border border-outline-variant bg-surface p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md active:cursor-grabbing"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-fixed to-secondary-container text-[12px] font-black text-on-primary-fixed">
+                          {candidate.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-black text-on-surface">{candidate.name}</p>
+                          <p className="mt-0.5 truncate text-[10.5px] font-bold text-on-surface-variant">
+                            {job?.title ?? 'Chưa gán vị trí'}
+                          </p>
+                        </div>
+                        <GripVertical className="mt-1 size-4 shrink-0 text-on-surface-variant/60 group-hover:text-primary" />
+                      </div>
+
+                      <div className="mt-2 grid gap-1 text-[11px] font-semibold text-on-surface-variant">
+                        <span className="truncate">{candidate.phone}</span>
+                        <span className="truncate">{candidate.email}</span>
+                      </div>
+
+                      {candidate.notes && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveNote({ name: candidate.name, note: candidate.notes })}
+                          className="mt-2 line-clamp-2 w-full rounded-lg bg-surface-container-low/55 px-2 py-1.5 text-left text-[11px] font-semibold leading-4 text-on-surface-variant transition hover:bg-primary-fixed/45 hover:text-primary"
+                        >
+                          {candidate.notes}
+                        </button>
+                      )}
+
+                      <div className="mt-2.5 flex items-center gap-1.5">
+                        <Link
+                          to={`/recruitment/candidate/${candidate.id}`}
+                          className="inline-flex h-8 flex-1 items-center justify-center rounded-lg border border-outline-variant bg-surface text-[10px] font-black uppercase tracking-[0.08em] text-on-surface-variant transition hover:border-primary/30 hover:text-primary"
+                        >
+                          Mở hồ sơ
+                        </Link>
+                        <Link
+                          to={`/recruitment/interview-questions?candidate=${candidate.id}`}
+                          className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-primary px-2.5 text-[10px] font-black uppercase tracking-[0.08em] text-on-primary shadow-sm shadow-primary/20 transition hover:bg-primary-container"
+                        >
+                          <MessageCircleQuestion className="size-3.5" />
+                          PV
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {stageCandidates.length === 0 && (
+                  <div className="flex min-h-28 items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low/45 px-3 text-center text-[11px] font-semibold leading-5 text-on-surface-variant">
+                    Kéo ứng viên vào đây để chuyển sang "{stage.label}".
+                  </div>
                 )}
-              >
-                {count}
-              </span>
-            </button>
+              </div>
+            </div>
           );
         })}
-      </div>
+        </div>
+      </section>
 
       <section className="hidden overflow-hidden rounded-2xl border border-outline-variant bg-surface shadow-sm md:block">
         <div className="overflow-x-auto">
@@ -467,10 +539,10 @@ export default function CandidateList() {
           );
         })}
 
-        {filteredCandidates.length === 0 && <EmptyState query={query} setQuery={setQuery} setStageFilter={setStageFilter} />}
+        {filteredCandidates.length === 0 && <EmptyState query={query} setQuery={setQuery} />}
       </section>
 
-      {filteredCandidates.length === 0 && <div className="hidden md:block"><EmptyState query={query} setQuery={setQuery} setStageFilter={setStageFilter} /></div>}
+      {filteredCandidates.length === 0 && <div className="hidden md:block"><EmptyState query={query} setQuery={setQuery} /></div>}
 
       <AnimatePresence>
         {activeNote && (
@@ -667,11 +739,9 @@ function Field({
 function EmptyState({
   query,
   setQuery,
-  setStageFilter,
 }: {
   query: string;
   setQuery: (value: string) => void;
-  setStageFilter: (value: StageFilter) => void;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-outline-variant bg-surface px-4 py-10 text-center">
@@ -686,12 +756,11 @@ function EmptyState({
         type="button"
         onClick={() => {
           setQuery('');
-          setStageFilter('all');
         }}
         className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-full border border-outline-variant bg-surface px-3 text-[10.5px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
       >
         <X className="size-3.5" strokeWidth={2.5} />
-        Xóa bộ lọc
+        Xóa tìm kiếm
       </button>
     </div>
   );

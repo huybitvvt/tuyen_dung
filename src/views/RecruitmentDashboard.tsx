@@ -6,25 +6,16 @@ import {
   Handshake,
   LayoutGrid,
   MessageCircleQuestion,
-  Plus,
   UserPlus,
   Users,
-  X,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
-import { candidateStages, Department, formatDateTime, useCrm } from '../lib/crmStore';
-import { FormEvent, useEffect, useState } from 'react';
+import { motion } from 'motion/react';
+import { candidateStages, formatDateTime, useCrm } from '../lib/crmStore';
 
 export default function RecruitmentDashboard() {
-  const { recruitmentJobs, candidates, candidateInterviews, createRecruitmentJob } = useCrm();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [jobForm, setJobForm] = useState({
-    title: '',
-    department: 'Kỹ thuật' as Department,
-    quantityNeeded: 1,
-  });
+  const { recruitmentJobs, candidates, candidateInterviews } = useCrm();
 
   const activeJobs = recruitmentJobs.filter((job) => job.status === 'Đang mở');
   const newCandidates = candidates.filter((candidate) => candidate.stage === 'new');
@@ -101,36 +92,6 @@ export default function RecruitmentDashboard() {
     })
     .sort((a, b) => b.count - a.count);
 
-  function resetJobForm() {
-    setJobForm({
-      title: '',
-      department: 'Kỹ thuật',
-      quantityNeeded: 1,
-    });
-  }
-
-  function handleSubmitJob(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const title = jobForm.title.trim();
-    if (!title) return;
-    createRecruitmentJob({
-      title,
-      department: jobForm.department,
-      quantityNeeded: jobForm.quantityNeeded,
-      status: 'Đang mở',
-    });
-    setIsCreateOpen(false);
-    resetJobForm();
-  }
-
-  // Lock body scroll when modal open
-  useEffect(() => {
-    document.body.style.overflow = isCreateOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isCreateOpen]);
-
   return (
     <div className="page-shell">
       {/* HERO */}
@@ -145,14 +106,6 @@ export default function RecruitmentDashboard() {
           </p>
 
           <div className="mt-3.5 grid grid-cols-2 gap-2 md:flex md:flex-wrap">
-            <button
-              type="button"
-              onClick={() => setIsCreateOpen(true)}
-              className="col-span-2 flex h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-[11px] font-black uppercase tracking-[0.12em] text-on-primary shadow-sm shadow-primary/25 transition active:scale-95 hover:bg-primary-container md:col-span-1"
-            >
-              <Plus className="size-4" strokeWidth={2.5} />
-              <span>Tạo tin mới</span>
-            </button>
             <Link
               to="/recruitment/candidates"
               className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-outline-variant bg-surface px-4 text-[10.5px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition active:scale-95 hover:border-primary/30 hover:text-primary"
@@ -432,112 +385,6 @@ export default function RecruitmentDashboard() {
         </section>
       </div>
 
-      {/* CREATE JOB BOTTOM SHEET */}
-      <AnimatePresence>
-        {isCreateOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 backdrop-blur-sm"
-            onClick={() => setIsCreateOpen(false)}
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md overflow-hidden rounded-t-3xl border border-b-0 border-outline-variant bg-surface shadow-[0_-12px_50px_rgba(0,0,0,0.16)]"
-            >
-              <div className="flex justify-center pt-2.5 pb-1">
-                <div className="h-1 w-10 rounded-full bg-outline-variant/70" />
-              </div>
-
-              <div className="flex items-center gap-3 px-4 pt-2 pb-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-sm shadow-primary/25">
-                  <Plus className="size-5" strokeWidth={2.5} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="eyebrow">Tin tuyển dụng mới</p>
-                  <h3 className="mt-0.5 truncate font-display text-[18px] font-bold leading-tight text-on-surface">
-                    Tạo vị trí
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition active:scale-90 hover:bg-surface-container-high hover:text-on-surface"
-                  aria-label="Đóng"
-                >
-                  <X className="size-4" strokeWidth={2.5} />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmitJob} className="grid gap-3 border-t border-outline-variant p-4">
-                <label className="block">
-                  <span className="eyebrow">Tên vị trí</span>
-                  <input
-                    value={jobForm.title}
-                    onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))}
-                    autoFocus
-                    required
-                    placeholder="VD: Sale Junior, Frontend Dev..."
-                    className="mt-1.5 h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="eyebrow">Phòng ban</span>
-                  <select
-                    value={jobForm.department}
-                    onChange={(event) =>
-                      setJobForm((current) => ({ ...current, department: event.target.value as Department }))
-                    }
-                    className="mt-1.5 h-12 w-full appearance-none rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  >
-                    <option value="Sale">Sale</option>
-                    <option value="Kỹ thuật">Kỹ thuật</option>
-                    <option value="Marketing">Marketing</option>
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="eyebrow">Số lượng cần tuyển</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="99"
-                    value={jobForm.quantityNeeded}
-                    onChange={(event) =>
-                      setJobForm((current) => ({ ...current, quantityNeeded: Number(event.target.value) }))
-                    }
-                    className="mt-1.5 h-12 w-full rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  />
-                </label>
-
-                <div className="mt-1 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateOpen(false)}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-outline-variant bg-surface text-[11px] font-black uppercase tracking-[0.12em] text-on-surface-variant transition active:scale-95 hover:bg-surface-container-high"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-primary text-[11px] font-black uppercase tracking-[0.12em] text-on-primary shadow-md shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
-                  >
-                    <Plus className="size-4" strokeWidth={2.5} />
-                    Tạo tin
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

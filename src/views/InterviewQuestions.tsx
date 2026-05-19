@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
@@ -18,8 +18,10 @@ import {
   HeartHandshake,
   ListChecks,
   Pencil,
+  Plus,
   Printer,
   RotateCcw,
+  Save,
   Search,
   Sparkles,
   Target,
@@ -29,6 +31,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useCrm, type Department } from '../lib/crmStore';
 
 type Section = {
   id: string;
@@ -168,7 +171,169 @@ const sections: Section[] = [
   },
 ];
 
-const totalQuestions = sections.reduce((sum, section) => sum + section.questions.length, 0);
+const technicalSections: Section[] = [
+  {
+    id: 'tech-basic',
+    roman: 'I',
+    title: 'Thông tin & nền tảng kỹ thuật',
+    subtitle: 'Làm rõ kinh nghiệm và cách học',
+    hint: 'Ưu tiên câu trả lời rõ ràng, có ví dụ dự án hoặc tình huống thật.',
+    icon: UserRound,
+    iconColorClass: 'text-primary',
+    barClass: 'bg-primary',
+    bgClass: 'bg-primary-fixed',
+    ringClass: 'ring-primary/15',
+    questions: [
+      'Em giới thiệu ngắn gọn về kinh nghiệm kỹ thuật gần nhất?',
+      'Stack công nghệ em tự tin nhất là gì?',
+      'Dự án nào em thấy thể hiện năng lực tốt nhất? Vì sao?',
+      'Em thường đọc tài liệu và học công nghệ mới như thế nào?',
+      'Em đã từng làm việc với Git, review code hoặc task management chưa?',
+    ],
+  },
+  {
+    id: 'tech-process',
+    roman: 'II',
+    title: 'Quy trình triển khai',
+    subtitle: 'Tư duy làm việc có hệ thống',
+    hint: 'Kiểm tra khả năng chia nhỏ việc, giao tiếp deadline và bàn giao.',
+    icon: ClipboardCheck,
+    iconColorClass: 'text-secondary',
+    barClass: 'bg-secondary',
+    bgClass: 'bg-secondary-container',
+    ringClass: 'ring-secondary/15',
+    questions: [
+      'Khi nhận một yêu cầu chưa rõ, em sẽ hỏi lại những gì?',
+      'Em thường estimate và báo tiến độ như thế nào?',
+      'Nếu phát hiện yêu cầu có rủi ro kỹ thuật, em xử lý ra sao?',
+      'Em kiểm tra lỗi trước khi bàn giao bằng cách nào?',
+      'Em đã từng viết tài liệu hướng dẫn hoặc checklist nghiệm thu chưa?',
+    ],
+  },
+  {
+    id: 'tech-situation',
+    roman: 'III',
+    title: 'Tình huống kỹ thuật',
+    subtitle: 'Debug, ưu tiên và xử lý áp lực',
+    hint: 'Tập trung vào cách suy luận và khả năng tự kiểm chứng.',
+    icon: Target,
+    iconColorClass: 'text-tertiary',
+    barClass: 'bg-tertiary',
+    bgClass: 'bg-tertiary-container/50',
+    ringClass: 'ring-tertiary/15',
+    questions: [
+      'Nếu production phát sinh lỗi sau deploy, em xử lý theo thứ tự nào?',
+      'Nếu task bị trễ vì dependency từ người khác, em sẽ làm gì?',
+      'Khi khách yêu cầu sửa gấp nhưng có thể ảnh hưởng hệ thống, em phản hồi sao?',
+      'Em từng debug một lỗi khó nào? Quy trình em dùng là gì?',
+      'Điểm mạnh và điểm cần cải thiện lớn nhất của em trong kỹ thuật là gì?',
+    ],
+  },
+  {
+    id: 'tech-fit',
+    roman: 'IV',
+    title: 'Phù hợp đội nhóm',
+    subtitle: 'Thái độ và khả năng phối hợp',
+    hint: 'Đánh giá sự chủ động, tinh thần ownership và cách trao đổi.',
+    icon: HeartHandshake,
+    iconColorClass: 'text-primary',
+    barClass: 'bg-primary',
+    bgClass: 'bg-primary/10',
+    ringClass: 'ring-primary/15',
+    questions: [
+      'Em thích làm độc lập hay phối hợp nhóm hơn? Vì sao?',
+      'Khi bị review code nhiều, em tiếp nhận như thế nào?',
+      'Em mong muốn môi trường kỹ thuật như thế nào?',
+      'Em có thể bắt đầu khi nào và lịch làm việc có ràng buộc gì không?',
+    ],
+  },
+];
+
+const marketingSections: Section[] = [
+  {
+    id: 'mkt-basic',
+    roman: 'I',
+    title: 'Thông tin & kinh nghiệm marketing',
+    subtitle: 'Nền tảng nội dung và kênh triển khai',
+    hint: 'Ưu tiên ứng viên nói được kết quả, kênh đã làm và vai trò cụ thể.',
+    icon: UserRound,
+    iconColorClass: 'text-primary',
+    barClass: 'bg-primary',
+    bgClass: 'bg-primary-fixed',
+    ringClass: 'ring-primary/15',
+    questions: [
+      'Em giới thiệu ngắn gọn về kinh nghiệm marketing của mình?',
+      'Em từng phụ trách kênh nào: Facebook, TikTok, SEO, ads hay CRM?',
+      'Chiến dịch nào em thấy hiệu quả nhất? Vì sao?',
+      'Em thường đo hiệu quả nội dung bằng chỉ số nào?',
+      'Em có từng phối hợp với sale hoặc vận hành để tối ưu chuyển đổi chưa?',
+    ],
+  },
+  {
+    id: 'mkt-content',
+    roman: 'II',
+    title: 'Nội dung & thương hiệu',
+    subtitle: 'Gu thẩm mỹ và khả năng kể chuyện',
+    hint: 'Quan sát cách ứng viên hiểu khách hàng và chuyển ý tưởng thành nội dung.',
+    icon: Sparkles,
+    iconColorClass: 'text-secondary',
+    barClass: 'bg-secondary',
+    bgClass: 'bg-secondary-container',
+    ringClass: 'ring-secondary/15',
+    questions: [
+      'Theo em một nội dung bán hàng tốt cần có gì?',
+      'Em sẽ phân tích chân dung khách hàng như thế nào?',
+      'Nếu một bài đăng không có tương tác, em sẽ điều chỉnh gì?',
+      'Em có dùng Canva, CapCut hoặc công cụ AI nào không?',
+      'Em đánh giá thế nào là một hình ảnh/nội dung đúng vibe thương hiệu?',
+    ],
+  },
+  {
+    id: 'mkt-situation',
+    roman: 'III',
+    title: 'Tình huống thực tế',
+    subtitle: 'Phản xạ với dữ liệu và áp lực',
+    hint: 'Tập trung vào khả năng ưu tiên và ra quyết định dựa trên số liệu.',
+    icon: Target,
+    iconColorClass: 'text-tertiary',
+    barClass: 'bg-tertiary',
+    bgClass: 'bg-tertiary-container/50',
+    ringClass: 'ring-tertiary/15',
+    questions: [
+      'Nếu ngân sách ads thấp nhưng cần lead nhanh, em sẽ làm gì?',
+      'Nếu khách comment tiêu cực trên fanpage, em xử lý ra sao?',
+      'Nếu nội dung đẹp nhưng không ra chuyển đổi, em sẽ kiểm tra gì?',
+      'Em sẽ lên kế hoạch nội dung 7 ngày cho một sản phẩm mới như thế nào?',
+      'Em có thể làm việc theo deadline gấp và chỉnh sửa nhiều vòng không?',
+    ],
+  },
+  {
+    id: 'mkt-fit',
+    roman: 'IV',
+    title: 'Phù hợp đội nhóm',
+    subtitle: 'Thái độ, chủ động và cam kết',
+    hint: 'Chốt khả năng đi làm, học nhanh và phối hợp trong team nhỏ.',
+    icon: HeartHandshake,
+    iconColorClass: 'text-primary',
+    barClass: 'bg-primary',
+    bgClass: 'bg-primary/10',
+    ringClass: 'ring-primary/15',
+    questions: [
+      'Em thích môi trường marketing có nhịp nhanh không?',
+      'Khi ý tưởng của em bị góp ý hoặc đổi hướng, em phản ứng thế nào?',
+      'Em mong muốn học thêm kỹ năng gì trong 3 tháng tới?',
+      'Em có thể bắt đầu khi nào và lịch làm việc có ràng buộc gì không?',
+    ],
+  },
+];
+
+const questionSetMap: Record<Department, Section[]> = {
+  Sale: sections,
+  'Kỹ thuật': technicalSections,
+  Marketing: marketingSections,
+};
+
+const questionSetOptions: Department[] = ['Sale', 'Kỹ thuật', 'Marketing'];
 
 const MAX_SCORE_PER_QUESTION = 10;
 const PASS_THRESHOLD = 7; // điểm >= 7 → đạt
@@ -177,8 +342,10 @@ const NEUTRAL_THRESHOLD = 5; // 5-6 → trung bình; <5 → chưa đạt
 type ScoreValue = number; // 0-10
 
 interface SessionState {
+  candidateId: string;
   candidateName: string;
   position: string;
+  questionSet: Department;
   date: string;
   interviewer: string;
   scores: Record<string, ScoreValue>;
@@ -193,8 +360,10 @@ const todayIso = () => {
 };
 
 const emptySession: SessionState = {
+  candidateId: '',
   candidateName: '',
   position: 'Sale Junior',
+  questionSet: 'Sale',
   date: todayIso(),
   interviewer: '',
   scores: {},
@@ -244,16 +413,26 @@ function formatDateVN(iso: string) {
 }
 
 export default function InterviewQuestions() {
+  const [searchParams] = useSearchParams();
+  const { candidates, recruitmentJobs, saveInterviewAssessment } = useCrm();
   const [session, setSession] = useState<SessionState>(() => loadSession());
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState<string>(sections[0].id);
   const [openNote, setOpenNote] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'report'>('idle');
+  const [saveState, setSaveState] = useState<'idle' | 'saved'>('idle');
   const [showSetup, setShowSetup] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const navRef = useRef<HTMLDivElement>(null);
+  const activeSections = questionSetMap[session.questionSet] ?? sections;
+  const totalQuestions = useMemo(
+    () => activeSections.reduce((sum, section) => sum + section.questions.length, 0),
+    [activeSections]
+  );
+
+  const selectedCandidate = candidates.find((candidate) => candidate.id === session.candidateId);
 
   // Persist session
   useEffect(() => {
@@ -263,6 +442,31 @@ export default function InterviewQuestions() {
       /* noop */
     }
   }, [session]);
+
+  useEffect(() => {
+    const candidateId = searchParams.get('candidate');
+    if (!candidateId) return;
+    const candidate = candidates.find((item) => item.id === candidateId);
+    if (!candidate) return;
+    const job = recruitmentJobs.find((item) => item.id === candidate.jobId);
+    setSession((prev) => {
+      const isNewCandidate = prev.candidateId !== candidateId;
+      return {
+        ...prev,
+        candidateId,
+        candidateName: candidate.name,
+        position: job?.title ?? prev.position,
+        questionSet: job?.department ?? prev.questionSet,
+        scores: isNewCandidate ? {} : prev.scores,
+        notes: isNewCandidate ? {} : prev.notes,
+      };
+    });
+  }, [searchParams, candidates, recruitmentJobs]);
+
+  useEffect(() => {
+    if (activeSections.some((section) => section.id === activeId)) return;
+    setActiveId(activeSections[0]?.id ?? '');
+  }, [activeId, activeSections]);
 
   // Track active section on scroll
   useEffect(() => {
@@ -280,14 +484,21 @@ export default function InterviewQuestions() {
       if (el) observer.observe(el);
     });
     return () => observer.disconnect();
-  }, []);
+  }, [activeSections]);
 
   // Auto-scroll active chip into view
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
     const target = nav.querySelector<HTMLElement>(`[data-chip="${activeId}"]`);
-    if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    if (!target) return;
+
+    const targetCenter = target.offsetLeft + target.offsetWidth / 2;
+    const nextLeft = targetCenter - nav.clientWidth / 2;
+    nav.scrollTo({
+      left: Math.max(0, nextLeft),
+      behavior: 'smooth',
+    });
   }, [activeId]);
 
   // Lock body scroll when modal open
@@ -304,14 +515,14 @@ export default function InterviewQuestions() {
 
   const filteredSections = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return sections;
-    return sections
+    if (!normalizedQuery) return activeSections;
+    return activeSections
       .map((section) => ({
         ...section,
         questions: section.questions.filter((q) => q.toLowerCase().includes(normalizedQuery)),
       }))
       .filter((section) => section.questions.length > 0);
-  }, [query]);
+  }, [query, activeSections]);
 
   const stats = useMemo(() => {
     const entries = Object.entries(session.scores) as Array<[string, ScoreValue]>;
@@ -331,10 +542,10 @@ export default function InterviewQuestions() {
     const overallPercent = maxPossible ? Math.round((totalScore / maxPossible) * 100) : 0;
     const averageScore = answered ? totalScore / answered : 0;
     return { answered, passCount, neutralCount, failCount, totalScore, overallPercent, averageScore };
-  }, [session.scores]);
+  }, [session.scores, totalQuestions]);
 
   const sectionStats = useMemo(() => {
-    return sections.map((section) => {
+    return activeSections.map((section) => {
       const keys = section.questions.map((q) => `${section.id}::${q}`);
       const scoredKeys = keys.filter((k) => k in session.scores);
       const filled = scoredKeys.length;
@@ -354,7 +565,7 @@ export default function InterviewQuestions() {
         fillPercent: section.questions.length ? Math.round((filled / section.questions.length) * 100) : 0,
       };
     });
-  }, [session.scores]);
+  }, [session.scores, activeSections]);
 
   const recommendation = useMemo(() => {
     if (stats.answered < Math.ceil(totalQuestions * 0.6)) {
@@ -383,10 +594,33 @@ export default function InterviewQuestions() {
       title: 'Chưa phù hợp',
       text: 'Nhiều mục thiếu điểm. Có thể giữ liên hệ cho vị trí khác phù hợp hơn.',
     };
-  }, [stats]);
+  }, [stats, totalQuestions]);
 
   function updateField<K extends keyof SessionState>(key: K, value: SessionState[K]) {
     setSession((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function selectCandidate(candidateId: string) {
+    const candidate = candidates.find((item) => item.id === candidateId);
+    const job = candidate ? recruitmentJobs.find((item) => item.id === candidate.jobId) : undefined;
+    setSession((prev) => ({
+      ...prev,
+      candidateId,
+      candidateName: candidate?.name ?? '',
+      position: job?.title ?? prev.position,
+      questionSet: job?.department ?? prev.questionSet,
+      scores: prev.candidateId !== candidateId ? {} : prev.scores,
+      notes: prev.candidateId !== candidateId ? {} : prev.notes,
+    }));
+  }
+
+  function selectQuestionSet(questionSet: Department) {
+    setSession((prev) => ({
+      ...prev,
+      questionSet,
+      scores: prev.questionSet !== questionSet ? {} : prev.scores,
+      notes: prev.questionSet !== questionSet ? {} : prev.notes,
+    }));
   }
 
   function setScore(key: string, value: ScoreValue | null) {
@@ -421,14 +655,14 @@ export default function InterviewQuestions() {
 
   function handleResetSession() {
     if (!window.confirm('Bắt đầu buổi phỏng vấn mới? Toàn bộ đánh giá hiện tại sẽ bị xoá.')) return;
-    setSession({ ...emptySession, date: todayIso() });
+    setSession({ ...emptySession, date: todayIso(), candidateId: session.candidateId, candidateName: session.candidateName, position: session.position, questionSet: session.questionSet });
     setOpenNote(null);
     setShowSummary(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function buildQuestionsText() {
-    return sections
+    return activeSections
       .map((section) => {
         const heading = `${section.roman}. ${section.title.toUpperCase()}`;
         const body = section.questions.map((q, idx) => `${idx + 1}. ${q}`).join('\n');
@@ -458,7 +692,7 @@ export default function InterviewQuestions() {
     lines.push('───────────────────────────────────────');
     lines.push('');
 
-    sections.forEach((section) => {
+    activeSections.forEach((section) => {
       lines.push(`${section.roman}. ${section.title.toUpperCase()}`);
       lines.push('');
       section.questions.forEach((q, idx) => {
@@ -488,6 +722,26 @@ export default function InterviewQuestions() {
 
   function handlePrint() {
     window.print();
+  }
+
+  function saveAssessmentToCandidate() {
+    if (!session.candidateId) {
+      setShowSetup(true);
+      return;
+    }
+    saveInterviewAssessment({
+      candidateId: session.candidateId,
+      questionSet: session.questionSet,
+      interviewer: session.interviewer,
+      scorePercent: stats.overallPercent,
+      answered: stats.answered,
+      totalQuestions,
+      recommendationTitle: recommendation.title,
+      recommendationText: recommendation.text,
+      reportText: buildReportText(),
+    });
+    setSaveState('saved');
+    window.setTimeout(() => setSaveState('idle'), 1800);
   }
 
   return (
@@ -529,12 +783,20 @@ export default function InterviewQuestions() {
           <h1 className="mt-1 font-display text-[28px] font-bold leading-[1.05] tracking-tight text-on-surface md:text-[34px]">
             Bộ câu hỏi phỏng vấn
             <br className="md:hidden" />
-            <span className="text-primary"> Sale</span>
+            <span className="text-primary"> {session.questionSet}</span>
           </h1>
 
           <p className="mt-2 max-w-md text-[12.5px] font-semibold leading-5 text-on-surface-variant md:text-[13px]">
-            {totalQuestions} câu · {sections.length} nhóm đánh giá · Tự lưu trên thiết bị.
+            {totalQuestions} câu · {activeSections.length} nhóm đánh giá · Lưu kết quả theo hồ sơ ứng viên.
           </p>
+          <button
+            type="button"
+            onClick={() => setShowSetup(true)}
+            className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/20 bg-surface/90 px-3 text-[10.5px] font-black uppercase tracking-[0.12em] text-primary shadow-sm transition hover:bg-primary hover:text-on-primary active:scale-95"
+          >
+            <Plus className="size-3.5" strokeWidth={2.5} />
+            Tạo bộ câu hỏi
+          </button>
         </div>
 
         {/* Compact session bar */}
@@ -544,7 +806,9 @@ export default function InterviewQuestions() {
               <UserRound className="size-5" strokeWidth={2.5} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[9.5px] font-black uppercase tracking-[0.16em] text-on-surface-variant">Ứng viên · {session.position}</p>
+              <p className="text-[9.5px] font-black uppercase tracking-[0.16em] text-on-surface-variant">
+                {selectedCandidate ? 'Gắn từ Kanban' : 'Ứng viên'} · {session.position}
+              </p>
               <p className="mt-0.5 truncate text-[14px] font-black leading-tight text-on-surface">
                 {session.candidateName || (
                   <span className="font-semibold text-on-surface-variant/80">Chưa nhập tên</span>
@@ -593,6 +857,30 @@ export default function InterviewQuestions() {
             </div>
             <button
               type="button"
+              onClick={handleResetSession}
+              className="hidden size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition active:scale-90 hover:border-primary/30 hover:text-primary sm:flex"
+              aria-label="Bắt đầu mới"
+            >
+              <RotateCcw className="size-3.5" strokeWidth={2.5} />
+            </button>
+            <div className="hidden min-w-[132px] rounded-full border border-outline-variant bg-surface px-3 py-1.5 md:block">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.12em] text-on-surface-variant">Tiến độ</span>
+                <span className="font-mono text-[10.5px] font-black text-on-surface">
+                  {stats.answered}/{totalQuestions}
+                </span>
+              </div>
+              <div className="mt-1 h-1 overflow-hidden rounded-full bg-surface-container">
+                <motion.div
+                  initial={false}
+                  animate={{ width: `${stats.overallPercent}%` }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full rounded-full bg-primary"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
               onClick={() => setShowSummary(true)}
               className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 text-[10.5px] font-black uppercase tracking-[0.14em] text-on-primary shadow-sm shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
             >
@@ -601,7 +889,7 @@ export default function InterviewQuestions() {
             </button>
           </div>
           <div ref={navRef} className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-2 scrollbar-hide snap-x">
-            {sections.map((section) => {
+            {activeSections.map((section) => {
               const stat = sectionStats.find((s) => s.id === section.id);
               const isActive = activeId === section.id;
               const isComplete = stat && stat.filled === stat.total;
@@ -867,49 +1155,33 @@ export default function InterviewQuestions() {
         )}
       </div>
 
-      {/* FLOATING ACTION BAR (sticky inside scroll container) */}
-      <div className="iq-action-bar z-40 mx-3 mt-4 rounded-2xl border border-outline-variant/80 bg-surface/95 px-3 pt-2.5 shadow-[0_-8px_32px_rgba(79,101,64,0.10)] backdrop-blur-xl print:hidden">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleResetSession}
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-outline-variant bg-surface text-on-surface-variant transition active:scale-90 hover:border-primary/30 hover:text-primary"
-            aria-label="Bắt đầu mới"
-          >
-            <RotateCcw className="size-4" strokeWidth={2.5} />
-          </button>
-          <div className="flex-1 rounded-2xl border border-outline-variant bg-home-bg/60 px-3 py-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[9.5px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Tiến độ</span>
-              <span className="font-mono text-[12px] font-black tabular-nums text-on-surface">
-                {stats.answered}/{totalQuestions} · {stats.overallPercent}%
-              </span>
-            </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-container">
-              <motion.div
-                initial={false}
-                animate={{ width: `${stats.overallPercent}%` }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full rounded-full bg-gradient-to-r from-primary via-primary-container to-secondary"
-              />
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowSummary(true)}
-            className="flex h-11 shrink-0 items-center gap-1.5 rounded-2xl bg-primary px-4 text-[11px] font-black uppercase tracking-[0.14em] text-on-primary shadow-md shadow-primary/25 transition active:scale-95 hover:bg-primary-container"
-          >
-            <Award className="size-4" strokeWidth={2.5} />
-            <span>Kết quả</span>
-          </button>
-        </div>
-      </div>
-
       {/* SETUP BOTTOM SHEET */}
       <AnimatePresence>
         {showSetup && (
           <BottomSheet onClose={() => setShowSetup(false)} title="Thông tin buổi phỏng vấn" icon={Pencil}>
             <div className="grid gap-3 p-4 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="eyebrow">Ứng viên từ Kanban</span>
+                <div className="relative mt-1.5">
+                  <UserRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant" strokeWidth={2} />
+                  <select
+                    value={session.candidateId}
+                    onChange={(event) => selectCandidate(event.target.value)}
+                    className="h-12 w-full appearance-none rounded-2xl border border-outline-variant bg-surface pl-10 pr-9 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  >
+                    <option value="">Chọn ứng viên để lưu kết quả vào hồ sơ</option>
+                    {candidates.map((candidate) => {
+                      const job = recruitmentJobs.find((item) => item.id === candidate.jobId);
+                      return (
+                        <option key={candidate.id} value={candidate.id}>
+                          {candidate.name} · {job?.title ?? 'Chưa gán vị trí'}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant" />
+                </div>
+              </label>
               <FloatingField
                 label="Tên ứng viên"
                 icon={UserRound}
@@ -922,7 +1194,24 @@ export default function InterviewQuestions() {
                 icon={Briefcase}
                 value={session.position}
                 onChange={(v) => updateField('position', v)}
-                options={['Sale Junior', 'Sale Senior', 'Sale Online', 'Sale Tại shop', 'Trưởng ca Sale']}
+                options={[
+                  'Sale Junior',
+                  'Sale Senior',
+                  'Sale Online',
+                  'Sale Tại shop',
+                  'Trưởng ca Sale',
+                  'Frontend Developer',
+                  'Kỹ thuật viên',
+                  'Marketing Executive',
+                  'Content Marketing',
+                ]}
+              />
+              <FloatingSelect
+                label="Bộ câu hỏi"
+                icon={ListChecks}
+                value={session.questionSet}
+                onChange={(v) => selectQuestionSet(v as Department)}
+                options={questionSetOptions}
               />
               <FloatingField
                 label="Ngày phỏng vấn"
@@ -1046,7 +1335,7 @@ export default function InterviewQuestions() {
             </div>
 
             {/* Action buttons */}
-            <div className="grid shrink-0 grid-cols-3 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3">
+            <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-outline-variant bg-surface-container-low/40 p-3 sm:grid-cols-4">
               <button
                 type="button"
                 onClick={() => copyText(buildReportText(), 'report')}
@@ -1067,6 +1356,21 @@ export default function InterviewQuestions() {
               >
                 <Printer className="size-4" strokeWidth={2.5} />
                 <span className="text-[9.5px] font-black uppercase tracking-[0.1em]">In</span>
+              </button>
+              <button
+                type="button"
+                onClick={saveAssessmentToCandidate}
+                className={cn(
+                  'flex h-12 flex-col items-center justify-center gap-0.5 rounded-2xl border bg-surface transition active:scale-95',
+                  saveState === 'saved'
+                    ? 'border-primary bg-primary-fixed text-primary'
+                    : 'border-outline-variant text-on-surface-variant hover:border-primary/30 hover:text-primary'
+                )}
+              >
+                {saveState === 'saved' ? <CheckCircle2 className="size-4" strokeWidth={2.5} /> : <Save className="size-4" strokeWidth={2.5} />}
+                <span className="text-[9.5px] font-black uppercase tracking-[0.1em]">
+                  {saveState === 'saved' ? 'Đã lưu' : 'Lưu hồ sơ'}
+                </span>
               </button>
               <button
                 type="button"

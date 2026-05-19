@@ -149,34 +149,6 @@
     border-radius: 1.25rem !important;
   }
 
-  .iq-action-bar {
-    position: fixed;
-    bottom: 4rem;
-    left: 0;
-    right: 0;
-    margin-left: auto;
-    margin-right: auto;
-    width: calc(100% - 1.5rem);
-    max-width: 48rem;
-    padding-bottom: 0.625rem;
-    z-index: 30;
-  }
-
-  @media (min-width: 768px) {
-    .iq-action-bar {
-      bottom: 1rem;
-      width: calc(100% - 3rem);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .iq-action-bar {
-      left: 16rem;
-      width: calc(100% - 16rem - 3rem);
-      max-width: 48rem;
-    }
-  }
-
   .section-card {
     @apply rounded-lg border border-home-outline bg-home-surface shadow-sm shadow-home-primary/5 transition-all duration-300 ease-out;
   }
@@ -235,7 +207,6 @@
   header,
   nav,
   .print\:hidden,
-  .iq-action-bar,
   .iq-sticky-nav {
     display: none !important;
   }

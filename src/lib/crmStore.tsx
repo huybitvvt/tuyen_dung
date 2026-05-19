@@ -136,6 +136,18 @@ export interface CandidateInterview {
   notes?: string;
 }
 
+export interface InterviewAssessmentInput {
+  candidateId: string;
+  questionSet: Department;
+  interviewer: string;
+  scorePercent: number;
+  answered: number;
+  totalQuestions: number;
+  recommendationTitle: string;
+  recommendationText: string;
+  reportText: string;
+}
+
 export interface CandidateFile {
   id: string;
   candidateId: string;
@@ -189,6 +201,7 @@ interface CrmContextValue extends CrmState {
   moveCandidateStage: (candidateId: string, toStage: CandidateStage) => void;
   scheduleInterview: (candidateId: string, scheduledAt: string, interviewer: string) => void;
   recordInterviewResult: (interviewId: string, result: CandidateInterview['result'], notes: string) => void;
+  saveInterviewAssessment: (assessment: InterviewAssessmentInput) => void;
   resetDemoData: () => void;
 }
 
@@ -1256,6 +1269,66 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
             candidateActivities: interview
               ? [...draft.candidateActivities, { id: id('activity'), candidateId: interview.candidateId, text: `Ghi nhận kết quả phỏng vấn: ${result}`, createdAt: nowIso() }]
               : draft.candidateActivities,
+          };
+        });
+      },
+      saveInterviewAssessment(assessment) {
+        persist((draft) => {
+          const candidate = draft.candidates.find((item) => item.id === assessment.candidateId);
+          if (!candidate) return draft;
+
+          const result: CandidateInterview['result'] =
+            assessment.scorePercent >= 75 ? 'Đạt' : assessment.scorePercent >= 55 ? 'Cần cân nhắc' : 'Không đạt';
+          const notes = [
+            `${assessment.questionSet} · ${assessment.recommendationTitle}`,
+            `Điểm: ${assessment.scorePercent}/100 · Đã chấm ${assessment.answered}/${assessment.totalQuestions} câu.`,
+            assessment.recommendationText,
+            '',
+            assessment.reportText,
+          ].join('\n');
+          const latestInterview = [...draft.candidateInterviews]
+            .filter((item) => item.candidateId === assessment.candidateId)
+            .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())[0];
+          const shouldAdvanceStage =
+            candidate.stage === 'new' || candidate.stage === 'screened' || candidate.stage === 'interview_scheduled';
+
+          return {
+            ...draft,
+            candidates: draft.candidates.map((item) =>
+              item.id === assessment.candidateId && shouldAdvanceStage ? { ...item, stage: 'interviewed' } : item
+            ),
+            candidateInterviews: latestInterview
+              ? draft.candidateInterviews.map((item) =>
+                  item.id === latestInterview.id
+                    ? {
+                        ...item,
+                        interviewer: assessment.interviewer || item.interviewer,
+                        result,
+                        notes,
+                      }
+                    : item
+                )
+              : [
+                  ...draft.candidateInterviews,
+                  {
+                    id: id('interview'),
+                    candidateId: assessment.candidateId,
+                    scheduledAt: nowIso(),
+                    interviewer: assessment.interviewer || currentUserId,
+                    result,
+                    notes,
+                  },
+                ],
+            candidateActivities: [
+              ...draft.candidateActivities,
+              {
+                id: id('activity'),
+                candidateId: assessment.candidateId,
+                text: `Lưu kết quả phỏng vấn ${assessment.questionSet}: ${result} (${assessment.scorePercent}/100)`,
+                ...(shouldAdvanceStage ? { fromStage: candidate.stage, toStage: 'interviewed' as CandidateStage } : {}),
+                createdAt: nowIso(),
+              },
+            ],
           };
         });
       },
