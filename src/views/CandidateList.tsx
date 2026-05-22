@@ -7,6 +7,7 @@ import {
   ExternalLink,
   FileText,
   GripVertical,
+  ImagePlus,
   Mail,
   MessageCircleQuestion,
   Phone,
@@ -20,7 +21,7 @@ import type React from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { cn } from '../lib/utils';
-import { candidateStages, stageLabel, useCrm, type CandidateStage } from '../lib/crmStore';
+import { candidateStages, stageLabel, useCrm, type Candidate, type CandidateStage } from '../lib/crmStore';
 import { isGoogleDrivePickerConfigured, uploadGoogleDriveFiles } from '../lib/googleDrivePicker';
 
 const stageTone = [
@@ -46,6 +47,7 @@ type CandidateForm = {
   cvUrl: string;
   cvDriveFileId: string;
   cvMimeType: string;
+  avatarUrl: string;
   notes: string;
 };
 
@@ -60,6 +62,7 @@ function emptyForm(jobId = ''): CandidateForm {
     cvUrl: '',
     cvDriveFileId: '',
     cvMimeType: '',
+    avatarUrl: '',
     notes: '',
   };
 }
@@ -75,6 +78,8 @@ export default function CandidateList() {
   const [form, setForm] = useState<CandidateForm>(() => emptyForm(recruitmentJobs[0]?.id));
   const [formError, setFormError] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
   const [isUploadingDrive, setIsUploadingDrive] = useState(false);
   const [activeNote, setActiveNote] = useState<{ name: string; note: string } | null>(null);
 
@@ -120,6 +125,17 @@ export default function CandidateList() {
     };
   }, [isFormOpen]);
 
+  useEffect(() => {
+    if (!selectedAvatarFile) {
+      setAvatarPreview('');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(selectedAvatarFile);
+    setAvatarPreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selectedAvatarFile]);
+
   function updateForm<K extends keyof CandidateForm>(key: K, value: CandidateForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
     if (formError) setFormError('');
@@ -128,6 +144,7 @@ export default function CandidateList() {
   function openForm() {
     setForm(emptyForm(recruitmentJobs[0]?.id));
     setSelectedFiles([]);
+    setSelectedAvatarFile(null);
     setFormError('');
     setIsFormOpen(true);
   }
@@ -148,7 +165,8 @@ export default function CandidateList() {
     }
 
     let uploadedFiles: Array<{ name: string; url: string; driveFileId?: string; mimeType?: string }> = [];
-    if (selectedFiles.length > 0) {
+    let avatarUrl = form.avatarUrl.trim();
+    if (selectedFiles.length > 0 || selectedAvatarFile) {
       if (!isGoogleDrivePickerConfigured()) {
         setFormError('Chưa cấu hình Google API nên chưa upload được file lên Drive.');
         return;
@@ -157,13 +175,18 @@ export default function CandidateList() {
       setIsUploadingDrive(true);
       setFormError('');
       try {
-        const results = await uploadGoogleDriveFiles(selectedFiles);
-        uploadedFiles = results.map((file) => ({
-          name: file.name,
-          url: file.url,
-          driveFileId: file.id,
-          mimeType: file.mimeType,
-        }));
+        const filesToUpload = [...(selectedAvatarFile ? [selectedAvatarFile] : []), ...selectedFiles];
+        const results = await uploadGoogleDriveFiles(filesToUpload);
+        const candidateFileResults = selectedAvatarFile ? results.slice(1) : results;
+        if (selectedAvatarFile) avatarUrl = results[0]?.url ?? avatarUrl;
+        if (candidateFileResults.length > 0) {
+          uploadedFiles = candidateFileResults.map((file) => ({
+            name: file.name,
+            url: file.url,
+            driveFileId: file.id,
+            mimeType: file.mimeType,
+          }));
+        }
       } catch (error) {
         setFormError(error instanceof Error ? error.message : 'Upload file lên Google Drive thất bại.');
         setIsUploadingDrive(false);
@@ -181,6 +204,7 @@ export default function CandidateList() {
       source: form.source.trim() || 'Khác',
       notes: form.notes.trim(),
       cvFileName: form.cvFileName.trim() || firstFileName || `${form.name.trim().replace(/\s+/g, '_')}_CV.pdf`,
+      avatarUrl,
       cvUrl: form.cvUrl.trim(),
       cvDriveFileId: form.cvDriveFileId,
       cvMimeType: form.cvMimeType,
@@ -301,9 +325,7 @@ export default function CandidateList() {
                       className="group rounded-xl border border-outline-variant bg-surface p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md active:cursor-grabbing"
                     >
                       <div className="flex items-start gap-2.5">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-fixed to-secondary-container text-[12px] font-black text-on-primary-fixed">
-                          {candidate.name.slice(0, 2).toUpperCase()}
-                        </div>
+                        <CandidateAvatar candidate={candidate} className="size-9 rounded-xl text-[12px]" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[13px] font-black text-on-surface">{candidate.name}</p>
                           <p className="mt-0.5 truncate text-[10.5px] font-bold text-on-surface-variant">
@@ -384,9 +406,7 @@ export default function CandidateList() {
                   <tr key={candidate.id} className="transition hover:bg-primary-fixed/25">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-fixed to-secondary-container text-[13px] font-black text-on-primary-fixed">
-                          {candidate.name.slice(0, 2).toUpperCase()}
-                        </div>
+                        <CandidateAvatar candidate={candidate} className="size-10 rounded-xl text-[13px]" />
                         <div className="min-w-0">
                           <p className="truncate text-[13px] font-black text-on-surface">{candidate.name}</p>
                           <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">
@@ -476,9 +496,7 @@ export default function CandidateList() {
             >
               <div className={cn('absolute left-0 top-0 h-full w-1', tone)} />
               <div className="flex items-start gap-3 pl-1">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-fixed to-secondary-container text-[14px] font-black text-on-primary-fixed shadow-sm">
-                  {candidate.name.slice(0, 2).toUpperCase()}
-                </div>
+                <CandidateAvatar candidate={candidate} className="size-11 rounded-2xl text-[14px]" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="truncate text-[14.5px] font-black leading-tight text-on-surface group-hover:text-primary">
@@ -623,6 +641,35 @@ export default function CandidateList() {
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-5">
               <div className="grid gap-3 md:grid-cols-2">
+                <Field label="Ảnh đại diện ứng viên" className="md:col-span-2">
+                  <div className="grid gap-3 rounded-2xl border border-outline-variant bg-surface-container-low/35 p-3 md:grid-cols-[72px_1fr]">
+                    <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-outline-variant bg-surface text-primary shadow-sm">
+                      {avatarPreview || form.avatarUrl.trim() ? (
+                        <img
+                          src={avatarPreview || form.avatarUrl.trim()}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImagePlus className="size-7" strokeWidth={2.2} />
+                      )}
+                    </div>
+                    <div className="grid min-w-0 gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => setSelectedAvatarFile(event.target.files?.[0] ?? null)}
+                        className={inputClass}
+                      />
+                      <input
+                        value={form.avatarUrl}
+                        onChange={(event) => updateForm('avatarUrl', event.target.value)}
+                        className={inputClass}
+                        placeholder="Hoặc dán link ảnh đại diện có sẵn"
+                      />
+                    </div>
+                  </div>
+                </Field>
                 <Field label="Họ tên">
                   <input value={form.name} onChange={(event) => updateForm('name', event.target.value)} className={inputClass} placeholder="Nguyễn Văn A" />
                 </Field>
@@ -647,7 +694,7 @@ export default function CandidateList() {
                 <Field label="CV/file">
                   <input value={form.cvFileName} onChange={(event) => updateForm('cvFileName', event.target.value)} className={inputClass} placeholder="Nguyen_Van_A_CV.pdf" />
                 </Field>
-                <Field label="Upload ảnh/CV lên Google Drive" className="md:col-span-2">
+                <Field label="Upload CV/file lên Google Drive" className="md:col-span-2">
                   <input
                     type="file"
                     multiple
@@ -733,6 +780,23 @@ function Field({
       <span className="eyebrow">{label}</span>
       <div className="mt-1.5">{children}</div>
     </label>
+  );
+}
+
+function CandidateAvatar({ candidate, className }: { candidate: Candidate; className?: string }) {
+  return (
+    <div
+      className={cn(
+        'flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-primary-fixed to-secondary-container font-black text-on-primary-fixed shadow-sm',
+        className
+      )}
+    >
+      {candidate.avatarUrl ? (
+        <img src={candidate.avatarUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        candidate.name.slice(0, 2).toUpperCase()
+      )}
+    </div>
   );
 }
 

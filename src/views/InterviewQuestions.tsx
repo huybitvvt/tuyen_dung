@@ -23,15 +23,18 @@ import {
   RotateCcw,
   Save,
   Search,
+  Settings2,
   Sparkles,
   Target,
   ThumbsDown,
   ThumbsUp,
+  Trash2,
+  Undo2,
   UserRound,
   X,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useCrm, type CustomInterviewQuestionSet, type Department, type InterviewQuestionAddition } from '../lib/crmStore';
+import { useCrm, type CustomInterviewQuestionSet, type Department, type InterviewQuestionAddition, type InterviewQuestionOverride } from '../lib/crmStore';
 
 type Section = {
   id: string;
@@ -429,6 +432,26 @@ function customQuestionSetToSections(set: CustomInterviewQuestionSet): Section[]
   }));
 }
 
+function applyQuestionOverrides(baseSections: Section[], overrides: InterviewQuestionOverride[]): Section[] {
+  if (!overrides.length) return baseSections;
+
+  return baseSections.map((section) => {
+    const sectionOverrides = overrides.filter((override) => override.sectionId === section.id);
+    if (!sectionOverrides.length) return section;
+
+    return {
+      ...section,
+      questions: section.questions
+        .map((question) => {
+          const override = sectionOverrides.find((item) => item.originalQuestion === question);
+          if (!override) return question;
+          return override.action === 'delete' ? null : override.question ?? question;
+        })
+        .filter((question): question is string => Boolean(question)),
+    };
+  }).filter((section) => section.questions.length > 0);
+}
+
 function mergeQuestionAdditions(baseSections: Section[], additions: InterviewQuestionAddition[]): Section[] {
   if (!additions.length) return baseSections;
 
@@ -469,9 +492,17 @@ export default function InterviewQuestions() {
     recruitmentJobs,
     customInterviewQuestionSets,
     interviewQuestionAdditions,
+    interviewQuestionOverrides,
     saveInterviewAssessment,
     createInterviewQuestionSet,
     addInterviewQuestion,
+    updateInterviewQuestionSet,
+    deleteInterviewQuestionSet,
+    updateInterviewQuestionAddition,
+    deleteInterviewQuestionAddition,
+    editInterviewQuestion,
+    deleteInterviewQuestion,
+    restoreInterviewQuestion,
   } = useCrm();
   const [session, setSession] = useState<SessionState>(() => loadSession());
   const [query, setQuery] = useState('');
@@ -483,6 +514,7 @@ export default function InterviewQuestions() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showCreateSet, setShowCreateSet] = useState(false);
   const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [showManageQuestions, setShowManageQuestions] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [setForm, setSetForm] = useState({
     title: '',
@@ -495,18 +527,32 @@ export default function InterviewQuestions() {
     sectionTitle: 'Câu hỏi thêm',
     question: '',
   });
+  const [setDrafts, setSetDrafts] = useState<Record<string, { title: string; department: Department }>>({});
+  const [baseQuestionDrafts, setBaseQuestionDrafts] = useState<Record<string, string>>({});
+  const [additionDrafts, setAdditionDrafts] = useState<Record<string, { sectionTitle: string; question: string }>>({});
   const [formError, setFormError] = useState('');
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const navRef = useRef<HTMLDivElement>(null);
   const activeCustomSet = customInterviewQuestionSets.find((set) => set.id === session.questionSet);
+  const baseSections = useMemo(
+    () =>
+      activeCustomSet
+        ? customQuestionSetToSections(activeCustomSet)
+        : questionSetMap[session.questionSet as Department] ?? sections,
+    [activeCustomSet, session.questionSet]
+  );
+  const activeOverrides = useMemo(
+    () => (interviewQuestionOverrides ?? []).filter((override) => override.setId === session.questionSet),
+    [interviewQuestionOverrides, session.questionSet]
+  );
+  const activeAdditions = useMemo(
+    () => (interviewQuestionAdditions ?? []).filter((addition) => addition.setId === session.questionSet),
+    [interviewQuestionAdditions, session.questionSet]
+  );
   const activeSections = useMemo(() => {
-    const baseSections = activeCustomSet
-      ? customQuestionSetToSections(activeCustomSet)
-      : questionSetMap[session.questionSet as Department] ?? sections;
-    const additions = (interviewQuestionAdditions ?? []).filter((addition) => addition.setId === session.questionSet);
-    return mergeQuestionAdditions(baseSections, additions);
-  }, [activeCustomSet, interviewQuestionAdditions, session.questionSet]);
+    return mergeQuestionAdditions(applyQuestionOverrides(baseSections, activeOverrides), activeAdditions);
+  }, [activeAdditions, activeOverrides, baseSections]);
   const totalQuestions = useMemo(
     () => activeSections.reduce((sum, section) => sum + section.questions.length, 0),
     [activeSections]
@@ -584,7 +630,7 @@ export default function InterviewQuestions() {
 
   // Lock body scroll when modal open
   useEffect(() => {
-    if (showSummary || showSetup || showResetConfirm || showCreateSet || showAddQuestion) {
+    if (showSummary || showSetup || showResetConfirm || showCreateSet || showAddQuestion || showManageQuestions) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -592,7 +638,7 @@ export default function InterviewQuestions() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showSummary, showSetup, showResetConfirm, showCreateSet, showAddQuestion]);
+  }, [showSummary, showSetup, showResetConfirm, showCreateSet, showAddQuestion, showManageQuestions]);
 
   const filteredSections = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -713,6 +759,67 @@ export default function InterviewQuestions() {
     }));
     setFormError('');
     setShowAddQuestion(true);
+  }
+
+  function openManageQuestionSheet() {
+    setSetDrafts(
+      customInterviewQuestionSets.reduce<Record<string, { title: string; department: Department }>>((drafts, set) => {
+        drafts[set.id] = { title: set.title, department: set.department };
+        return drafts;
+      }, {})
+    );
+    setBaseQuestionDrafts(() => {
+      const drafts: Record<string, string> = {};
+      baseSections.forEach((section) => {
+        section.questions.forEach((question) => {
+          const key = `${session.questionSet}::${section.id}::${question}`;
+          const override = activeOverrides.find(
+            (item) => item.sectionId === section.id && item.originalQuestion === question
+          );
+          drafts[key] = override?.action === 'edit' ? override.question ?? question : question;
+        });
+      });
+      return drafts;
+    });
+    setAdditionDrafts(
+      activeAdditions.reduce<Record<string, { sectionTitle: string; question: string }>>((drafts, addition) => {
+        drafts[addition.id] = { sectionTitle: addition.sectionTitle, question: addition.question };
+        return drafts;
+      }, {})
+    );
+    setFormError('');
+    setShowManageQuestions(true);
+  }
+
+  function saveSetDraft(setId: string) {
+    const draft = setDrafts[setId];
+    if (!draft?.title.trim()) {
+      setFormError('Tên bộ câu hỏi không được để trống.');
+      return;
+    }
+    updateInterviewQuestionSet(setId, draft);
+    setFormError('');
+  }
+
+  function saveBaseQuestion(sectionId: string, originalQuestion: string) {
+    const key = `${session.questionSet}::${sectionId}::${originalQuestion}`;
+    const draft = baseQuestionDrafts[key]?.trim();
+    if (!draft) {
+      setFormError('Nội dung câu hỏi không được để trống.');
+      return;
+    }
+    editInterviewQuestion(session.questionSet, sectionId, originalQuestion, draft);
+    setFormError('');
+  }
+
+  function saveAddition(additionId: string) {
+    const draft = additionDrafts[additionId];
+    if (!draft?.question.trim()) {
+      setFormError('Nội dung câu hỏi bổ sung không được để trống.');
+      return;
+    }
+    updateInterviewQuestionAddition(additionId, draft);
+    setFormError('');
   }
 
   function submitQuestionSet(event: FormEvent<HTMLFormElement>) {
@@ -949,6 +1056,15 @@ export default function InterviewQuestions() {
             >
               <FileText className="size-3.5" strokeWidth={2.5} />
               Thêm vào bộ
+            </button>
+            <button
+              type="button"
+              onClick={openManageQuestionSheet}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-outline-variant bg-surface/90 px-3 text-[10.5px] font-black uppercase tracking-[0.12em] text-on-surface-variant shadow-sm transition hover:border-primary/30 hover:bg-primary-fixed/40 hover:text-primary active:scale-95"
+              title="Sửa hoặc xóa bộ câu hỏi/câu hỏi hiện tại"
+            >
+              <Settings2 className="size-3.5" strokeWidth={2.5} />
+              Quản lý bộ
             </button>
           </div>
         </div>
@@ -1646,6 +1762,272 @@ export default function InterviewQuestions() {
                 </button>
               </div>
             </form>
+          </BottomSheet>
+        )}
+      </AnimatePresence>
+
+      {/* MANAGE QUESTION SET */}
+      <AnimatePresence>
+        {showManageQuestions && (
+          <BottomSheet onClose={() => setShowManageQuestions(false)} title="Quản lý bộ câu hỏi" icon={Settings2} size="large">
+            <div className="border-t border-outline-variant bg-primary-fixed/45 px-4 py-3">
+              <p className="text-[12px] font-semibold leading-5 text-on-primary-fixed">
+                Có thể sửa/xóa câu hỏi trong bộ đang mở. Bộ tự tạo có thể đổi tên, đổi bộ phận hoặc xóa hẳn.
+              </p>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+              {formError && (
+                <div className="rounded-2xl border border-error/25 bg-error-container px-3 py-2 text-[12px] font-bold text-on-error-container">
+                  {formError}
+                </div>
+              )}
+
+              <section className="rounded-2xl border border-outline-variant bg-surface overflow-hidden">
+                <header className="border-b border-outline-variant bg-surface-container-low/50 px-3 py-2.5">
+                  <p className="eyebrow">Bộ câu hỏi tự tạo</p>
+                  <h3 className="text-[14px] font-black text-on-surface">Đổi tên hoặc xóa bộ riêng</h3>
+                </header>
+                {customInterviewQuestionSets.length > 0 ? (
+                  <div className="divide-y divide-outline-variant/50">
+                    {customInterviewQuestionSets.map((set) => {
+                      const draft = setDrafts[set.id] ?? { title: set.title, department: set.department };
+                      return (
+                        <div key={set.id} className="grid gap-2 p-3 sm:grid-cols-[1fr_150px_auto] sm:items-end">
+                          <label className="block">
+                            <span className="eyebrow">Tên bộ</span>
+                            <input
+                              value={draft.title}
+                              onChange={(event) =>
+                                setSetDrafts((current) => ({
+                                  ...current,
+                                  [set.id]: { ...draft, title: event.target.value },
+                                }))
+                              }
+                              className="mt-1.5 h-11 w-full rounded-xl border border-outline-variant bg-surface px-3 text-[13px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="eyebrow">Bộ phận</span>
+                            <select
+                              value={draft.department}
+                              onChange={(event) =>
+                                setSetDrafts((current) => ({
+                                  ...current,
+                                  [set.id]: { ...draft, department: event.target.value as Department },
+                                }))
+                              }
+                              className="mt-1.5 h-11 w-full rounded-xl border border-outline-variant bg-surface px-3 text-[13px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                            >
+                              {questionSetOptions.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 sm:w-[190px]">
+                            <button
+                              type="button"
+                              onClick={() => saveSetDraft(set.id)}
+                              className="inline-flex h-11 items-center justify-center gap-1 rounded-xl bg-primary px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-primary transition active:scale-95 hover:bg-primary-container"
+                            >
+                              <Save className="size-3.5" strokeWidth={2.5} />
+                              Lưu
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (session.questionSet === set.id) selectAnyQuestionSet(set.department);
+                                deleteInterviewQuestionSet(set.id);
+                              }}
+                              className="inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-error/30 bg-error-container px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-error-container transition active:scale-95 hover:opacity-85"
+                            >
+                              <Trash2 className="size-3.5" strokeWidth={2.5} />
+                              Xóa
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="px-3 py-4 text-[12px] font-semibold text-on-surface-variant">
+                    Chưa có bộ tự tạo. Bộ mặc định vẫn có thể sửa/xóa từng câu ở phần dưới.
+                  </p>
+                )}
+              </section>
+
+              <section className="rounded-2xl border border-outline-variant bg-surface overflow-hidden">
+                <header className="border-b border-outline-variant bg-surface-container-low/50 px-3 py-2.5">
+                  <p className="eyebrow">Bộ đang mở</p>
+                  <h3 className="text-[14px] font-black text-on-surface">
+                    {activeQuestionSetLabel} · sửa/xóa từng câu
+                  </h3>
+                </header>
+                <div className="space-y-3 p-3">
+                  {baseSections.map((section) => (
+                    <div key={section.id} className="rounded-2xl border border-outline-variant bg-surface-container-low/35 p-2.5">
+                      <p className="mb-2 text-[11px] font-black uppercase tracking-[0.14em] text-on-surface-variant">
+                        {section.roman}. {section.title}
+                      </p>
+                      <div className="space-y-2">
+                        {section.questions.map((question, index) => {
+                          const key = `${session.questionSet}::${section.id}::${question}`;
+                          const override = activeOverrides.find(
+                            (item) => item.sectionId === section.id && item.originalQuestion === question
+                          );
+                          const isDeleted = override?.action === 'delete';
+                          return (
+                            <div
+                              key={key}
+                              className={cn(
+                                'rounded-xl border bg-surface p-2 transition',
+                                isDeleted ? 'border-error/25 opacity-70' : 'border-outline-variant'
+                              )}
+                            >
+                              <div className="mb-1.5 flex items-center justify-between gap-2">
+                                <span className="font-mono text-[10px] font-black uppercase tracking-[0.12em] text-on-surface-variant">
+                                  Câu {index + 1}
+                                </span>
+                                {override && (
+                                  <span className="rounded-full bg-primary-fixed px-2 py-0.5 text-[9.5px] font-black uppercase tracking-[0.10em] text-primary">
+                                    {isDeleted ? 'Đã ẩn' : 'Đã sửa'}
+                                  </span>
+                                )}
+                              </div>
+                              <textarea
+                                value={baseQuestionDrafts[key] ?? question}
+                                disabled={isDeleted}
+                                onChange={(event) =>
+                                  setBaseQuestionDrafts((current) => ({
+                                    ...current,
+                                    [key]: event.target.value,
+                                  }))
+                                }
+                                rows={3}
+                                className="w-full resize-y rounded-xl border border-outline-variant bg-surface p-3 text-[13px] font-semibold leading-6 text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:bg-surface-container-low disabled:text-on-surface-variant"
+                              />
+                              <div className="mt-2 flex flex-wrap justify-end gap-2">
+                                {override ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      restoreInterviewQuestion(session.questionSet, section.id, question);
+                                      setBaseQuestionDrafts((current) => ({ ...current, [key]: question }));
+                                    }}
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-outline-variant bg-surface px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant transition hover:border-primary/30 hover:text-primary active:scale-95"
+                                  >
+                                    <Undo2 className="size-3.5" strokeWidth={2.5} />
+                                    Khôi phục
+                                  </button>
+                                ) : null}
+                                {!isDeleted && (
+                                  <button
+                                    type="button"
+                                    onClick={() => saveBaseQuestion(section.id, question)}
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-primary transition hover:bg-primary-container active:scale-95"
+                                  >
+                                    <Save className="size-3.5" strokeWidth={2.5} />
+                                    Lưu câu
+                                  </button>
+                                )}
+                                {!isDeleted && (
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteInterviewQuestion(session.questionSet, section.id, question)}
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-error/30 bg-error-container px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-error-container transition hover:opacity-85 active:scale-95"
+                                  >
+                                    <Trash2 className="size-3.5" strokeWidth={2.5} />
+                                    Xóa câu
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-outline-variant bg-surface overflow-hidden">
+                <header className="border-b border-outline-variant bg-surface-container-low/50 px-3 py-2.5">
+                  <p className="eyebrow">Câu hỏi bổ sung</p>
+                  <h3 className="text-[14px] font-black text-on-surface">Sửa/xóa các câu đã thêm vào bộ hiện tại</h3>
+                </header>
+                {activeAdditions.length > 0 ? (
+                  <div className="space-y-2 p-3">
+                    {activeAdditions.map((addition) => {
+                      const draft = additionDrafts[addition.id] ?? {
+                        sectionTitle: addition.sectionTitle,
+                        question: addition.question,
+                      };
+                      return (
+                        <div key={addition.id} className="rounded-xl border border-outline-variant bg-surface-container-low/35 p-2.5">
+                          <input
+                            value={draft.sectionTitle}
+                            onChange={(event) =>
+                              setAdditionDrafts((current) => ({
+                                ...current,
+                                [addition.id]: { ...draft, sectionTitle: event.target.value },
+                              }))
+                            }
+                            className="h-10 w-full rounded-xl border border-outline-variant bg-surface px-3 text-[12.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                            placeholder="Nhóm câu hỏi"
+                          />
+                          <textarea
+                            value={draft.question}
+                            onChange={(event) =>
+                              setAdditionDrafts((current) => ({
+                                ...current,
+                                [addition.id]: { ...draft, question: event.target.value },
+                              }))
+                            }
+                            rows={3}
+                            className="mt-2 w-full resize-y rounded-xl border border-outline-variant bg-surface p-3 text-[13px] font-semibold leading-6 text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                          />
+                          <div className="mt-2 flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => saveAddition(addition.id)}
+                              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-primary transition hover:bg-primary-container active:scale-95"
+                            >
+                              <Save className="size-3.5" strokeWidth={2.5} />
+                              Lưu
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteInterviewQuestionAddition(addition.id)}
+                              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-error/30 bg-error-container px-3 text-[10px] font-black uppercase tracking-[0.10em] text-on-error-container transition hover:opacity-85 active:scale-95"
+                            >
+                              <Trash2 className="size-3.5" strokeWidth={2.5} />
+                              Xóa
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="px-3 py-4 text-[12px] font-semibold text-on-surface-variant">
+                    Chưa có câu hỏi bổ sung trong bộ này.
+                  </p>
+                )}
+              </section>
+            </div>
+
+            <div className="border-t border-outline-variant bg-surface-container-low/40 p-3">
+              <button
+                type="button"
+                onClick={() => setShowManageQuestions(false)}
+                className="btn-primary flex h-12 w-full items-center justify-center gap-2"
+              >
+                <Check className="size-4" strokeWidth={2.5} />
+                <span className="text-[12px]">Xong</span>
+              </button>
+            </div>
           </BottomSheet>
         )}
       </AnimatePresence>

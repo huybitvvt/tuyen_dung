@@ -115,6 +115,7 @@ export interface Candidate {
   stage: CandidateStage;
   notes: string;
   cvFileName: string;
+  avatarUrl?: string;
   createdAt: string;
 }
 
@@ -170,6 +171,16 @@ export interface InterviewQuestionAddition {
   createdAt: string;
 }
 
+export interface InterviewQuestionOverride {
+  id: string;
+  setId: string;
+  sectionId: string;
+  originalQuestion: string;
+  question?: string;
+  action: 'edit' | 'delete';
+  createdAt: string;
+}
+
 export interface CandidateFile {
   id: string;
   candidateId: string;
@@ -211,11 +222,23 @@ interface CrmState {
   candidateFiles: CandidateFile[];
   customInterviewQuestionSets: CustomInterviewQuestionSet[];
   interviewQuestionAdditions: InterviewQuestionAddition[];
+  interviewQuestionOverrides: InterviewQuestionOverride[];
 }
 
 interface CrmContextValue extends CrmState {
   currentUser: Employee;
   createCourse: (course: Omit<Course, 'id'>) => void;
+  addCourseLesson: (lesson: Omit<Lesson, 'id'>) => Lesson;
+  updateCourseLesson: (lessonId: string, patch: Partial<Omit<Lesson, 'id' | 'courseId'>>) => void;
+  deleteCourseLesson: (lessonId: string) => void;
+  addQuizQuestion: (input: {
+    courseId: string;
+    question: string;
+    options: string[];
+    correctAnswer: number;
+  }) => void;
+  updateQuizQuestion: (questionId: string, patch: Partial<Omit<Question, 'id' | 'quizId'>>) => void;
+  deleteQuizQuestion: (questionId: string) => void;
   assignCourse: (courseId: string, target: string) => void;
   updateLessonProgress: (lessonId: string, percent: number, secondsWatched?: number) => void;
   submitQuiz: (quizId: string, answers: Record<string, number>) => Result;
@@ -233,6 +256,15 @@ interface CrmContextValue extends CrmState {
     questions: string[];
   }) => CustomInterviewQuestionSet;
   addInterviewQuestion: (setId: string, sectionTitle: string, question: string) => void;
+  updateInterviewQuestionSet: (setId: string, patch: Partial<Pick<CustomInterviewQuestionSet, 'title' | 'department'>>) => void;
+  deleteInterviewQuestionSet: (setId: string) => void;
+  updateInterviewQuestionAddition: (additionId: string, patch: Partial<Pick<InterviewQuestionAddition, 'sectionTitle' | 'question'>>) => void;
+  deleteInterviewQuestionAddition: (additionId: string) => void;
+  editInterviewQuestion: (setId: string, sectionId: string, originalQuestion: string, question: string) => void;
+  deleteInterviewQuestion: (setId: string, sectionId: string, originalQuestion: string) => void;
+  restoreInterviewQuestion: (setId: string, sectionId: string, originalQuestion: string) => void;
+  updateCustomInterviewQuestion: (setId: string, sectionId: string, questionIndex: number, question: string) => void;
+  deleteCustomInterviewQuestion: (setId: string, sectionId: string, questionIndex: number) => void;
   resetDemoData: () => void;
 }
 
@@ -988,6 +1020,7 @@ function createSeedState(): CrmState {
     ],
     customInterviewQuestionSets: [],
     interviewQuestionAdditions: [],
+    interviewQuestionOverrides: [],
   };
 }
 
@@ -1015,6 +1048,7 @@ function hydrateLessonVideos(state: CrmState) {
       ...(changed ? { ...state, lessons } : state),
       customInterviewQuestionSets: state.customInterviewQuestionSets ?? [],
       interviewQuestionAdditions: state.interviewQuestionAdditions ?? [],
+      interviewQuestionOverrides: state.interviewQuestionOverrides ?? [],
     },
     changed,
   };
@@ -1066,6 +1100,66 @@ async function saveRemoteState(state: CrmState) {
   }
 }
 
+function normalizeDepartment(value: unknown): Department {
+  const text = String(value ?? '').trim().toLowerCase();
+  if (text.includes('kỹ') || text.includes('ky') || text.includes('tech') || text.includes('it')) return 'Kỹ thuật';
+  if (text.includes('market') || text.includes('mkt') || text.includes('marketing')) return 'Marketing';
+  return 'Sale';
+}
+
+function normalizeEmployeeRow(row: Record<string, unknown>): Employee | null {
+  const rawId = row.id ?? row.user_id ?? row.employee_id ?? row.employee_code ?? row.timekeeping_code ?? row.email;
+  const rawName = row.name ?? row.full_name ?? row.display_name ?? row.user_name ?? row.email;
+  if (!rawId || !rawName) return null;
+
+  return {
+    id: String(rawId),
+    name: String(rawName),
+    role: String(row.role ?? row.position ?? row.title ?? row.chuc_vu ?? row.employee_code ?? 'Nhân viên'),
+    department: normalizeDepartment(row.department ?? row.bo_phan ?? row.team ?? row.position ?? row.role),
+  };
+}
+
+function mergeEmployees(localEmployees: Employee[], remoteEmployees: Employee[]) {
+  const merged: Employee[] = [];
+  const seenIds = new Set<string>();
+  const seenNames = new Set<string>();
+
+  const add = (employee: Employee) => {
+    const idKey = employee.id.trim().toLowerCase();
+    const nameKey = employee.name.trim().toLowerCase();
+    if (!idKey || !nameKey || seenIds.has(idKey) || seenNames.has(nameKey)) return;
+    seenIds.add(idKey);
+    seenNames.add(nameKey);
+    merged.push(employee);
+  };
+
+  remoteEmployees.forEach(add);
+  localEmployees.forEach(add);
+  return merged;
+}
+
+async function loadCompanyEmployees(): Promise<Employee[]> {
+  if (!appSupabase) return [];
+
+  for (const table of ['employees', 'users']) {
+    const { data, error } = await appSupabase.from(table).select('*').limit(500);
+    if (error) {
+      if (error.code !== 'PGRST205' && error.code !== '42P01') {
+        console.warn(`Không đọc được bảng ${table} từ Supabase:`, error.message);
+      }
+      continue;
+    }
+
+    const employees = (data ?? [])
+      .map((row) => normalizeEmployeeRow(row as Record<string, unknown>))
+      .filter((employee): employee is Employee => Boolean(employee));
+    if (employees.length > 0) return employees;
+  }
+
+  return [];
+}
+
 const CrmContext = createContext<CrmContextValue | null>(null);
 
 export function CrmProvider({ children }: { children: React.ReactNode }) {
@@ -1075,10 +1169,19 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function hydrateRemoteState() {
-      const remoteState = await loadRemoteState();
-      if (!remoteState || cancelled) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteState));
-      setState(remoteState);
+      const [remoteState, remoteEmployees] = await Promise.all([loadRemoteState(), loadCompanyEmployees()]);
+      if (cancelled) return;
+      if (!remoteState && remoteEmployees.length === 0) return;
+
+      setState((current) => {
+        const baseState = remoteState ?? current;
+        const nextState = remoteEmployees.length > 0
+          ? { ...baseState, employees: mergeEmployees(baseState.employees, remoteEmployees) }
+          : baseState;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+        if (remoteEmployees.length > 0 || remoteState) void saveRemoteState(nextState);
+        return nextState;
+      });
     }
 
     void hydrateRemoteState();
@@ -1107,6 +1210,91 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
         persist((draft) => ({
           ...draft,
           courses: [...draft.courses, { ...course, id: id('course') }],
+        }));
+      },
+      addCourseLesson(lesson) {
+        const createdLesson: Lesson = { ...lesson, id: id('lesson') };
+        persist((draft) => ({
+          ...draft,
+          lessons: [...draft.lessons, createdLesson],
+        }));
+        return createdLesson;
+      },
+      updateCourseLesson(lessonId, patch) {
+        persist((draft) => ({
+          ...draft,
+          lessons: draft.lessons.map((lesson) =>
+            lesson.id === lessonId
+              ? {
+                  ...lesson,
+                  ...patch,
+                  title: patch.title !== undefined ? patch.title.trim() : lesson.title,
+                  contentUrl: patch.contentUrl !== undefined ? patch.contentUrl.trim() : lesson.contentUrl,
+                  videoUrl: Object.prototype.hasOwnProperty.call(patch, 'videoUrl') ? patch.videoUrl?.trim() : lesson.videoUrl,
+                  summary: patch.summary !== undefined ? patch.summary.trim() : lesson.summary,
+                  body: patch.body !== undefined ? patch.body.trim() : lesson.body,
+                }
+              : lesson
+          ),
+        }));
+      },
+      deleteCourseLesson(lessonId) {
+        persist((draft) => ({
+          ...draft,
+          lessons: draft.lessons.filter((lesson) => lesson.id !== lessonId),
+          progress: draft.progress.filter((item) => item.lessonId !== lessonId),
+        }));
+      },
+      addQuizQuestion(input) {
+        const normalizedQuestion = input.question.trim();
+        const normalizedOptions = input.options.map((option) => option.trim()).filter(Boolean);
+        if (!normalizedQuestion || normalizedOptions.length < 2) return;
+
+        persist((draft) => {
+          const existingQuiz = draft.quizzes.find((quiz) => quiz.courseId === input.courseId);
+          const quizId = existingQuiz?.id ?? id('quiz');
+          const correctAnswer = Math.min(Math.max(input.correctAnswer, 0), normalizedOptions.length - 1);
+          return {
+            ...draft,
+            quizzes: existingQuiz ? draft.quizzes : [...draft.quizzes, { id: quizId, courseId: input.courseId }],
+            questions: [
+              ...draft.questions,
+              {
+                id: id('question'),
+                quizId,
+                question: normalizedQuestion,
+                options: normalizedOptions,
+                correctAnswer,
+              },
+            ],
+          };
+        });
+      },
+      updateQuizQuestion(questionId, patch) {
+        persist((draft) => ({
+          ...draft,
+          questions: draft.questions.map((question) => {
+            if (question.id !== questionId) return question;
+            const normalizedOptions = patch.options !== undefined
+              ? patch.options.map((option) => option.trim()).filter(Boolean)
+              : question.options;
+            return {
+              ...question,
+              ...patch,
+              question: patch.question !== undefined ? patch.question.trim() : question.question,
+              options: normalizedOptions,
+              correctAnswer: Math.min(
+                Math.max(patch.correctAnswer ?? question.correctAnswer, 0),
+                Math.max(normalizedOptions.length - 1, 0)
+              ),
+            };
+          }),
+        }));
+      },
+      deleteQuizQuestion(questionId) {
+        persist((draft) => ({
+          ...draft,
+          questions: draft.questions.filter((question) => question.id !== questionId),
         }));
       },
       assignCourse(courseId, target) {
@@ -1406,6 +1594,167 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
               createdAt: nowIso(),
             },
           ],
+        }));
+      },
+      updateInterviewQuestionSet(setId, patch) {
+        persist((draft) => ({
+          ...draft,
+          customInterviewQuestionSets: (draft.customInterviewQuestionSets ?? []).map((set) =>
+            set.id === setId
+              ? {
+                  ...set,
+                  title: patch.title !== undefined ? patch.title.trim() || set.title : set.title,
+                  department: patch.department ?? set.department,
+                }
+              : set
+          ),
+        }));
+      },
+      deleteInterviewQuestionSet(setId) {
+        persist((draft) => ({
+          ...draft,
+          customInterviewQuestionSets: (draft.customInterviewQuestionSets ?? []).filter((set) => set.id !== setId),
+          interviewQuestionAdditions: (draft.interviewQuestionAdditions ?? []).filter((addition) => addition.setId !== setId),
+          interviewQuestionOverrides: (draft.interviewQuestionOverrides ?? []).filter((override) => override.setId !== setId),
+        }));
+      },
+      updateInterviewQuestionAddition(additionId, patch) {
+        persist((draft) => ({
+          ...draft,
+          interviewQuestionAdditions: (draft.interviewQuestionAdditions ?? []).map((addition) =>
+            addition.id === additionId
+              ? {
+                  ...addition,
+                  sectionTitle: patch.sectionTitle !== undefined ? patch.sectionTitle.trim() || addition.sectionTitle : addition.sectionTitle,
+                  question: patch.question !== undefined ? patch.question.trim() || addition.question : addition.question,
+                }
+              : addition
+          ),
+        }));
+      },
+      deleteInterviewQuestionAddition(additionId) {
+        persist((draft) => ({
+          ...draft,
+          interviewQuestionAdditions: (draft.interviewQuestionAdditions ?? []).filter((addition) => addition.id !== additionId),
+        }));
+      },
+      editInterviewQuestion(setId, sectionId, originalQuestion, question) {
+        const normalizedQuestion = question.trim();
+        if (!normalizedQuestion) return;
+
+        persist((draft) => {
+          const filteredOverrides = (draft.interviewQuestionOverrides ?? []).filter(
+            (override) =>
+              !(
+                override.setId === setId &&
+                override.sectionId === sectionId &&
+                override.originalQuestion === originalQuestion
+              )
+          );
+          return {
+            ...draft,
+            interviewQuestionOverrides:
+              normalizedQuestion === originalQuestion.trim()
+                ? filteredOverrides
+                : [
+                    ...filteredOverrides,
+                    {
+                      id: id('interview_override'),
+                      setId,
+                      sectionId,
+                      originalQuestion,
+                      question: normalizedQuestion,
+                      action: 'edit',
+                      createdAt: nowIso(),
+                    },
+                  ],
+          };
+        });
+      },
+      deleteInterviewQuestion(setId, sectionId, originalQuestion) {
+        persist((draft) => {
+          const filteredOverrides = (draft.interviewQuestionOverrides ?? []).filter(
+            (override) =>
+              !(
+                override.setId === setId &&
+                override.sectionId === sectionId &&
+                override.originalQuestion === originalQuestion
+              )
+          );
+          return {
+            ...draft,
+            interviewQuestionOverrides: [
+              ...filteredOverrides,
+              {
+                id: id('interview_override'),
+                setId,
+                sectionId,
+                originalQuestion,
+                action: 'delete',
+                createdAt: nowIso(),
+              },
+            ],
+          };
+        });
+      },
+      restoreInterviewQuestion(setId, sectionId, originalQuestion) {
+        persist((draft) => ({
+          ...draft,
+          interviewQuestionOverrides: (draft.interviewQuestionOverrides ?? []).filter(
+            (override) =>
+              !(
+                override.setId === setId &&
+                override.sectionId === sectionId &&
+                override.originalQuestion === originalQuestion
+              )
+          ),
+        }));
+      },
+      updateCustomInterviewQuestion(setId, sectionId, questionIndex, question) {
+        const normalizedQuestion = question.trim();
+        if (!normalizedQuestion) return;
+
+        persist((draft) => ({
+          ...draft,
+          customInterviewQuestionSets: (draft.customInterviewQuestionSets ?? []).map((set) =>
+            set.id === setId
+              ? {
+                  ...set,
+                  sections: set.sections.map((section) =>
+                    section.id === sectionId
+                      ? {
+                          ...section,
+                          questions: section.questions.map((item, index) =>
+                            index === questionIndex ? normalizedQuestion : item
+                          ),
+                        }
+                      : section
+                  ),
+                }
+              : set
+          ),
+        }));
+      },
+      deleteCustomInterviewQuestion(setId, sectionId, questionIndex) {
+        persist((draft) => ({
+          ...draft,
+          customInterviewQuestionSets: (draft.customInterviewQuestionSets ?? []).map((set) =>
+            set.id === setId
+              ? {
+                  ...set,
+                  sections: set.sections
+                    .map((section) =>
+                      section.id === sectionId
+                        ? {
+                            ...section,
+                            questions: section.questions.filter((_, index) => index !== questionIndex),
+                          }
+                        : section
+                    )
+                    .filter((section) => section.questions.length > 0),
+                }
+              : set
+          ),
         }));
       },
       resetDemoData() {

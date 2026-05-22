@@ -11,6 +11,7 @@ import {
   FileEdit,
   FileText,
   Globe,
+  ImagePlus,
   Mail,
   Phone,
   Plus,
@@ -80,6 +81,7 @@ export default function CandidateProfile() {
     notes: '',
     cvFileName: '',
     cvUrl: '',
+    avatarUrl: '',
   });
 
   useEffect(() => {
@@ -127,6 +129,7 @@ export default function CandidateProfile() {
       notes: candidate!.notes,
       cvFileName: candidate!.cvFileName,
       cvUrl: firstFile?.url && firstFile.url !== '#' ? firstFile.url : '',
+      avatarUrl: candidate!.avatarUrl ?? '',
     });
     setOpenModal('edit');
   }
@@ -203,6 +206,7 @@ export default function CandidateProfile() {
       notes: editDraft.notes.trim(),
       cvFileName: editDraft.cvFileName.trim(),
       cvUrl: editDraft.cvUrl.trim(),
+      avatarUrl: editDraft.avatarUrl.trim(),
     });
     setOpenModal(null);
   }
@@ -265,8 +269,12 @@ export default function CandidateProfile() {
         <section className="rounded-xl border border-[#dbe2ea] bg-white shadow-sm">
           <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="flex size-16 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary-fixed text-[18px] font-black text-primary shadow-sm">
-                {candidate.name.slice(0, 2).toUpperCase()}
+              <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/20 bg-primary-fixed text-[18px] font-black text-primary shadow-sm">
+                {candidate.avatarUrl ? (
+                  <img src={candidate.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  candidate.name.slice(0, 2).toUpperCase()
+                )}
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -493,6 +501,23 @@ export default function CandidateProfile() {
           <Modal title="Sửa thông tin ứng viên" subtitle={`Hồ sơ: ${candidate.name}`} icon={FileEdit} onClose={() => setOpenModal(null)}>
             <div className="px-4 py-4 md:px-5">
               <div className="grid gap-3 md:grid-cols-2">
+                <ProfileField label="Ảnh đại diện" className="md:col-span-2">
+                  <div className="grid gap-3 rounded-2xl border border-outline-variant bg-surface-container-low/35 p-3 md:grid-cols-[68px_1fr]">
+                    <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-outline-variant bg-surface text-primary">
+                      {editDraft.avatarUrl.trim() ? (
+                        <img src={editDraft.avatarUrl.trim()} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImagePlus className="size-7" strokeWidth={2.2} />
+                      )}
+                    </div>
+                    <input
+                      value={editDraft.avatarUrl}
+                      onChange={(event) => setEditDraft((draft) => ({ ...draft, avatarUrl: event.target.value }))}
+                      className="h-12 w-full self-center rounded-2xl border border-outline-variant bg-surface px-4 text-[13.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      placeholder="Dán link ảnh đại diện ứng viên"
+                    />
+                  </div>
+                </ProfileField>
                 <ProfileField label="Họ tên">
                   <input
                     value={editDraft.name}
