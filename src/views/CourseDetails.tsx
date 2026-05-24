@@ -101,6 +101,18 @@ export default function CourseDetails() {
 
   const progressRows = courseLessons.map((lesson) => progress.find((item) => item.userId === currentUser.id && item.lessonId === lesson.id)?.percent ?? 0);
   const coursePercent = progressRows.length ? Math.round(progressRows.reduce((sum, item) => sum + item, 0) / progressRows.length) : 0;
+  const resultAttemptsByUser = resultHistory.reduce<Record<string, number>>((counts, item) => {
+    counts[item.userId] = (counts[item.userId] ?? 0) + 1;
+    return counts;
+  }, {});
+  const latestResultByUser = resultHistory.reduce<typeof resultHistory>((rows, item) => {
+    if (!rows.some((row) => row.userId === item.userId)) rows.push(item);
+    return rows;
+  }, []);
+  const passResultCount = resultHistory.filter((item) => item.passed).length;
+  const averageResultScore = resultHistory.length
+    ? Math.round(resultHistory.reduce((sum, item) => sum + item.score, 0) / resultHistory.length)
+    : 0;
 
   // Get employees not yet enrolled in this course
   const enrolledUserIds = enrollments.filter((e) => e.courseId === course?.id).map((e) => e.userId);
@@ -484,35 +496,65 @@ export default function CourseDetails() {
                   Pass khi đạt tối thiểu 70%. {latestResult ? `Kết quả gần nhất: ${latestResult.score}% - ${latestResult.passed ? 'PASS' : 'FAIL'}.` : 'Bạn chưa nộp bài.'}
                   {' '}Hiện có {quizQuestions.length} câu hỏi.
                 </p>
-                <Link to={`/training/${course.id}/quiz`} className="bg-primary hover:bg-primary-container text-white px-8 py-3 rounded-lg text-sm font-bold transition-all w-fit block">
-                  Bắt đầu ngay
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <Link to={`/training/${course.id}/quiz`} className="bg-primary hover:bg-primary-container text-white px-8 py-3 rounded-lg text-sm font-bold transition-all w-fit block">
+                    Bắt đầu ngay
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('quiz-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
+                  >
+                    <History className="size-4" strokeWidth={2.4} />
+                    Xem điểm NV
+                  </button>
+                </div>
               </div>
             </div>
 
-            <section className="mt-4 overflow-hidden rounded-xl border border-outline-variant bg-surface shadow-sm">
+            <section id="quiz-results" className="mt-4 scroll-mt-20 overflow-hidden rounded-xl border border-outline-variant bg-surface shadow-sm">
               <header className="flex items-center justify-between gap-3 border-b border-outline-variant bg-surface-container-low/45 px-4 py-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-on-surface-variant">Lịch sử bài test</p>
-                  <h4 className="text-[14px] font-black text-on-surface">Kết quả đã lưu theo nhân viên</h4>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-primary">Điểm test nhân viên</p>
+                  <h4 className="text-[14px] font-black text-on-surface">Lịch sử kết quả đã lưu</h4>
+                  <p className="mt-1 text-[11px] font-semibold text-on-surface-variant">
+                    Mỗi lần nhân viên nộp bài sẽ lưu lại tại đây và vẫn còn sau khi F5.
+                  </p>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full border border-outline-variant bg-surface px-2 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant">
                   <History className="size-3.5" strokeWidth={2.4} />
                   {resultHistory.length}
                 </span>
               </header>
+              <div className="grid gap-2 border-b border-outline-variant/60 bg-surface-container-low/20 p-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-outline-variant bg-surface px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Lượt nộp</p>
+                  <p className="mt-1 text-2xl font-black text-on-surface">{resultHistory.length}</p>
+                </div>
+                <div className="rounded-xl border border-outline-variant bg-surface px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Điểm TB</p>
+                  <p className="mt-1 text-2xl font-black text-on-surface">{averageResultScore}%</p>
+                </div>
+                <div className="rounded-xl border border-outline-variant bg-surface px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Đạt</p>
+                  <p className="mt-1 text-2xl font-black text-primary">{passResultCount}</p>
+                </div>
+              </div>
               {resultHistory.length > 0 ? (
                 <div className="divide-y divide-outline-variant/60">
-                  {resultHistory.slice(0, 8).map((item) => {
+                  {latestResultByUser.map((item) => {
                     const employee = employees.find((candidate) => candidate.id === item.userId);
                     return (
-                      <div key={item.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                      <div key={item.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
                         <div className="min-w-0">
                           <p className="truncate text-[13px] font-black text-on-surface">{employee?.name ?? item.userId}</p>
                           <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">
-                            {new Date(item.submittedAt).toLocaleString('vi-VN')}
+                            Lần gần nhất: {new Date(item.submittedAt).toLocaleString('vi-VN')}
                           </p>
                         </div>
+                        <span className="w-fit rounded-full border border-outline-variant bg-surface-container-low px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant">
+                          {resultAttemptsByUser[item.userId] ?? 1} lần
+                        </span>
                         <span className={cn('w-fit rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]', item.passed ? 'border-primary/25 bg-primary-fixed text-primary' : 'border-error/25 bg-error-container text-on-error-container')}>
                           {item.passed ? 'PASS' : 'FAIL'}
                         </span>

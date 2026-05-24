@@ -527,6 +527,10 @@ export default function InterviewQuestions() {
     sectionTitle: 'Câu hỏi thêm',
     question: '',
   });
+  const [manageQuestionForm, setManageQuestionForm] = useState({
+    sectionTitle: 'Thông tin cơ bản',
+    question: '',
+  });
   const [setDrafts, setSetDrafts] = useState<Record<string, { title: string; department: Department }>>({});
   const [baseQuestionDrafts, setBaseQuestionDrafts] = useState<Record<string, string>>({});
   const [additionDrafts, setAdditionDrafts] = useState<Record<string, { sectionTitle: string; question: string }>>({});
@@ -762,6 +766,10 @@ export default function InterviewQuestions() {
   }
 
   function openManageQuestionSheet() {
+    setManageQuestionForm({
+      sectionTitle: activeSections[0]?.title ?? 'Câu hỏi thêm',
+      question: '',
+    });
     setSetDrafts(
       customInterviewQuestionSets.reduce<Record<string, { title: string; department: Department }>>((drafts, set) => {
         drafts[set.id] = { title: set.title, department: set.department };
@@ -789,6 +797,24 @@ export default function InterviewQuestions() {
     );
     setFormError('');
     setShowManageQuestions(true);
+  }
+
+  function submitManagedQuestion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const sectionTitle = manageQuestionForm.sectionTitle.trim();
+    const question = manageQuestionForm.question.trim();
+    if (!sectionTitle) {
+      setFormError('Vui lòng chọn hoặc nhập nhóm câu hỏi.');
+      return;
+    }
+    if (!question) {
+      setFormError('Vui lòng nhập nội dung câu hỏi mới.');
+      return;
+    }
+
+    addInterviewQuestion(session.questionSet, sectionTitle, question);
+    setManageQuestionForm((current) => ({ ...current, question: '' }));
+    setFormError('');
   }
 
   function saveSetDraft(setId: string) {
@@ -1782,6 +1808,70 @@ export default function InterviewQuestions() {
                   {formError}
                 </div>
               )}
+
+              <section className="rounded-2xl border border-outline-variant bg-surface overflow-hidden">
+                <header className="border-b border-outline-variant bg-surface-container-low/50 px-3 py-2.5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="eyebrow">Thêm câu hỏi mới</p>
+                      <h3 className="text-[14px] font-black text-on-surface">Bổ sung trực tiếp vào bộ đang mở</h3>
+                    </div>
+                    <span className="rounded-full border border-primary/20 bg-primary-fixed px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-primary">
+                      {activeQuestionSetLabel}
+                    </span>
+                  </div>
+                </header>
+                <form onSubmit={submitManagedQuestion} className="grid gap-2 p-3">
+                  <label className="block">
+                    <span className="eyebrow">Nhóm nhận câu hỏi</span>
+                    <div className="mt-1.5 grid gap-2 md:grid-cols-[minmax(180px,220px)_minmax(0,1fr)]">
+                      <select
+                        value={manageQuestionForm.sectionTitle}
+                        onChange={(event) => {
+                          setManageQuestionForm((current) => ({ ...current, sectionTitle: event.target.value }));
+                          setFormError('');
+                        }}
+                        className="h-11 rounded-xl border border-outline-variant bg-surface px-3 text-[12.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      >
+                        {activeSections.map((section) => (
+                          <option key={section.id} value={section.title}>
+                            {section.roman}. {section.title}
+                          </option>
+                        ))}
+                        {!activeSections.some((section) => section.title === manageQuestionForm.sectionTitle) && (
+                          <option value={manageQuestionForm.sectionTitle}>{manageQuestionForm.sectionTitle}</option>
+                        )}
+                      </select>
+                      <input
+                        value={manageQuestionForm.sectionTitle}
+                        onChange={(event) => {
+                          setManageQuestionForm((current) => ({ ...current, sectionTitle: event.target.value }));
+                          setFormError('');
+                        }}
+                        className="h-11 rounded-xl border border-outline-variant bg-surface px-3 text-[12.5px] font-bold text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        placeholder="Hoặc nhập tên nhóm mới"
+                      />
+                      <button
+                        type="submit"
+                        className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-[10px] font-black uppercase tracking-[0.10em] text-on-primary transition hover:bg-primary-container active:scale-95 md:col-span-2 md:ml-auto md:w-auto"
+                      >
+                        <Plus className="size-3.5" strokeWidth={2.5} />
+                        Thêm câu hỏi
+                      </button>
+                    </div>
+                  </label>
+                  <textarea
+                    value={manageQuestionForm.question}
+                    onChange={(event) => {
+                      setManageQuestionForm((current) => ({ ...current, question: event.target.value }));
+                      setFormError('');
+                    }}
+                    rows={3}
+                    className="w-full resize-y rounded-xl border border-outline-variant bg-surface p-3 text-[13px] font-semibold leading-6 text-on-surface outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    placeholder="Nhập câu hỏi mới. Câu dài có thể xuống nhiều dòng trong ô này."
+                  />
+                </form>
+              </section>
 
               <section className="rounded-2xl border border-outline-variant bg-surface overflow-hidden">
                 <header className="border-b border-outline-variant bg-surface-container-low/50 px-3 py-2.5">
