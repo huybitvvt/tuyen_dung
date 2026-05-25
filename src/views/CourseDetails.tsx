@@ -62,6 +62,7 @@ export default function CourseDetails() {
     deleteQuizQuestion,
   } = useCrm();
   const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [isResultsOpen, setIsResultsOpen] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [contentModal, setContentModal] = useState<'lesson' | 'quiz' | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
@@ -105,10 +106,14 @@ export default function CourseDetails() {
     counts[item.userId] = (counts[item.userId] ?? 0) + 1;
     return counts;
   }, {});
-  const latestResultByUser = resultHistory.reduce<typeof resultHistory>((rows, item) => {
-    if (!rows.some((row) => row.userId === item.userId)) rows.push(item);
+  const latestResultByUser = resultHistory.reduce<Record<string, (typeof resultHistory)[number]>>((rows, item) => {
+    if (!rows[item.userId]) rows[item.userId] = item;
     return rows;
-  }, []);
+  }, {});
+  const bestResultScoreByUser = resultHistory.reduce<Record<string, number>>((rows, item) => {
+    rows[item.userId] = Math.max(rows[item.userId] ?? 0, item.score);
+    return rows;
+  }, {});
   const passResultCount = resultHistory.filter((item) => item.passed).length;
   const averageResultScore = resultHistory.length
     ? Math.round(resultHistory.reduce((sum, item) => sum + item.score, 0) / resultHistory.length)
@@ -117,6 +122,26 @@ export default function CourseDetails() {
   // Get employees not yet enrolled in this course
   const enrolledUserIds = enrollments.filter((e) => e.courseId === course?.id).map((e) => e.userId);
   const availableEmployees = employees.filter((emp) => !enrolledUserIds.includes(emp.id));
+  const scoreUserIds = Array.from(new Set([...course.assignedUsers, ...enrolledUserIds, ...resultHistory.map((item) => item.userId)]));
+  const scoreEmployees = scoreUserIds.length > 0
+    ? scoreUserIds
+        .map((userId) => employees.find((employee) => employee.id === userId) ?? { id: userId, name: userId, role: 'Nhân viên', department: course.department })
+        .filter((employee, index, rows) => rows.findIndex((item) => item.id === employee.id) === index)
+    : employees;
+  const scoreRows = scoreEmployees
+    .map((employee) => ({
+      employee,
+      latest: latestResultByUser[employee.id],
+      attempts: resultAttemptsByUser[employee.id] ?? 0,
+      bestScore: bestResultScoreByUser[employee.id],
+      enrolled: enrolledUserIds.includes(employee.id) || course.assignedUsers.includes(employee.id),
+    }))
+    .sort((a, b) => {
+      if (a.latest && !b.latest) return -1;
+      if (!a.latest && b.latest) return 1;
+      if (a.latest && b.latest) return new Date(b.latest.submittedAt).getTime() - new Date(a.latest.submittedAt).getTime();
+      return a.employee.name.localeCompare(b.employee.name, 'vi');
+    });
 
   function handleOpenAssign() {
     setSelectedEmployees([]);
@@ -502,7 +527,7 @@ export default function CourseDetails() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => document.getElementById('quiz-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    onClick={() => setIsResultsOpen(true)}
                     className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
                   >
                     <History className="size-4" strokeWidth={2.4} />
@@ -540,25 +565,25 @@ export default function CourseDetails() {
                   <p className="mt-1 text-2xl font-black text-primary">{passResultCount}</p>
                 </div>
               </div>
-              {resultHistory.length > 0 ? (
+              {scoreRows.length > 0 ? (
                 <div className="divide-y divide-outline-variant/60">
-                  {latestResultByUser.map((item) => {
-                    const employee = employees.find((candidate) => candidate.id === item.userId);
+                  {scoreRows.map(({ employee, latest, attempts, bestScore, enrolled }) => {
                     return (
-                      <div key={item.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
+                      <div key={employee.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
                         <div className="min-w-0">
-                          <p className="truncate text-[13px] font-black text-on-surface">{employee?.name ?? item.userId}</p>
+                          <p className="truncate text-[13px] font-black text-on-surface">{employee.name}</p>
                           <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">
-                            Lần gần nhất: {new Date(item.submittedAt).toLocaleString('vi-VN')}
+                            {employee.id} · {employee.department}
+                            {latest ? ` · Lần gần nhất: ${new Date(latest.submittedAt).toLocaleString('vi-VN')}` : enrolled ? ' · Đã gán khóa' : ' · Chưa gán khóa'}
                           </p>
                         </div>
                         <span className="w-fit rounded-full border border-outline-variant bg-surface-container-low px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-on-surface-variant">
-                          {resultAttemptsByUser[item.userId] ?? 1} lần
+                          {attempts} lần
                         </span>
-                        <span className={cn('w-fit rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]', item.passed ? 'border-primary/25 bg-primary-fixed text-primary' : 'border-error/25 bg-error-container text-on-error-container')}>
-                          {item.passed ? 'PASS' : 'FAIL'}
+                        <span className={cn('w-fit rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]', latest ? latest.passed ? 'border-primary/25 bg-primary-fixed text-primary' : 'border-error/25 bg-error-container text-on-error-container' : 'border-outline-variant bg-surface-container-low text-on-surface-variant')}>
+                          {latest ? latest.passed ? 'PASS' : 'FAIL' : 'Chưa làm'}
                         </span>
-                        <span className="font-mono text-[18px] font-black tabular-nums text-on-surface">{item.score}%</span>
+                        <span className="font-mono text-[18px] font-black tabular-nums text-on-surface">{latest ? `${latest.score}%` : bestScore !== undefined ? `${bestScore}%` : '--'}</span>
                       </div>
                     );
                   })}
@@ -955,6 +980,97 @@ export default function CourseDetails() {
               </button>
             </footer>
           </motion.form>
+        </div>
+      )}
+
+      {isResultsOpen && (
+        <div className="fixed inset-0 z-[85] flex items-end justify-center bg-black/45 px-3 py-6 backdrop-blur-sm md:items-center" onClick={() => setIsResultsOpen(false)}>
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-outline-variant bg-surface shadow-2xl"
+          >
+            <header className="flex items-start gap-3 border-b border-outline-variant bg-surface-container-low px-5 py-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-on-primary">
+                <History className="size-5" strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="eyebrow">Điểm test nhân viên</p>
+                <h2 className="truncate text-xl font-black text-on-surface">{course.name}</h2>
+                <p className="mt-1 text-[12px] font-semibold text-on-surface-variant">
+                  Hiển thị nhân viên đã gán khóa và nhân viên đã từng nộp bài. Người chưa làm vẫn hiện rõ trạng thái.
+                </p>
+              </div>
+              <button type="button" onClick={() => setIsResultsOpen(false)} className="flex size-9 shrink-0 items-center justify-center rounded-full border border-outline-variant bg-surface text-on-surface-variant transition hover:bg-surface-container-high">
+                <X className="size-4" />
+              </button>
+            </header>
+
+            <div className="grid gap-2 border-b border-outline-variant/60 bg-surface-container-low/25 p-4 sm:grid-cols-4">
+              <div className="rounded-2xl border border-outline-variant bg-surface px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Nhân viên</p>
+                <p className="mt-1 text-2xl font-black text-on-surface">{scoreRows.length}</p>
+              </div>
+              <div className="rounded-2xl border border-outline-variant bg-surface px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Đã nộp</p>
+                <p className="mt-1 text-2xl font-black text-on-surface">{resultHistory.length}</p>
+              </div>
+              <div className="rounded-2xl border border-outline-variant bg-surface px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Điểm TB</p>
+                <p className="mt-1 text-2xl font-black text-on-surface">{averageResultScore}%</p>
+              </div>
+              <div className="rounded-2xl border border-outline-variant bg-surface px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant">Pass</p>
+                <p className="mt-1 text-2xl font-black text-primary">{passResultCount}</p>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div className="overflow-hidden rounded-2xl border border-outline-variant bg-surface">
+                <div className="hidden grid-cols-[1.5fr_0.8fr_0.7fr_0.7fr_1fr] gap-3 border-b border-outline-variant bg-surface-container-low/60 px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-on-surface-variant md:grid">
+                  <span>Nhân viên</span>
+                  <span>Trạng thái</span>
+                  <span>Lượt nộp</span>
+                  <span>Điểm</span>
+                  <span>Lần gần nhất</span>
+                </div>
+                <div className="divide-y divide-outline-variant/60">
+                  {scoreRows.map(({ employee, latest, attempts, bestScore, enrolled }) => (
+                    <div key={employee.id} className="grid gap-3 px-4 py-3 md:grid-cols-[1.5fr_0.8fr_0.7fr_0.7fr_1fr] md:items-center">
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-black text-on-surface">{employee.name}</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-on-surface-variant">
+                          ID: {employee.id} · {employee.role} · {employee.department}
+                        </p>
+                      </div>
+                      <span className={cn('w-fit rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.10em]', latest ? latest.passed ? 'border-primary/25 bg-primary-fixed text-primary' : 'border-error/25 bg-error-container text-on-error-container' : enrolled ? 'border-secondary/25 bg-secondary-container text-on-secondary-container' : 'border-outline-variant bg-surface-container-low text-on-surface-variant')}>
+                        {latest ? latest.passed ? 'PASS' : 'FAIL' : enrolled ? 'Chưa làm' : 'Chưa gán'}
+                      </span>
+                      <p className="text-[12px] font-black text-on-surface md:font-mono">{attempts} lần</p>
+                      <p className="font-mono text-[18px] font-black tabular-nums text-on-surface">
+                        {latest ? `${latest.score}%` : bestScore !== undefined ? `${bestScore}%` : '--'}
+                      </p>
+                      <p className="text-[11px] font-semibold text-on-surface-variant">
+                        {latest ? new Date(latest.submittedAt).toLocaleString('vi-VN') : 'Chưa có kết quả'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <footer className="border-t border-outline-variant bg-surface-container-low/40 p-3">
+              <button
+                type="button"
+                onClick={() => setIsResultsOpen(false)}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[11px] font-black uppercase tracking-[0.10em] text-on-primary shadow-md shadow-primary/25 transition hover:bg-primary-container"
+              >
+                <CheckCircle className="size-4" strokeWidth={2.5} />
+                Xong
+              </button>
+            </footer>
+          </motion.div>
         </div>
       )}
 
